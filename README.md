@@ -18,6 +18,10 @@
   written by Claude. The only principles used beyond intuitionistic logic are unique choice and
   Noetherianity in the inductive (Richman–Seidenberg / Coquand–Persson) sense. Maximal ideals,
   Krull dimension and compactness are not used.
+- [`constructive/lean-formalisation.pdf`](constructive/lean-formalisation.pdf)
+  (LaTeX source alongside): a short note by Claude that documents the Lean proof. It covers the
+  constructive ingredients (chain lifting, smoothness certificates, points, unique choice) and the
+  status of the formalisation.
 - The Lean development. Claude's additions are mainly in `BezoutCounterexample/Constructive/`
   and the `Principalization/ChainLift*` and `*Pt*` files. The constructive form of the main
   theorem is `main_theorem_tower` in

@@ -1,0 +1,141 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\p}{\mathfrak{p}}
+\newcommand{\m}{\mathfrak{m}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newtheorem{theorem}{Theorem}
+\title{A constructive proof that Bézout does not imply\\ elementary divisor}
+\author{Claude (Anthropic)}
+\date{6 October 2026}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Hägg and Mörtberg~\cite{HM}, with GPT-6 Astra, constructed a Bézout domain that is not an elementary
+divisor domain; their proof is classical. We outline a constructive proof, based on a Lean formalisation
+available at \url{https://github.com/coquand/bezout-constructive}. It has
+three ingredients. Chain lifting along explicit polynomial charts replaces compactness.
+Smoothness is carried as Jacobian-minor certificates. Points and components of the maximal locus
+are explicit. Apart from known constructive results, the only choice principle used is unique
+choice.
+
+This note, written by Claude, documents a constructive version of the proof
+in~\cite{HM} (\url{https://arxiv.org/abs/2609.35229}) and its Lean formalisation. It has not
+been reviewed by Hägg and Mörtberg.
+\end{abstract}
+
+\section{The statement}
+
+\begin{theorem}[Hägg--Mörtberg with GPT-6 Astra~\cite{HM}]
+There is a Bézout domain $R\supset\Q[x,y]$ over which the matrix
+$M=\begin{pmatrix}1+x&y\\y&1-x\end{pmatrix}$ has no diagonal reduction.
+\end{theorem}
+
+The ring $R=\bigcup_n A_n$ is an ascending union of smooth, finitely generated $\Q$-domains with
+$A_0=\Q[x,y]$. Each step principalises one coprime pair of $A_n$, using a weighted centre
+(Abramovich--Temkin--Włodarczyk), the extended Rees algebra and the forcing algebra~\cite{H}
+$J_B(c)=B[\sigma]/(\sum c_i\sigma_i-1)$. The original obstruction is topological: compact real sets
+with monotone surjections keep the Möbius bundle on $x^2+y^2=1$ nonorientable. The classical proof
+uses Noetherianity, maximal ideals, minimal primes and Krull dimension throughout.
+
+\section{Constructive ingredients}
+
+\paragraph{Chain lifting instead of compact sets.}
+The topological argument is replaced by a lifting property for finite chains of real points along
+each stage. At every stage it is proved with explicit charts and composed along the tower. The
+analytic input is a Kantorovich step with explicit radius and a polynomial inverse function
+theorem whose radius is uniform in the base point. It uses only positive inverses and positive
+roots, with no real division and no Markov principle.
+
+\paragraph{Smoothness as certificates.}
+A stage $A=\Q[Y]/(G)$ carries a \emph{certificate of dimension $n$}. This is a comaximal cover by
+Jacobian minors $h_k$ such that on each $D(h_k)$ some $m$ of the generators cut out $A$ and their
+$m\times m$ minor is invertible. The dimension is $n=|Y|-m$ on every piece. Certificates propagate
+along the tower:
+\begin{itemize}
+\item the forcing algebra $J=B[X_0,\dots,X_r]/(\sum c_iX_i-1)$: on $D(c_i)$ one has
+  $J[1/c_i]\cong B[1/c_i][X_j : j\ne i]$, so the $c_i$ themselves give the cover and the
+  dimension becomes $n+r$. This replaces the split-conormal argument of \cite[Lemma 3.1]{HM},
+  and $B\to J$ is injective iff $\operatorname{Ann}(c)=0$ \cite[Lemma II.2.14]{LQ};
+\item the Rees algebra: the weighted charts give the pieces, and the dimension becomes $n+1$.
+\end{itemize}
+On a piece, $A_{h}$ has the standard presentation
+$\Q[Z][Y,t]/(F_{\mathrm{rel}},F_{\mathrm{coord}}-Z,ht-1)$, whose Jacobian is a unit, so $A_h$ is
+standard étale over $\Q[Z]$. Formal smoothness at a point follows from Newton lifting. The
+formalisation proves the isomorphism by two explicit inverse maps, so no kernel is computed.
+
+\paragraph{Points instead of maximal ideals.}
+A \emph{point} of $A$ is a $\Q$-algebra map $A\to L$ onto a finite extension of $\Q$. Its residue
+field is therefore discrete. Every local argument of the classical proof is run at a point:
+\begin{itemize}
+\item the invariant and its admissibility (decided at points);
+\item the maximal locus as an intersection over explicit points;
+\item primality of $s$ in the Rees algebra;
+\item the drop of the invariant at the vertex.
+\end{itemize}
+Negative goals use $\neg\neg$-stability of membership at a point. The local--global principle for
+comaximal localisations \cite{LQ} assembles the pieces. The Nullstellensatz in Jacobson
+form produces points: for $\p$ prime and $a\notin\p$ there is a point that kills $\p$ and not $a$.
+
+\paragraph{Explicit inputs.}
+\begin{itemize}
+\item Factorisation over $\Q$ uses Kronecker's method and Gauss's lemma. It transfers to
+  $K(t)$ and to $K[X]/(p)$.
+\item Minimal primes follow Perdry's strongly Noetherian approach~\cite{P}.
+\item The invariant (order at a point) is the escape level of a Rees bar induction, so no
+  unbounded search is needed. The weighted minimiser is a search over an explicit box.
+\end{itemize}
+
+\paragraph{Unique choice.}
+The tower is a recursively defined sequence of rings, and each stage is selected by a property
+that determines it uniquely:
+\begin{itemize}
+\item the maximal invariant;
+\item the canonical component, the least canonical generator list in a decidable order coming
+  from an explicit enumeration of the ring;
+\item the common denominator, the least admissible index, and the canonical generators of the
+  next presentation.
+\end{itemize}
+Passing from $\exists!$ to data is unique choice. It is valid in Bishop-style mathematics. In
+Lean, however, it is an extra principle, because \code{Prop} does not eliminate into \code{Type}.
+Nothing stronger is used.
+
+
+\section{Status of the formalisation}
+
+\begin{itemize}
+\item \code{main\_theorem} and \code{main\_theorem\_tower} are proved in Lean~4/Mathlib with the
+  standard axioms (9188 build jobs).
+\item The constructive layer passes an audit of 1921 declarations. It relies on 8 trusted
+  primitives:
+  \begin{itemize}
+  \item sign splitting and cotransitivity on $\R$;
+  \item positive inverses and positive roots;
+  \item the Banach fixed point with rate $\tfrac12$;
+  \item the polynomial gcd over a discrete field;
+  \item the primitive-element shift (a bounded decidable search, justified by $\neg\neg$).
+  \end{itemize}
+\item In the dependency cone of the main theorem (4812 declarations), no project declaration
+  uses classical logic directly. The standard axioms still appear, but only through
+  Mathlib lemmas at the level of propositions (Hilbert basis, localisation, finite-set
+  bookkeeping), which are known constructive facts. The tower is defined by well-founded
+  recursion together with unique choice.
+\end{itemize}
+
+\begin{thebibliography}{9}
+\bibitem{HM} C.~Hägg and A.~Mörtberg, \emph{A Bézout domain that is not an elementary divisor domain},
+  arXiv:2609.35229, 2026, \url{https://arxiv.org/abs/2609.35229}. The proof was found with GPT-6 Astra and formalised in Lean with Codex;
+  \url{https://github.com/Zelaron/bezout-counterexample-lean}.
+\bibitem{H} M.~Hochster, \emph{Solid closure}, Contemp.\ Math.\ 159 (1994), 103--172.
+\bibitem{LQ} H.~Lombardi and C.~Quitté, \emph{Commutative Algebra: Constructive Methods},
+  Springer, 2015.
+\bibitem{P} H.~Perdry, \emph{Strongly Noetherian rings and constructive ideal theory},
+  J.~Symbolic Comput.\ 37 (2004).
+\end{thebibliography}
+
+\end{document}
