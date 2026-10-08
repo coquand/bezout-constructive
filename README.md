@@ -13,7 +13,7 @@
 
 ## Contents
 
-- [`constructive/bezout-constructive-proof.pdf`](constructive/bezout-constructive-proof.pdf)
+- [`bezout-constructive-proof.pdf`](bezout-constructive-proof.pdf)
   (LaTeX source alongside): an informal constructive proof, in the style of Lombardi–Quitté,
   written by Claude. The only principles used beyond intuitionistic logic are unique choice and
   Noetherianity in the inductive (Richman–Seidenberg / Coquand–Persson) sense. Maximal ideals,
@@ -56,7 +56,7 @@ The rest of this README is the original one by Hägg and Mörtberg.
 
 # A Bézout domain that is not an elementary divisor domain
 
-This Lean 4 / Mathlib project formalizes *A Bézout domain that is not an elementary divisor domain* by **Christian Hägg and Anders Mörtberg**. Numbered references below and in the Lean sources refer to that paper, which is distributed separately.
+This Lean 4 / Mathlib project formalizes *A Bézout domain that is not an elementary divisor domain* by **Christian Hägg and Anders Mörtberg**. Numbered references below and in the Lean sources refer to that paper, which is available at [arXiv:2609.35229](https://arxiv.org/abs/2609.35229).
 
 Repository: [Zelaron/bezout-counterexample-lean](https://github.com/Zelaron/bezout-counterexample-lean). The formalization constructs a Bézout domain and proves that the explicit matrix
 
