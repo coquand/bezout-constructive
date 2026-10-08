@@ -13,13 +13,13 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 include hd hw in
 /-- The weighted sphere bundle maps monotonically onto `K` (Lemma 4.5). -/
-theorem torsorK_monotone (hk2 : v₀ 1 ≠ 0) (K : Set (RealPt A)) :
+theorem torsorK_monotone [Constructive.Enum A] [Fact (Constructive.HasPres A)] (hk2 : v₀ 1 ≠ 0) (K : Set (RealPt A)) :
     IsMonotoneSurjOn (RealPt.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)))
       (torsorK hI hmax h𝔭 hπ K) K := by
   have hmaps : Set.MapsTo (RealPt.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)))

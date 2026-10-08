@@ -249,8 +249,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭)
 
 include hI hmax h𝔭 in
 /-- **Derivations stabilizing `I` stabilize the component filtration.** -/
@@ -258,7 +258,7 @@ theorem deriv_mem_compF (δ : Derivation ℚ A A) (hδ : ∀ f ∈ I, δ f ∈ I
     (hf : f ∈ compF I 𝔭 t) : δ f ∈ compF I 𝔭 t := by
   rw [mem_compF] at hf ⊢
   intro 𝔪 _ h𝔭𝔪
-  obtain ⟨hI𝔪, n, e, he, -⟩ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
+  obtain ⟨hI𝔪, n, e, he, -⟩ := h𝔭.mem_max hI hmax 𝔪 h𝔭𝔪
   have : IsNoetherianRing (Localization.AtPrime 𝔪) :=
     IsLocalization.isNoetherianRing 𝔪.primeCompl _ inferInstance
   obtain ⟨J, -, -⟩ := he.1
@@ -275,6 +275,31 @@ theorem deriv_mem_compF (δ : Derivation ℚ A A) (hδ : ∀ f ∈ I, δ f ∈ I
   have h1 := hf 𝔪 h𝔭𝔪
   rw [hcRF] at h1 ⊢
   rw [← extLoc_algebraMap 𝔪.primeCompl δ f]
+  exact deriv_mem_RF_of_x ck δ𝔪 hx t h1
+
+include hI hmax h𝔭 in
+/-- **Derivations stabilizing `I` stabilize the component filtration at points.** -/
+theorem deriv_mem_compFPt (δ : Derivation ℚ A A) (hδ : ∀ f ∈ I, δ f ∈ I) (t : ℚ) {f : A}
+    (hf : f ∈ compFPt I 𝔭 t) : δ f ∈ compFPt I 𝔭 t := by
+  rw [mem_compFPt] at hf ⊢
+  intro p h𝔭𝔪
+  obtain ⟨hI𝔪, n, e, he, -⟩ := h𝔭.mem hI hmax p h𝔭𝔪
+  have : IsNoetherianRing (Localization.AtPrime p.ker) :=
+    IsLocalization.isNoetherianRing p.ker.primeCompl _ inferInstance
+  obtain ⟨J, -, -⟩ := he.1
+  obtain ⟨k, ck, hrun, hadm, hck, hsupp⟩ :=
+    he.exists_run (Iloc_ne_bot hI p.ker) (Iloc_le hI𝔪) J.c J.centred
+  set δ𝔪 : Derivation ℚ (Localization.AtPrime p.ker) (Localization.AtPrime p.ker) :=
+    extLoc (S := Localization.AtPrime p.ker) p.ker.primeCompl δ
+  have hδ𝔪 : ∀ g ∈ Iloc I p.ker, δ𝔪 g ∈ Iloc I p.ker := fun g hg =>
+    deriv_mem_map (algebraMap A _) δ𝔪 δ (fun r => extLoc_algebraMap _ δ r) hδ hg
+  have hx : ∀ i, e i ≠ 0 → δ𝔪 (ck.x i) ∈ ck.RF e (e i) := fun i hi =>
+    deriv_mem_RF hrun hadm hck he.nonneg he.anti hsupp δ𝔪 hδ𝔪 i ((hsupp i).1 hi)
+  have hcRF : cRF I p.ker t = ck.RF e t :=
+    cRF_eq hI hI𝔪 (J := ⟨ck, e, hck, he.nonneg, he.anti⟩) hadm he t
+  have h1 := hf p h𝔭𝔪
+  rw [hcRF] at h1 ⊢
+  rw [← extLoc_algebraMap p.ker.primeCompl δ f]
   exact deriv_mem_RF_of_x ck δ𝔪 hx t h1
 
 end CompFDer
@@ -480,19 +505,6 @@ open IsLocalRing IsLocalization LaurentPolynomial
 
 section ChartSize
 
-/-- **Chart sizes are constant on a domain.** -/
-lemma chart_card_eq_of_domain {B : Type} [CommRing B] [IsDomain B] [Algebra ℚ B] (𝔭 𝔮 : Ideal B)
-    [𝔭.IsPrime] [𝔮.IsPrime] {n n' : ℕ} (c : Chart (Localization.AtPrime 𝔭) n)
-    (c' : Chart (Localization.AtPrime 𝔮) n') : n = n' :=
-  Chart.card_eq (Loc.transport (Ideal.primeCompl_le_nonZeroDivisors 𝔭) c)
-    (Loc.transport (Ideal.primeCompl_le_nonZeroDivisors 𝔮) c')
-
-lemma exists_chart_atPrime {B : Type} [CommRing B] [IsDomain B] [Algebra ℚ B] [Algebra.Smooth ℚ B]
-    (p : Ideal B) [p.IsPrime] : ∃ n, Nonempty (Chart (Localization.AtPrime p) n) := by
-  obtain ⟨f, hf, n, ⟨c⟩⟩ := exists_chart_away p
-  have h : Submonoid.powers f ≤ p.primeCompl := (Submonoid.powers_le).2 hf
-  exact ⟨n, ⟨Loc.transport h c⟩⟩
-
 /-- Chart sizes on the Rees algebra are one more than on the base. -/
 theorem rees_chart_card {B : Type} [CommRing B] [IsDomain B] [Algebra ℚ B] (Φ : WFil B)
     (hneg : ∀ j : ℤ, j ≤ 0 → Φ.F j = ⊤) (𝔪 : Ideal B) [𝔪.IsPrime] {nA : ℕ}
@@ -608,20 +620,20 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
   (hπ0 : π ≠ 0)
 
 include hd in
-lemma le_comap_of_torsorI (Q : Ideal (Torsor hI hmax h𝔭 d hπ))
+lemma le_comap_of_torsorI [Fact (Constructive.HasPres A)] [Constructive.Enum A] (Q : Ideal (Torsor hI hmax h𝔭 d hπ))
     (hIQ : torsorI hI hmax h𝔭 hd hπ ≤ Q) : I ≤ Q.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) := by
   rw [← Ideal.map_le_iff_le_comap, torsor_map_eq hI hmax h𝔭 hd hπ]
   exact Ideal.mul_le_right.trans hIQ
 
 include hd hw hπ0 in
 /-- **Chart sizes on the torsor.** -/
-theorem torsor_dimOK {m N : ℕ} (hD : DimOK I m N) :
+theorem torsor_dimOK [Constructive.Enum A] [Fact (Constructive.HasPres A)] {m N : ℕ} (hD : DimOK I m N) :
     DimOK (torsorI hI hmax h𝔭 hd hπ) (m + (nGen hI hmax h𝔭 d + 1)) N := by
   intro Q _ hIQ n ⟨c⟩
   have : Algebra.FiniteType A (ReesAlg (compFil hI hmax h𝔭 d)) :=
@@ -659,12 +671,12 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
   (hπ0 : π ≠ 0)
 
-lemma torsorY_euler (i : Fin (nGen hI hmax h𝔭 d + 1)) :
+lemma torsorY_euler [Fact (Constructive.HasPres A)] [Constructive.Enum A] (i : Fin (nGen hI hmax h𝔭 d + 1)) :
     reesEuler (compFil hI hmax h𝔭 d) (torsorY hI hmax h𝔭 d hπ i) =
       genDeg hI hmax h𝔭 d i • torsorY hI hmax h𝔭 d hπ i :=
   reesEuler_C_mul_T _ (genCoeff_mem hI hmax h𝔭 d hπ i)
@@ -673,7 +685,7 @@ include hd hw hπ0 in
 set_option maxHeartbeats 2000000 in
 omit hπ0 in
 /-- **Vertical derivations on the torsor.** -/
-theorem torsor_vertOK {m : ℕ} (hV : VertOK I m) :
+theorem torsor_vertOK [Constructive.Enum A] [Fact (Constructive.HasPres A)] {m : ℕ} (hV : VertOK I m) :
     VertOK (torsorI hI hmax h𝔭 hd hπ) (m + (nGen hI hmax h𝔭 d + 1)) := by
   classical
   intro Q hQ hIQ
@@ -685,7 +697,7 @@ theorem torsor_vertOK {m : ℕ} (hV : VertOK I m) :
   have hδF : ∀ j, ∀ i, ∀ f ∈ (compFil hI hmax h𝔭 d).F i, δ j f ∈ (compFil hI hmax h𝔭 d).F i :=
     fun j i f hf => by
       rw [compFil_F] at hf ⊢
-      exact deriv_mem_compF hI hmax h𝔭 (δ j) (hδ j) _ hf
+      exact deriv_mem_compFPt hI hmax h𝔭 (δ j) (hδ j) _ hf
   obtain ⟨l, hl⟩ := exists_torsorY_not_mem hI hmax h𝔭 hπ Q
   set y := torsorY hI hmax h𝔭 d hπ
   set DR : Fin m → Derivation ℚ (ReesAlg (compFil hI hmax h𝔭 d)) (ReesAlg (compFil hI hmax h𝔭 d)) :=

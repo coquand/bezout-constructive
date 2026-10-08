@@ -1,4 +1,5 @@
 import BezoutCounterexample.Principalization.Centre
+import BezoutCounterexample.Principalization.QuotSeq
 
 /-!
 # Method-1 runs and the transfer theorem
@@ -52,7 +53,7 @@ namespace BezoutCounterexample.Principalization
 
 open MvPowerSeries IsLocalRing
 
-variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] [IsNoetherianRing R] {n : ℕ}
+variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] [Fact (QuotSeqCond R)] {n : ℕ}
 
 namespace MC
 
@@ -69,7 +70,7 @@ theorem SA.step_run (hSA : SA I j J) (hna : ¬ J.Adm I) :
       SA I (j + 1) ⟨nextChart J.c ⟨j, hj⟩ l (J.c.Dv (β - Finsupp.single l 1) f) u hu,
         nextE J.e j (nextW J.e j β), hc, hnn, ha⟩ := by
   classical
-  obtain ⟨hj, βs, f, hf, hfne, hlt, hN, hmin, hnext, hbJ⟩ := hSA.step_data hna
+  obtain ⟨hj, βs, f, hf, hfne, hlt, hN, hmin, hnext, hbJ⟩ := hSA.step_data_Q Fact.out hna
   set jj : Fin n := ⟨j, hj⟩ with hjj
   set bp : ℚ := (1 - lam J.e βs) / tailSum j βs with hbpdef
   have hNq : (0 : ℚ) < tailSum j βs := by exact_mod_cast hN
@@ -93,6 +94,10 @@ theorem SA.step_run (hSA : SA I j J) (hna : ¬ J.Adm I) :
     simp only [compl]; split_ifs
     · exact J.nonneg i
     · exact hbp.le
+  have hc_ne : ∀ i, compl J.e j bp i ≠ 0 := fun i => by
+    simp only [compl]; split_ifs with h
+    · exact (hSA.e_pos h).ne'
+    · exact hbp.ne'
   have hc_anti : Antitone (compl J.e j bp) := by
     intro i i' hii'
     simp only [compl]
@@ -105,7 +110,7 @@ theorem SA.step_run (hSA : SA I j J) (hna : ¬ J.Adm I) :
       · rw [ite_eq_right h2]
   have hc_adm : I ≤ J.c.RF (compl J.e j bp) 1 := by
     intro g hg
-    rw [J.centred.mem_RF_iff hc_nonneg]
+    rw [J.centred.mem_RF_iff_of_ne hc_nonneg hc_ne]
     intro β hβ
     by_contra hne
     rw [lam_compl hzero] at hβ
@@ -261,7 +266,7 @@ theorem SA.step_run (hSA : SA I j J) (hna : ¬ J.Adm I) :
       · rw [← hJ'j]; exact J'.anti (Fin.le_def.2 (by simp only [hjj, Fin.val_mk]; omega))
       · by_contra hlt'
         push Not at hlt'
-        have := (hc''.mem_RF_iff J'.nonneg bp xb).1 hxb_RF (Finsupp.single m 1) (by
+        have := hc''.coeff_tau_eq_zero_of_mem_RF J'.nonneg hxb_RF (Finsupp.single m 1) (by
           rw [lam_single]; simpa using hlt')
         rw [Chart.coeff_tau_eq_zero_iff, Chart.Dv_single_one] at this
         exact hmnm this
@@ -295,7 +300,7 @@ namespace BezoutCounterexample.Principalization
 
 open MvPowerSeries IsLocalRing
 
-variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] [IsNoetherianRing R] {n : ℕ}
+variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] [Fact (QuotSeqCond R)] {n : ℕ}
 
 namespace MC
 
@@ -314,7 +319,7 @@ theorem exists_run (hI : I ≠ ⊥) (hIm : I ≤ maximalIdeal R) (c : Chart R n)
       intro j hj J hJ
       by_cases ha : J.Adm I
       · exact ⟨j, J.c, J.e, .refl _ _ _, ha, J.centred, J.nonneg, J.anti, hJ.supp⟩
-      · obtain ⟨hjn, -⟩ := hJ.step_data ha
+      · obtain ⟨hjn, -⟩ := hJ.step_data_Q Fact.out ha
         omega
     | succ d ih =>
       intro j hj J hJ
@@ -324,7 +329,7 @@ theorem exists_run (hI : I ≠ ⊥) (hIm : I ≤ maximalIdeal R) (c : Chart R n)
           hJ.step_run ha
         obtain ⟨k, ck, ek, hrun, hadm, hck, hek⟩ := ih (j + 1) (by omega) _ hSA'
         exact ⟨k, ck, ek, .step hjn f hf β l hl hβl hlam hN hunit hb u hu hrun, hadm, hck, hek⟩
-  exact key (n - 0) 0 rfl ⟨c, 0, hc, fun _ => le_rfl, fun _ _ _ => le_rfl⟩ (sa_zero hI hIm c hc)
+  exact key (n - 0) 0 rfl ⟨c, 0, hc, fun _ => le_rfl, fun _ _ _ => le_rfl⟩ (sa_zero_Q Fact.out hI hIm c hc)
 
 end MC
 
@@ -466,7 +471,7 @@ namespace BezoutCounterexample.Principalization
 open MvPowerSeries IsLocalRing
 
 variable {S : Type*} [CommRing S] [Algebra ℚ S] {R' : Type*} [CommRing R'] [Algebra ℚ R']
-  [IsLocalRing R'] [IsNoetherianRing R'] {n n' : ℕ} {hnn : n ≤ n'}
+  [IsLocalRing R'] {n n' : ℕ} {hnn : n ≤ n'}
 
 /-- The transfer invariant at stage `j`: the lexicographic lower bound and the domination
 property for admissible marked centres of `I R'`, relative to the run data `(c, e)` on `S`
@@ -518,7 +523,7 @@ namespace BezoutCounterexample.Principalization
 open MvPowerSeries IsLocalRing
 
 variable {S : Type*} [CommRing S] [Algebra ℚ S] {R' : Type*} [CommRing R'] [Algebra ℚ R']
-  [IsLocalRing R'] [IsNoetherianRing R'] {n n' : ℕ} {hnn : n ≤ n'}
+  [IsLocalRing R'] {n n' : ℕ} {hnn : n ≤ n'}
 
 lemma lam_compl_pad {e : Fin n → ℚ} {j : ℕ} (hsupp : ∀ i : Fin n, j ≤ (i : ℕ) → e i = 0)
     (b : ℚ) (β : Fin n →₀ ℕ) :
@@ -613,7 +618,7 @@ theorem TI.step {ψ : S →+* R'} {I : Ideal S} {j : ℕ} {c : Chart S n} {e : F
       · rw [← hJ'j]; exact J'.anti (Fin.le_def.2 (by omega))
       · by_contra hlt'
         push Not at hlt'
-        have := (hc''.mem_RF_iff J'.nonneg b xb').1 hxb_RF (Finsupp.single m 1) (by
+        have := hc''.coeff_tau_eq_zero_of_mem_RF J'.nonneg hxb_RF (Finsupp.single m 1) (by
           rw [lam_single]; simpa using hlt')
         rw [Chart.coeff_tau_eq_zero_iff, Chart.Dv_single_one] at this
         exact hmnm this
@@ -648,7 +653,7 @@ namespace BezoutCounterexample.Principalization
 open MvPowerSeries IsLocalRing
 
 variable {S : Type*} [CommRing S] [Algebra ℚ S] {R' : Type*} [CommRing R'] [Algebra ℚ R']
-  [IsLocalRing R'] [IsNoetherianRing R'] {n n' : ℕ} {hnn : n ≤ n'}
+  [IsLocalRing R'] {n n' : ℕ} {hnn : n ≤ n'}
 
 lemma nextE_zero_ge {e : Fin n → ℚ} {j : ℕ} (b : ℚ) (i : Fin n) (hi : j + 1 ≤ (i : ℕ)) :
     nextE e j b i = 0 := by
@@ -675,7 +680,6 @@ theorem IsRun.transfer {ψ : S →+* R'} {I : Ideal S} {j : ℕ} {c : Chart S n}
     exact ih (fun i hi => nextE_zero_ge _ i hi) _
       (hT.step hj hsupp f hf β l hl hβl hlam hN hunit u hu)
 
-omit [IsNoetherianRing R'] in
 /-- The transfer invariant holds at stage `0` for compatible charts. -/
 lemma TI.zero {ψ : S →+* R'} {I : Ideal S} {c : Chart S n} {c' : Chart R' n'}
     (h : Compat hnn ψ c c') : TI hnn ψ I 0 c 0 c' :=

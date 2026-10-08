@@ -168,15 +168,15 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
 include hI hmax h𝔭 hd hw
 
 /-- **The drop of the invariant on the exceptional divisor** (Brais, property (C)): at every point
 of the Rees algebra on the exceptional divisor and off the vertex locus `V(R₊)`, the weak transform
 has strictly smaller invariant. -/
-theorem drop (P : Ideal (ReesAlg (compFil hI hmax h𝔭 d))) [hPm : P.IsMaximal]
+theorem drop [Fact (Constructive.HasPres A)] (P : Ideal (ReesAlg (compFil hI hmax h𝔭 d))) [hPm : P.IsMaximal]
     (hIwP : weakT (compFil hI hmax h𝔭 d) I d (I_le_compFil hI hmax h𝔭 hd) ≤ P)
     (hsP : reesS (compFil hI hmax h𝔭 d) (fun _j hj => compFil_F_nonpos hI hmax h𝔭 d hj) ∈ P)
     {j : ℤ} (hj : 1 ≤ j) {f : A} (hf : f ∈ (compFil hI hmax h𝔭 d).F j)
@@ -197,7 +197,7 @@ theorem drop (P : Ideal (ReesAlg (compFil hI hmax h𝔭 d))) [hPm : P.IsMaximal]
   have h𝔭𝔪 : 𝔭 ≤ 𝔪 := by
     intro g hg
     have hg1 : g ∈ (compFil hI hmax h𝔭 d).F 1 := by
-      rw [compFil_F, show ((1 : ℤ) : ℚ) / d = 1 / d by push_cast; ring, compF_one_div hI hmax h𝔭 hd hw]
+      rw [compFil_F, show ((1 : ℤ) : ℚ) / d = 1 / d by push_cast; ring, h𝔭.compFPt_one_div hI hmax hd hw]
       exact hg
     show algebraMap A (ReesAlg (compFil hI hmax h𝔭 d)) g ∈ P
     have : algebraMap A (ReesAlg (compFil hI hmax h𝔭 d)) g = reesS (compFil hI hmax h𝔭 d) hneg * ⟨LaurentPolynomial.C g * T 1, C_mul_T_mem_ReesAlg hg1⟩ := by

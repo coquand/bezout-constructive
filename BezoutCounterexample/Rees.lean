@@ -1,4 +1,7 @@
 import BezoutCounterexample.Invariant
+import BezoutCounterexample.Principalization.MaxLocusPt
+import BezoutCounterexample.Principalization.DropBridge
+import BezoutCounterexample.Principalization.MaxInvPos
 
 /-!
 # Section 3.3: extended Rees algebras, the drop of the invariant, derivations
@@ -115,6 +118,13 @@ theorem le_of_mem_components {I : Ideal A} (hI : I ≠ ⊥) (hItop : I ≠ ⊤) 
     (h𝔭 : 𝔭 ∈ components I) : I ≤ 𝔭 :=
   ((theorem_3_3_3 hI hItop).2.1 𝔭 h𝔭).2
 
+/-- The classical `maxinv` is the maximal invariant (for the construction sites). -/
+theorem isMaxInv_maxinv {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth ℚ A]
+    {I : Ideal A} (hI : I ≠ ⊥) (hItop : I ≠ ⊤) : Principalization.IsMaxInv I (maxinv I) := by
+  refine ⟨?_, maxinv_le hI hItop⟩
+  obtain ⟨𝔪, h𝔪, hI𝔪, heq⟩ := (maxinv_spec hI hItop).1
+  exact ⟨𝔪, h𝔪, hI𝔪, heq ▸ invAt_inv hI hI𝔪⟩
+
 /-! ## Notation 3.4 -/
 
 /-- **Notation 3.4** (`not:rees`). `A` is a smooth finitely generated `ℚ`-domain, `I ⊊ A` is a
@@ -127,40 +137,98 @@ structure ReesData (A : Type) [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra
   ne_top : I ≠ ⊤
   /-- The component `V(𝔭)` of the maximal locus. -/
   𝔭 : Ideal A
-  mem_components : 𝔭 ∈ components I
+  /-- The maximal invariant, as data (`he`: it is the maximal invariant; group B, Task A). -/
+  e : ℕ → ℚ
+  he : Principalization.IsMaxInvPt I e
+  /-- `V(𝔭)` is a component of the locus at points (stage 3: replaces `𝔭 ∈ components I`;
+  produced by `exists_comp_data`). -/
+  comp : Principalization.LocusComp I e 𝔭
   /-- The common denominator `d`. -/
   d : ℕ
   one_le_d : 1 ≤ d
-  d_mul : ∀ i, ∃ w : ℤ, (d : ℚ) * maxinv I i = w
+  d_mul : ∀ i, ∃ w : ℤ, (d : ℚ) * e i = w
+  /-- Generators of `I`, explicit along the tower (`exists_gens_of_map_eq_mul`). -/
+  Igens : List A
+  hIgens : I = Ideal.span {x | x ∈ Igens}
+  /-- A chart size of `A` (D3.7b, from `StarC.dim_le` along the tower). -/
+  hN : ∃ k, Principalization.ChartDim A k
+  /-- `e` is attained at an explicit point (D3.8 (A): with `he` at points, the maximal invariant) -/
+  hatt : ∃ q : Principalization.Pt A, I ≤ q.ker ∧ Principalization.InvAt I q.ker e
 
 namespace ReesData
 
 variable (S : ReesData A)
 
-/-- `e = maxinv(I)`. -/
-def e : ℕ → ℚ := maxinv S.I
+/-- The classical relation (off the path: `IsMaxInvPt.toMax`, Zariski's lemma). -/
+theorem he_cl : Principalization.IsMaxInv S.I S.e := by
+  obtain ⟨q, hIq, hv⟩ := S.hatt
+  exact ⟨⟨q.ker, inferInstance, hIq, hv⟩, (IsMaxInvPt.toMax S.he)⟩
+
+/-- `e = maxinv(I)` (classical comparison, Prop only). -/
+theorem e_eq_maxinv : S.e = maxinv S.I :=
+  (Principalization.maxinv_eq_of_isMaxInv S.ne_bot S.ne_top S.he_cl).symm
+
+/-- `e ≥ 0`, from the invariant at the attaining maximal ideal (no `GoodV`). -/
+theorem e_nonneg (i : ℕ) : 0 ≤ S.e i := by
+  obtain ⟨q, -, n, e', he', hev⟩ := S.hatt
+  rw [← hev]
+  simp only [ext0]
+  split_ifs
+  · exact he'.nonneg _
+  · exact le_rfl
+
+/-- The zeros of `e` propagate upwards (the second half of `Γ`, without `GoodV`). -/
+theorem e_zero_succ (i : ℕ) (hi : S.e i = 0) : S.e (i + 1) = 0 := by
+  obtain ⟨q, -, n, e', he', hev⟩ := S.hatt
+  rw [← hev] at hi ⊢
+  simp only [ext0] at hi ⊢
+  rcases Nat.lt_or_ge (i + 1) n with h1 | h1
+  · rw [dite_eq_left h1]
+    rw [dite_eq_left (show i < n by omega)] at hi
+    have h2 : e' ⟨i + 1, h1⟩ ≤ e' ⟨i, by omega⟩ := he'.anti (Fin.le_def.2 (Nat.le_succ i))
+    exact le_antisymm (h2.trans hi.le) (he'.nonneg _)
+  · rw [dite_eq_right (by omega)]
+
+theorem e_mem_Γ : S.e ∈ Γ := by rw [S.e_eq_maxinv]; exact maxinv_mem_Γ S.ne_bot S.ne_top
+
+theorem finite_support_e : {i | S.e i ≠ 0}.Finite := by
+  rw [S.e_eq_maxinv]; exact finite_support_maxinv S.ne_bot S.ne_top
 
 /-- `k`, the number of nonzero entries of `e`. -/
 def k : ℕ := numNonzero S.e
 
 /-- The engine form of maximality of `e`. -/
-theorem hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], S.I ≤ 𝔪 → ∀ v, InvAt S.I 𝔪 v →
-    toLex (maxinv S.I) ≤ toLex v := by
-  intro 𝔪 _ hI𝔪 v hv
-  rw [← inv_eq_of_invAt S.ne_bot hI𝔪 hv]
-  exact (maxinv_spec S.ne_bot S.ne_top).2 𝔪 hI𝔪
+theorem hmax : IsMaxInvPt S.I S.e :=
+  S.he
 
-/-- The engine form of `𝔭 ∈ components I`. -/
-theorem h𝔭 : S.𝔭 ∈ (locusIdeal S.I (maxinv S.I)).minimalPrimes := by
-  rw [← maxLocusIdeal_eq_locusIdeal S.ne_bot]; exact S.mem_components
+/-- **The component as a `LocusComp`** (the field `comp`; the classical bridge
+`LocusComp.of_minimalPrimes` is gone). -/
+theorem h𝔭c : LocusComp S.I (S.e) S.𝔭 := S.comp
+
+/-- The engine form of `𝔭 ∈ components I` (classical comparison `locusPt_eq_locusIdeal`). -/
+theorem h𝔭 : S.𝔭 ∈ (locusIdeal S.I (S.e)).minimalPrimes :=
+  have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing ℚ A
+  S.comp.toMin
+
+/-- `𝔭 ∈ components I` (classical comparison, Prop only; off the top chain). -/
+theorem mem_components : S.𝔭 ∈ components S.I := by
+  show S.𝔭 ∈ (maxLocusIdeal S.I).minimalPrimes
+  rw [maxLocusIdeal_eq_locusIdeal S.ne_bot, ← S.e_eq_maxinv]
+  exact S.h𝔭
+
+/-- `𝔭` is prime (from `comp`). -/
+theorem 𝔭_isPrime : S.𝔭.IsPrime := S.comp.min.1.1
+
+/-- `I ⊆ 𝔭` (from `comp`). -/
+theorem I_le_𝔭 : S.I ≤ S.𝔭 := (le_locusPt S.I S.e).trans S.comp.min.1.2
 
 theorem d_pos : 0 < S.d := S.one_le_d
 
-theorem hw : ∀ i, ∃ w : ℕ, (w : ℚ) = S.d * maxinv S.I i := by
+theorem hw : ∀ i, ∃ w : ℕ, (w : ℚ) = S.d * S.e i := by
   intro i
   obtain ⟨z, hz⟩ := S.d_mul i
   have h0 : (0 : ℚ) ≤ z :=
-    hz ▸ mul_nonneg (Nat.cast_nonneg _) (Γ_nonneg (maxinv_mem_Γ S.ne_bot S.ne_top) i)
+    hz ▸ mul_nonneg (Nat.cast_nonneg _) (S.e_nonneg i)
   have h0' : (0 : ℤ) ≤ z := by exact_mod_cast h0
   refine ⟨z.toNat, ?_⟩
   rw [hz]
@@ -170,11 +238,12 @@ theorem hw : ∀ i, ∃ w : ℕ, (w : ℚ) = S.d * maxinv S.I i := by
 def 𝓕 (j : ℤ) : Ideal A := globalCenter S.I S.𝔭 ((j : ℚ) / S.d)
 
 /-- The filtration `(𝓕 j)` as an engine filtration. -/
-abbrev fil : WFil A := compFil S.ne_bot S.hmax S.h𝔭 S.d
+abbrev fil : WFil A := compFil S.ne_bot S.hmax S.h𝔭c S.d
 
 theorem fil_F (j : ℤ) : S.fil.F j = S.𝓕 j := by
+  rw [fil, compFil_F_eq_compF]
   show compF S.I S.𝔭 ((j : ℚ) / S.d) = globalCenter S.I S.𝔭 ((j : ℚ) / S.d)
-  have hI𝔭 := le_of_mem_components S.ne_bot S.ne_top S.mem_components
+  have hI𝔭 := S.I_le_𝔭
   ext f
   rw [mem_compF, mem_globalCenter]
   constructor
@@ -200,7 +269,7 @@ theorem C_mul_T_mem {j : ℤ} {f : A} (hf : f ∈ S.𝓕 j) : C f * T j ∈ S.�
 def mono (j : ℤ) (f : A) (hf : f ∈ S.𝓕 j) : S.𝓡 := ⟨C f * T j, S.C_mul_T_mem hf⟩
 
 /-- The exceptional element `s = T⁻¹ ∈ 𝓡`. -/
-def s : S.𝓡 := reesS S.fil (fun _j hj => compFil_F_nonpos S.ne_bot S.hmax S.h𝔭 S.d hj)
+def s : S.𝓡 := reesS S.fil (fun _j hj => compFil_F_nonpos S.ne_bot S.hmax S.h𝔭c S.d hj)
 
 @[simp] lemma s_coe : (S.s : A[T;T⁻¹]) = T (-1) := rfl
 
@@ -208,34 +277,34 @@ def s : S.𝓡 := reesS S.fil (fun _j hj => compFil_F_nonpos S.ne_bot S.hmax S.h
 def 𝓡plus : Ideal S.𝓡 :=
   Ideal.span {r : S.𝓡 | ∃ (j : ℤ) (f : A), 1 ≤ j ∧ f ∈ S.𝓕 j ∧ (r : A[T;T⁻¹]) = C f * T j}
 
-theorem I_le_fil : S.I ≤ S.fil.F S.d := I_le_compFil S.ne_bot S.hmax S.h𝔭 S.d_pos
+theorem I_le_fil : S.I ≤ S.fil.F S.d := I_le_compFil S.ne_bot S.hmax S.h𝔭c S.d_pos
 
 /-- The weak transform `I_w = (f T^d : f ∈ I) 𝓡` of `I`. -/
 def Iw : Ideal S.𝓡 := weakT S.fil S.I S.d S.I_le_fil
 
 /-- Finite generating sets `G j` of `𝓕 j`. -/
-def G (j : ℤ) : Finset A := gensF S.ne_bot S.hmax S.h𝔭 S.d j
+def G [Fact (Constructive.HasPres A)] [Constructive.Enum A] (j : ℤ) : List A := gensF S.ne_bot S.hmax S.h𝔭c S.d j
 
-theorem span_G (j : ℤ) : Ideal.span (S.G j : Set A) = S.𝓕 j := by
+theorem span_G [Constructive.Enum A] [Fact (Constructive.HasPres A)] (j : ℤ) : Ideal.span {g | g ∈ S.G j} = S.𝓕 j := by
   rw [G, span_gensF]; exact S.fil_F j
 
-instance : Algebra.Smooth ℚ S.𝓡 := rees_smooth S.ne_bot S.hmax S.h𝔭 S.d_pos S.hw
+instance [Fact (Constructive.HasPres A)] : Algebra.Smooth ℚ S.𝓡 := rees_smooth S.ne_bot S.hmax S.h𝔭c S.d_pos S.hw
 
 /-! ## Lemma 3.5 -/
 
 /-- **Lemma 3.5(1)**: `𝓕_j = A` for `j ≤ 0`. -/
 theorem 𝓕_of_nonpos {j : ℤ} (hj : j ≤ 0) : S.𝓕 j = ⊤ := by
-  rw [← S.fil_F]; exact compFil_F_nonpos S.ne_bot S.hmax S.h𝔭 S.d hj
+  rw [← S.fil_F]; exact compFil_F_nonpos S.ne_bot S.hmax S.h𝔭c S.d hj
 
 /-- **Lemma 3.5(1)**: `𝓕₁ = 𝔭`. -/
-theorem 𝓕_one : S.𝓕 1 = S.𝔭 := by
+theorem 𝓕_one [Fact (Constructive.HasPres A)] : S.𝓕 1 = S.𝔭 := by
   rw [← S.fil_F, fil, compFil_F, show ((1 : ℤ) : ℚ) / S.d = 1 / S.d by push_cast; ring]
-  exact compF_one_div S.ne_bot S.hmax S.h𝔭 S.d_pos S.hw
+  exact S.h𝔭c.compFPt_one_div S.ne_bot S.hmax S.d_pos S.hw
 
 /-- **Lemma 3.5(1)**: `𝔭^j ⊆ 𝓕_j` for `j ≥ 0`. -/
-theorem pow_le_𝓕 (j : ℕ) : S.𝔭 ^ j ≤ S.𝓕 j := by
+theorem pow_le_𝓕 [Fact (Constructive.HasPres A)] (j : ℕ) : S.𝔭 ^ j ≤ S.𝓕 j := by
   rw [← S.fil_F, fil, compFil_F, show ((j : ℤ) : ℚ) = (j : ℚ) by push_cast; ring]
-  exact pow_le_compF S.ne_bot S.hmax S.h𝔭 S.d_pos S.hw j
+  exact S.h𝔭c.pow_le_compFPt S.ne_bot S.hmax S.d_pos S.hw j
 
 /-- **Lemma 3.5(1)**: `I ⊆ 𝓕_d` (admissibility). -/
 theorem I_le_𝓕 : S.I ≤ S.𝓕 S.d := by
@@ -246,7 +315,7 @@ theorem map_I_eq : S.I.map (algebraMap A S.𝓡) = Ideal.span {S.s ^ S.d} * S.Iw
   map_eq_weakT S.fil _ S.I S.d S.I_le_fil
 
 /-- **Lemma 3.5(1)**: `𝔭 = 𝓕₁ ⊆ s 𝓡`. -/
-theorem map_𝔭_le : S.𝔭.map (algebraMap A S.𝓡) ≤ Ideal.span {S.s} := by
+theorem map_𝔭_le [Fact (Constructive.HasPres A)] : S.𝔭.map (algebraMap A S.𝓡) ≤ Ideal.span {S.s} := by
   rw [Ideal.map_le_iff_le_comap]
   intro g hg
   have hg1 : g ∈ S.𝓕 1 := by rw [S.𝓕_one]; exact hg
@@ -256,24 +325,24 @@ theorem map_𝔭_le : S.𝔭.map (algebraMap A S.𝓡) ≤ Ideal.span {S.s} := b
   rw [mul_assoc, ← T_add, add_neg_cancel, T_zero, mul_one, LaurentPolynomial.C_eq_algebraMap]
 
 /-- **Lemma 3.5(2)**: `𝓕_j = ∑_{q=1}^d 𝓕_q 𝓕_{j-q}` for `j > d`. -/
-theorem 𝓕_eq_sum {j : ℤ} (hj : (S.d : ℤ) < j) :
+theorem 𝓕_eq_sum [Fact (Constructive.HasPres A)] {j : ℤ} (hj : (S.d : ℤ) < j) :
     S.𝓕 j = ⨆ q ∈ Finset.Icc (1 : ℤ) S.d, S.𝓕 q * S.𝓕 (j - q) := by
   simp only [← S.fil_F]
-  refine le_antisymm (compFil_le_iSup S.ne_bot S.hmax S.h𝔭 S.d_pos S.hw hj)
+  refine le_antisymm (compFil_le_iSup S.ne_bot S.hmax S.h𝔭c S.d_pos S.hw hj)
     (iSup₂_le fun q _ => ?_)
   have := S.fil.mul_le q (j - q)
   rwa [add_sub_cancel] at this
 
 /-- The generators `s` and `g T^j` (`g ∈ G_j`, `1 ≤ j ≤ d`) of `𝓡`. -/
-def gens : Set A[T;T⁻¹] :=
-  {T (-1)} ∪ ⋃ j ∈ Finset.Icc (1 : ℤ) S.d, (fun g => C g * T j) '' (S.G j : Set A)
+def gens [Fact (Constructive.HasPres A)] [Constructive.Enum A] : Set A[T;T⁻¹] :=
+  {T (-1)} ∪ ⋃ j ∈ Finset.Icc (1 : ℤ) S.d, (fun g => C g * T j) '' {g | g ∈ S.G j}
 
 /-- **Lemma 3.5(2)**: `𝓡 = A[s, g T^j : g ∈ G_j, 1 ≤ j ≤ d]`. -/
-theorem 𝓡_eq_adjoin : S.𝓡 = Algebra.adjoin A S.gens :=
-  reesAlg_eq_adjoin S.ne_bot S.hmax S.h𝔭 S.d S.d_pos S.hw
+theorem 𝓡_eq_adjoin [Constructive.Enum A] [Fact (Constructive.HasPres A)] : S.𝓡 = Algebra.adjoin A S.gens :=
+  reesAlg_eq_adjoin S.ne_bot S.hmax S.h𝔭c S.d S.d_pos S.hw
 
 /-- **Lemma 3.5(2)**: the elements `g T^j`, `g ∈ G_j`, `1 ≤ j ≤ d`, generate `𝓡plus`. -/
-theorem 𝓡plus_eq_span : S.𝓡plus = Ideal.span {r : S.𝓡 | ∃ j ∈ Finset.Icc (1 : ℤ) S.d, ∃ g ∈ S.G j,
+theorem 𝓡plus_eq_span [Constructive.Enum A] [Fact (Constructive.HasPres A)] : S.𝓡plus = Ideal.span {r : S.𝓡 | ∃ j ∈ Finset.Icc (1 : ℤ) S.d, ∃ g ∈ S.G j,
     (r : A[T;T⁻¹]) = C g * T j} := by
   set J := Ideal.span {r : S.𝓡 | ∃ j ∈ Finset.Icc (1 : ℤ) S.d, ∃ g ∈ S.G j,
     (r : A[T;T⁻¹]) = C g * T j}
@@ -302,7 +371,7 @@ theorem 𝓡plus_eq_span : S.𝓡plus = Ideal.span {r : S.𝓡 | ∃ j ∈ Finse
       intro j hj1 hjn f hf
       by_cases hjd : j ≤ S.d
       · -- `f` is a combination of the generators `G_j`
-        have hfG : f ∈ Ideal.span (S.G j : Set A) := by rw [S.span_G]; exact hf
+        have hfG : f ∈ Ideal.span {g | g ∈ S.G j} := by rw [S.span_G]; exact hf
         induction hfG using Submodule.span_induction with
         | mem g hg =>
           exact Ideal.subset_span ⟨j, Finset.mem_Icc.2 ⟨hj1, hjd⟩, g, hg, rfl⟩
@@ -371,8 +440,8 @@ theorem isLocalization_rees (𝔪 : Ideal A) [𝔪.IsMaximal] :
 theorem fil_loc_F (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : S.𝔭 ≤ 𝔪) (j : ℤ) :
     (S.fil.loc (Localization.AtPrime 𝔪)).F j = maxCenter S.I 𝔪 ((j : ℚ) / S.d) := by
   rw [maxCenter_eq_cRF S.ne_bot
-    ((le_of_mem_components S.ne_bot S.ne_top S.mem_components).trans h𝔭𝔪)]
-  exact compFil_loc_F S.ne_bot S.hmax S.h𝔭 S.d 𝔪 h𝔭𝔪 j
+    ((S.I_le_𝔭).trans h𝔭𝔪)]
+  exact compFil_loc_F S.ne_bot S.hmax S.h𝔭c S.d 𝔪 h𝔭𝔪 j
 
 /-- The integer weights `wᵢ = d eᵢ`. -/
 def w (i : ℕ) : ℕ := ((S.d : ℚ) * S.e i).num.toNat
@@ -380,23 +449,22 @@ def w (i : ℕ) : ℕ := ((S.d : ℚ) * S.e i).num.toNat
 theorem w_spec (i : ℕ) : (S.w i : ℚ) = S.d * S.e i := by
   obtain ⟨z, hz⟩ := S.d_mul i
   have h0 : (0 : ℚ) ≤ z :=
-    hz ▸ mul_nonneg (Nat.cast_nonneg _) (Γ_nonneg (maxinv_mem_Γ S.ne_bot S.ne_top) i)
+    hz ▸ mul_nonneg (Nat.cast_nonneg _) (S.e_nonneg i)
   have h0' : (0 : ℤ) ≤ z := by exact_mod_cast h0
-  have : S.w i = z.toNat := by simp only [w, e, hz, Rat.num_intCast]
-  rw [this, e, hz]
+  have : S.w i = z.toNat := by simp only [w, hz, Rat.num_intCast]
+  rw [this, hz]
   exact_mod_cast Int.toNat_of_nonneg h0'
 
 /-- The number of positive weights is bounded by the number of parameters.
 This follows from the zero-padding convention and adds no hypothesis. -/
 theorem k_le_n {𝔪 : Ideal A} [𝔪.IsMaximal] (J : MarkedCenter 𝔪)
-    (hJw : J.weights = maxinv S.I) : S.k ≤ J.n := by
+    (hJw : J.weights = S.e) : S.k ≤ J.n := by
   by_contra h
   have hn : J.n < S.k := lt_of_not_ge h
   have he : S.e J.n ≠ 0 :=
-    (ne_zero_iff_lt_numNonzero (maxinv_mem_Γ S.ne_bot S.ne_top)
-      (finite_support_maxinv S.ne_bot S.ne_top) J.n).2 hn
+    (ne_zero_iff_lt_numNonzero S.e_mem_Γ S.finite_support_e J.n).2 hn
   apply he
-  rw [e, ← hJw]
+  rw [← hJw]
   simp [MarkedCenter.weights]
 
 /-- **Lemma 3.5(4)**: let `𝔪 ⊇ 𝔭` be maximal and let `x` be as in Theorem 3.3(3). Then
@@ -404,7 +472,7 @@ theorem k_le_n {𝔪 : Ideal A} [𝔪.IsMaximal] (J : MarkedCenter 𝔪)
 `A_𝔪[s, u₁, …, u_k]/(xᵢ - s^{wᵢ} uᵢ | 1 ≤ i ≤ k) ≅ 𝓡 ⊗_A A_𝔪`, where `𝓡 ⊗_A A_𝔪` is the extended
 Rees algebra of the localized filtration (`isLocalization_rees`). -/
 theorem rees_presentation (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : S.𝔭 ≤ 𝔪) (J : MarkedCenter 𝔪)
-    (hJw : J.weights = maxinv S.I) (hJ : J.IsAdmissible S.I)
+    (hJw : J.weights = S.e) (hJ : J.IsAdmissible S.I)
     (_hJ𝔭 : S.𝔭.map (algebraMap A (Localization.AtPrime 𝔪)) =
       Ideal.span (J.x '' {i | (i : ℕ) < S.k})) :
     let hkn : S.k ≤ J.n := S.k_le_n J hJw
@@ -421,16 +489,16 @@ theorem rees_presentation (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : S.𝔭 
   let hkn : S.k ≤ J.n := S.k_le_n J hJw
   -- a centred chart with coordinates `x`
   obtain ⟨c, hcx, hc⟩ := J.isRegular.exists_chart
-  have hI𝔪 : S.I ≤ 𝔪 := (le_of_mem_components S.ne_bot S.ne_top S.mem_components).trans h𝔭𝔪
+  have hI𝔪 : S.I ≤ 𝔪 := (S.I_le_𝔭).trans h𝔭𝔪
   have hinv : inv S.I 𝔪 = maxinv S.I :=
     ((theorem_3_3_3 S.ne_bot S.ne_top).2.2.2.1 𝔪 hI𝔪).2 ⟨S.𝔭, S.mem_components, h𝔭𝔪⟩
   have hJe : ∀ i : Fin J.n, J.e i = S.e i := fun i => by
     have := congrFun hJw i
-    simpa [MarkedCenter.weights, ReesData.e] using this
+    simpa [MarkedCenter.weights] using this
   -- the localized filtration is the filtration of the marked center `(x, e)`
   have hF : ∀ j, (S.fil.loc (Localization.AtPrime 𝔪)).F j = chartFil c J.e S.d j := by
     intro j
-    rw [S.fil_loc_F 𝔪 h𝔭𝔪 j, ← J.F_eq_maxCenter S.ne_bot hI𝔪 hJ (hJw.trans hinv.symm),
+    rw [S.fil_loc_F 𝔪 h𝔭𝔪 j, ← J.F_eq_maxCenter S.ne_bot hI𝔪 hJ (hJw.trans (S.e_eq_maxinv.trans hinv.symm)),
       J.F_eq_RF c hcx]
     rfl
   set wn : Fin J.n → ℕ := fun i => S.w i
@@ -438,8 +506,7 @@ theorem rees_presentation (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : S.𝔭 
     simp only [wn]; rw [S.w_spec, hJe]
   have hsupp : ∀ i : Fin J.n, J.e i ≠ 0 ↔ (i : ℕ) < S.k := fun i => by
     rw [hJe]
-    exact ne_zero_iff_lt_numNonzero (maxinv_mem_Γ S.ne_bot S.ne_top)
-      (finite_support_maxinv S.ne_bot S.ne_top) i
+    exact ne_zero_iff_lt_numNonzero S.e_mem_Γ S.finite_support_e i
   have hsurj := reesPsi_surjective c hF J.nonneg S.d_pos hw hkn hsupp
   have hrel : Ideal.span (Set.range fun i : Fin S.k =>
       MvPolynomial.C (J.x (Fin.castLE hkn i)) -
@@ -467,12 +534,14 @@ theorem rees_loc_eq_top (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : ¬ S.𝔭
     ReesAlg (S.fil.loc (Localization.AtPrime 𝔪)) = ⊤ := by
   rw [eq_top_iff]
   intro p _ j
-  have : (S.fil.loc (Localization.AtPrime 𝔪)).F j = ⊤ :=
-    compF_map_of_not_le S.ne_bot S.hmax S.h𝔭 S.d_pos S.hw 𝔪 h𝔭𝔪 _
+  have : (S.fil.loc (Localization.AtPrime 𝔪)).F j = ⊤ := by
+    show (S.fil.F j).map _ = ⊤
+    rw [fil, compFil_F_eq_compF]
+    exact compF_map_of_not_le S.ne_bot (IsMaxInvPt.toMax S.hmax) S.h𝔭 S.d_pos S.hw 𝔪 h𝔭𝔪 _
   rw [this]; trivial
 
 /-- **Lemma 3.5(4)**: `𝓡` is a smooth finitely generated `ℚ`-domain. -/
-theorem rees_smooth_domain : IsDomain S.𝓡 ∧ Algebra.Smooth ℚ S.𝓡 :=
+theorem rees_smooth_domain [Fact (Constructive.HasPres A)] : IsDomain S.𝓡 ∧ Algebra.Smooth ℚ S.𝓡 :=
   ⟨inferInstance, inferInstance⟩
 
 /-- **Lemma 3.5(5)**: `s 𝓡 ∩ 𝓕_j T^j = 𝓕_{j+1} T^j`, so that the degree-`j` part of `𝓡/s𝓡` is
@@ -610,30 +679,32 @@ def quotientSEquiv : (DirectSum ℕ S.grPiece) ≃ₗ[A] (S.𝓡 ⧸ Ideal.span 
 
 /-- **Lemma 3.5(5)**: `⊕_{j ≥ 0} 𝓕_j/𝓕_{j+1}` is a domain: products of nonzero homogeneous
 elements are nonzero. -/
-theorem mul_not_mem_𝓕 {a b : ℕ} {f g : A} (hf : f ∈ S.𝓕 a) (hf1 : f ∉ S.𝓕 (a + 1))
+theorem mul_not_mem_𝓕 [Fact (Constructive.HasPres A)] {a b : ℕ} {f g : A} (hf : f ∈ S.𝓕 a) (hf1 : f ∉ S.𝓕 (a + 1))
     (hg : g ∈ S.𝓕 b) (hg1 : g ∉ S.𝓕 (b + 1)) : f * g ∉ S.𝓕 (a + b + 1) := by
   simp only [← S.fil_F] at hf hf1 hg hg1 ⊢
-  exact compFil_mul_not_mem S.ne_bot S.hmax S.h𝔭 S.d_pos S.hw hf hf1 hg hg1
+  exact compFil_mul_not_mem_pt S.ne_bot S.hmax S.h𝔭c S.d_pos S.hw hf hf1 hg hg1
 
 /-- **Lemma 3.5(5)**: `𝓡/s𝓡` is a domain; hence `s` is a prime element of `𝓡`. -/
-theorem isDomain_quotient_s : IsDomain (S.𝓡 ⧸ Ideal.span {S.s}) := by
+theorem isDomain_quotient_s [Fact (Constructive.HasPres A)] : IsDomain (S.𝓡 ⧸ Ideal.span {S.s}) := by
   rw [Ideal.Quotient.isDomain_iff_prime]
-  exact rees_s_prime S.ne_bot S.hmax S.h𝔭 S.d_pos S.hw
+  haveI : Fact (∃ k, ChartDim A k) := ⟨S.hN⟩
+  exact rees_s_prime S.ne_bot S.hmax S.h𝔭c S.d_pos S.hw
 
-theorem prime_s : Prime S.s := by
+theorem prime_s [Fact (Constructive.HasPres A)] : Prime S.s := by
   have hs0 : S.s ≠ 0 := by
     intro h
     have := congrArg (fun r : S.𝓡 => (r : A[T;T⁻¹])) h
     simp only [s_coe, ZeroMemClass.coe_zero] at this
     exact (isUnit_T (-1 : ℤ)).ne_zero this
-  exact (Ideal.span_singleton_prime hs0).1 (rees_s_prime S.ne_bot S.hmax S.h𝔭 S.d_pos S.hw)
+  haveI : Fact (∃ k, ChartDim A k) := ⟨S.hN⟩
+  exact (Ideal.span_singleton_prime hs0).1 (rees_s_prime S.ne_bot S.hmax S.h𝔭c S.d_pos S.hw)
 
 /-! ## Theorem 3.6 -/
 
 /-- **Theorem 3.6** (`thm:drop`, strict decrease of the invariant). Let `P` be a maximal ideal of
 `𝓡` that contains `I_w + s𝓡` but not `𝓡plus`. Then `inv_P(I_w) ≺ maxinv(I)`. -/
-theorem drop (P : Ideal S.𝓡) [P.IsMaximal] (hIw : S.Iw ≤ P) (hs : S.s ∈ P)
-    (hP : ¬ S.𝓡plus ≤ P) : inv S.Iw P ≺ maxinv S.I := by
+theorem drop [Fact (Constructive.HasPres A)] (P : Ideal S.𝓡) [P.IsMaximal] (hIw : S.Iw ≤ P) (hs : S.s ∈ P)
+    (hP : ¬ S.𝓡plus ≤ P) : inv S.Iw P ≺ S.e := by
   -- some generator `f T^j` (`j ≥ 1`) of `𝓡₊` lies outside `P`
   obtain ⟨r, ⟨j, f, hj1, hf, hr⟩, hrP⟩ : ∃ r ∈ {r : S.𝓡 | ∃ (j : ℤ) (f : A), 1 ≤ j ∧
       f ∈ S.𝓕 j ∧ (r : A[T;T⁻¹]) = C f * T j}, r ∉ P := by
@@ -647,7 +718,9 @@ theorem drop (P : Ideal S.𝓡) [P.IsMaximal] (hIw : S.Iw ≤ P) (hs : S.s ∈ P
   have hrP' : (⟨C f * T j, C_mul_T_mem_ReesAlg hf'⟩ : S.𝓡) ∉ P := by
     have : r = ⟨C f * T j, C_mul_T_mem_ReesAlg hf'⟩ := Subtype.ext hr
     rwa [this] at hrP
-  exact Principalization.drop S.ne_bot S.hmax S.h𝔭 S.d_pos S.hw P hIw hs hj1 hf' hrP' hv
+  haveI : Fact (∃ k, ChartDim A k) := ⟨S.hN⟩
+  -- through `drop_pt` at `Pt.ofIsMaximal P` (DropBridge)
+  exact Principalization.drop_of_pt S.ne_bot S.hmax S.h𝔭c S.d_pos S.hw P hIw hs hj1 hf' hrP' hv
 
 end ReesData
 
@@ -682,7 +755,7 @@ theorem deriv_mem_maxCenter {I : Ideal A} (hI : I ≠ ⊥) {𝔪 : Ideal A} [�
 theorem ReesData.deriv_mem_𝓕 (S : ReesData A) (δ : Derivation ℚ A A)
     (hδ : ∀ f ∈ S.I, δ f ∈ S.I) (j : ℤ) {f : A} (hf : f ∈ S.𝓕 j) : δ f ∈ S.𝓕 j := by
   rw [← S.fil_F] at hf ⊢
-  exact deriv_mem_compF S.ne_bot S.hmax S.h𝔭 δ hδ _ hf
+  exact deriv_mem_compFPt S.ne_bot S.hmax S.h𝔭c δ hδ _ hf
 
 /-- **Lemma 3.7(2)** (`lem:derivations`): if `δ₁, …, δ_m` are derivations of `A` with
 `δⱼ(I) ⊆ I` and `det(δⱼ(z_q)) ∉ 𝔪` for some `z₁, …, z_m ∈ A`, then `inv_𝔪(I)` has at most

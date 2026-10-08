@@ -223,40 +223,44 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
 
 include hI hmax h𝔭 in
 /-- **In the divisorial case the component is principal.** -/
-theorem div_eq_span (h0 : v₀ 0 ≠ 0) (hk1 : v₀ 1 = 0) {π : A} (hπ : Prime π) (hπ𝔭 : π ∈ 𝔭) :
+theorem div_eq_span [Fact (Constructive.HasPres A)] (h0 : v₀ 0 ≠ 0) (hk1 : v₀ 1 = 0) {π : A} (hπ : Prime π) (hπ𝔭 : π ∈ 𝔭) :
     𝔭 = Ideal.span {π} := by
-  have := h𝔭.1.1
-  obtain ⟨𝔪, h𝔪, hle⟩ := Ideal.exists_le_maximal 𝔭 (Ideal.IsPrime.ne_top ‹_›)
-  have := h𝔪
-  obtain ⟨hI𝔪, hv⟩ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 hle
-  obtain ⟨D⟩ := LocData.nonempty hI 𝔪 hI𝔪 hv
-  have hp : 𝔭 = D.p := D.eq_p_of_minimal h𝔭 hle
-  have hloc : 𝔭.map (algebraMap A (Localization.AtPrime 𝔪)) =
-      Ideal.span {(Loc.transport (D.ctrl 𝔪 D.hg) D.ck).x ⟨0, D.n_pos h0⟩} := by
+  have := h𝔭.isPrime
+  obtain ⟨C, hC, -⟩ := h𝔭.gens
+  obtain ⟨q, hle⟩ := HasPres.exists_pt (Fact.out : Constructive.HasPres A) C fun h =>
+    (Ideal.IsPrime.ne_top ‹_›) ((Ideal.eq_top_iff_one _).2 (hC ▸ h))
+  rw [← hC] at hle
+  obtain ⟨hI𝔪, hv⟩ := h𝔭.mem hI hmax q hle
+  obtain ⟨D⟩ := LocData.nonempty hI q.ker hI𝔪 hv
+  have hp : 𝔭 = D.p := h𝔭.eq_p D hle
+  have hloc : 𝔭.map (algebraMap A (Localization.AtPrime q.ker)) =
+      Ideal.span {(Loc.transport (D.ctrl q.ker D.hg) D.ck).x ⟨0, D.n_pos h0⟩} := by
     rw [hp, D.map_p, D.P_eq_span h0 hk1]
   exact eq_span_of_loc_principal hle hπ hπ𝔭 (D.cent.x_mem _) hloc
 
 include hI hmax h𝔭 hd in
 /-- **In the divisorial case `I ⊆ (π^a)`.** -/
-theorem div_le_span_pow (h0 : v₀ 0 ≠ 0) (hk1 : v₀ 1 = 0) {π : A} (hπ : Prime π) (hπ𝔭 : π ∈ 𝔭)
+theorem div_le_span_pow [Fact (Constructive.HasPres A)] (h0 : v₀ 0 ≠ 0) (hk1 : v₀ 1 = 0) {π : A} (hπ : Prime π) (hπ𝔭 : π ∈ 𝔭)
     {a : ℕ} (ha : v₀ 0 = 1 / a) : I ≤ Ideal.span {π ^ a} := by
   have h𝔭π := div_eq_span hI hmax h𝔭 h0 hk1 hπ hπ𝔭
   refine (I_le_compFil hI hmax h𝔭 hd).trans ?_
   rw [compFil_F, show ((d : ℤ) : ℚ) / d = 1 by
     have : (d : ℚ) ≠ 0 := by exact_mod_cast hd.ne'
     push_cast; field_simp]
-  apply Ideal.le_of_forall_map
-  intro 𝔪 _
-  by_cases h𝔭𝔪 : 𝔭 ≤ 𝔪
-  · rw [compF_map hI hmax h𝔭 𝔪 h𝔭𝔪 1]
-    obtain ⟨hI𝔪, hv⟩ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
-    obtain ⟨D⟩ := LocData.nonempty hI 𝔪 hI𝔪 hv
+  refine Ideal.le_of_forall_pt ⟨[π ^ a], by rw [Constructive.lspan_singleton]⟩ fun p => ?_
+  rcases p.mem_ker_dec π with hπp | hπp
+  · have h𝔭𝔪 : 𝔭 ≤ p.ker := h𝔭π ▸ Ideal.span_le.2 (Set.singleton_subset_iff.2 hπp)
+    have hle1 : (compFPt I 𝔭 1).map (algebraMap A (Localization.AtPrime p.ker)) ≤ cRF I p.ker 1 :=
+      Ideal.map_le_iff_le_comap.2 fun x hx => mem_compFPt.1 hx p h𝔭𝔪
+    refine hle1.trans ?_
+    obtain ⟨hI𝔪, hv⟩ := h𝔭.mem hI hmax p h𝔭𝔪
+    obtain ⟨D⟩ := LocData.nonempty hI p.ker hI𝔪 hv
     rw [D.cRF_eq_transport hI 1]
     have h0' := D.n_pos h0
     have hek : D.ek ⟨0, h0'⟩ = 1 / a := by
@@ -264,13 +268,12 @@ theorem div_le_span_pow (h0 : v₀ 0 ≠ 0) (hk1 : v₀ 1 = 0) {π : A} (hπ : P
       rw [ext0, dite_eq_left h0'] at this
       rw [this, ha]
     refine (RF_le_pow_of_single _ h0' (D.supp_zero h0 hk1) hek).trans ?_
-    have hx : Ideal.span {(Loc.transport (D.ctrl 𝔪 D.hg) D.ck).x ⟨0, h0'⟩} =
-        (Ideal.span {π}).map (algebraMap A (Localization.AtPrime 𝔪)) := by
-      rw [← D.P_eq_span h0 hk1, ← D.map_p, ← D.eq_p_of_minimal h𝔭 h𝔭𝔪, h𝔭π]
+    have hx : Ideal.span {(Loc.transport (D.ctrl p.ker D.hg) D.ck).x ⟨0, h0'⟩} =
+        (Ideal.span {π}).map (algebraMap A (Localization.AtPrime p.ker)) := by
+      rw [← D.P_eq_span h0 hk1, ← D.map_p, ← h𝔭.eq_p D h𝔭𝔪, h𝔭π]
     rw [hx, ← Ideal.map_pow, Ideal.span_singleton_pow]
-  · have hπ𝔪 : π ∉ 𝔪 := fun h => h𝔭𝔪 (h𝔭π ▸ (Ideal.span_le.2 (Set.singleton_subset_iff.2 h)))
-    have hu : IsUnit (algebraMap A (Localization.AtPrime 𝔪) (π ^ a)) :=
-      IsLocalization.map_units _ (⟨π ^ a, 𝔪.primeCompl.pow_mem hπ𝔪 a⟩ : 𝔪.primeCompl)
+  · have hu : IsUnit (algebraMap A (Localization.AtPrime p.ker) (π ^ a)) :=
+      IsLocalization.map_units _ (⟨π ^ a, p.ker.primeCompl.pow_mem hπp a⟩ : p.ker.primeCompl)
     rw [Ideal.map_span, Set.image_singleton, Ideal.span_singleton_eq_top.2 hu]
     exact le_top
 
@@ -315,7 +318,7 @@ lemma div_eq_mul {I : Ideal A} {π : A} {a : ℕ} (hle : I ≤ Ideal.span {π ^ 
     exact I.mul_mem_left _ (mem_divI.1 hy)
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
+  (hmax : IsMaxInvPt I v₀)
   {π : A} {a : ℕ} (ha0 : 0 < a) (ha : v₀ 0 = 1 / a) (hle : I ≤ Ideal.span {π ^ a})
 
 include hI hmax ha0 ha hle in
@@ -331,7 +334,7 @@ theorem div_not_mem (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔪 : divI I π a ≤ �
   have hI𝔪' : I ≤ 𝔪 := hI𝔪.trans (Ideal.pow_le_self (by omega))
   obtain ⟨v, hv⟩ := exists_invAt hI 𝔪 hI𝔪'
   have h1 := invAt_zero_le_of_le_pow hv (by omega) hI𝔪
-  have h2 := hmax 𝔪 hI𝔪' v hv
+  have h2 := IsMaxInvPt.toMax hmax 𝔪 hI𝔪' v hv
   have hlt : v 0 < v₀ 0 := by
     rw [ha]
     refine lt_of_le_of_lt h1 ?_
@@ -359,7 +362,7 @@ include hI hmax ha0 ha hle in
 omit [IsNoetherianRing A] in
 theorem div_inv_ge (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔪 : divI I π a ≤ 𝔪) {v : ℕ → ℚ}
     (hv : InvAt (divI I π a) 𝔪 v) : toLex v₀ ≤ toLex v :=
-  hmax 𝔪 ((le_divI I π a).trans h𝔪) v ((div_invAt_iff hI hmax ha0 ha hle 𝔪 h𝔪).1 hv)
+  IsMaxInvPt.toMax hmax 𝔪 ((le_divI I π a).trans h𝔪) v ((div_invAt_iff hI hmax ha0 ha hle 𝔪 h𝔪).1 hv)
 
 omit [IsDomain A] [Algebra ℚ A] [Algebra.Smooth ℚ A] [IsNoetherianRing A] in
 lemma divI_ne_bot (hI : I ≠ ⊥) : divI I π a ≠ ⊥ := fun h => hI (eq_bot_iff.2 (h ▸ le_divI I π a))
@@ -379,8 +382,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭)
   {π : A} (h𝔭π : 𝔭 = Ideal.span {π}) {a : ℕ} (ha0 : 0 < a) (ha : v₀ 0 = 1 / a)
   (hle : I ≤ Ideal.span {π ^ a})
 
@@ -399,7 +402,7 @@ theorem div_count :
     (hfin.toFinset.erase 𝔭) (fun 𝔭' => 𝔭') ?_ ?_ ?_
   · have hcard : (hfin.toFinset.erase 𝔭).card < (locusIdeal I v₀).minimalPrimes.ncard := by
       rw [Set.ncard_eq_toFinset_card _ hfin]
-      exact Finset.card_erase_lt_of_mem (hfin.mem_toFinset.2 h𝔭)
+      exact Finset.card_erase_lt_of_mem (hfin.mem_toFinset.2 h𝔭.toMin)
     exact lt_of_le_of_lt hle' hcard
   · intro 𝔭' h𝔭'
     rw [Finset.mem_erase, Set.Finite.mem_toFinset] at h𝔭'
@@ -416,9 +419,9 @@ theorem div_count :
   · intro 𝔭' h𝔭' Q hQ h𝔭'Q
     rw [Finset.mem_erase, Set.Finite.mem_toFinset] at h𝔭'
     have := hQ
-    obtain ⟨hIQ, hinv⟩ := mem_maxLocus_of_minimal hI hmax h𝔭'.2 Q h𝔭'Q
+    obtain ⟨hIQ, hinv⟩ := mem_maxLocus_of_minimal hI (IsMaxInvPt.toMax hmax) h𝔭'.2 Q h𝔭'Q
     have hπQ : π ∉ Q := fun h => by
-      have := minimalPrimes_sup_eq_top hI hmax h𝔭 h𝔭'.2 (Ne.symm h𝔭'.1)
+      have := minimalPrimes_sup_eq_top hI (IsMaxInvPt.toMax hmax) h𝔭.toMin h𝔭'.2 (Ne.symm h𝔭'.1)
       apply hQ.ne_top
       rw [eq_top_iff, ← this]
       exact sup_le (h𝔭π ▸ Ideal.span_le.2 (Set.singleton_subset_iff.2 h)) h𝔭'Q
@@ -438,20 +441,20 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
   {π : A} (h𝔭π : 𝔭 = Ideal.span {π}) {a : ℕ} (ha0 : 0 < a)
 
 include hI hmax h𝔭 hd hw h𝔭π ha0 in
 /-- Stabilizing derivations pass to `I : π^a`. -/
-theorem deriv_mem_divI (δ : Derivation ℚ A A) (hδ : ∀ f ∈ I, δ f ∈ I) {f : A}
+theorem deriv_mem_divI [Fact (Constructive.HasPres A)] (δ : Derivation ℚ A A) (hδ : ∀ f ∈ I, δ f ∈ I) {f : A}
     (hf : f ∈ divI I π a) : δ f ∈ divI I π a := by
-  have hπF : π ∈ compF I 𝔭 (1 / d) := by
-    rw [compF_one_div hI hmax h𝔭 hd hw, h𝔭π]; exact Ideal.mem_span_singleton_self π
+  have hπF : π ∈ compFPt I 𝔭 (1 / d) := by
+    rw [h𝔭.compFPt_one_div hI hmax hd hw, h𝔭π]; exact Ideal.mem_span_singleton_self π
   have hδπ : δ π ∈ Ideal.span {π} := by
-    rw [← h𝔭π, ← compF_one_div hI hmax h𝔭 hd hw]
-    exact deriv_mem_compF hI hmax h𝔭 δ hδ _ hπF
+    rw [← h𝔭π, ← h𝔭.compFPt_one_div hI hmax hd hw]
+    exact deriv_mem_compFPt hI hmax h𝔭 δ hδ _ hπF
   obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.1 hδπ
   rw [mem_divI] at hf ⊢
   obtain ⟨b, rfl⟩ : ∃ b, a = b + 1 := ⟨a - 1, by omega⟩
@@ -465,7 +468,7 @@ theorem deriv_mem_divI (δ : Derivation ℚ A A) (hδ : ∀ f ∈ I, δ f ∈ I)
   exact I.sub_mem (hδ _ hf) (I.mul_mem_left _ hf)
 
 include hI hmax h𝔭 hd hw h𝔭π ha0 in
-theorem div_vertOK {m : ℕ} (hV : VertOK I m) : VertOK (divI I π a) m := by
+theorem div_vertOK [Fact (Constructive.HasPres A)] {m : ℕ} (hV : VertOK I m) : VertOK (divI I π a) m := by
   intro 𝔪 h𝔪 hle
   obtain ⟨δ, y, hδ, hdet⟩ := hV 𝔪 h𝔪 ((le_divI I π a).trans hle)
   exact ⟨δ, y, fun j f hf => deriv_mem_divI hI hmax h𝔭 hd hw h𝔭π ha0 (δ j) (hδ j) hf, hdet⟩

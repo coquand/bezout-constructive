@@ -159,24 +159,24 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 /-- The natural-number degree of a torsor generator. -/
-abbrev gdeg (l : Fin (nGen hI hmax h𝔭 d + 1)) : ℕ := (genDeg hI hmax h𝔭 d l).toNat
+abbrev gdeg [Fact (Constructive.HasPres A)] [Constructive.Enum A] (l : Fin (nGen hI hmax h𝔭 d + 1)) : ℕ := (genDeg hI hmax h𝔭 d l).toNat
 
 /-- The even exponents `2 d! / jₗ` of the weighted sphere. -/
-abbrev sphE (l : Fin (nGen hI hmax h𝔭 d + 1)) : ℕ := 2 * (d.factorial / gdeg hI hmax h𝔭 l)
+abbrev sphE [Fact (Constructive.HasPres A)] [Constructive.Enum A] (l : Fin (nGen hI hmax h𝔭 d + 1)) : ℕ := 2 * (d.factorial / gdeg hI hmax h𝔭 l)
 
-lemma gdeg_pos (l) : 0 < gdeg hI hmax h𝔭 (d := d) l := by
+lemma gdeg_pos [Fact (Constructive.HasPres A)] [Constructive.Enum A] (l) : 0 < gdeg hI hmax h𝔭 (d := d) l := by
   have := genDeg_pos hI hmax h𝔭 d l; simp only [gdeg]; omega
 
-lemma gdeg_cast (l) : ((gdeg hI hmax h𝔭 (d := d) l : ℕ) : ℤ) = genDeg hI hmax h𝔭 d l := by
+lemma gdeg_cast [Fact (Constructive.HasPres A)] [Constructive.Enum A] (l) : ((gdeg hI hmax h𝔭 (d := d) l : ℕ) : ℤ) = genDeg hI hmax h𝔭 d l := by
   have := genDeg_pos hI hmax h𝔭 d l; simp only [gdeg]; omega
 
 include hd in
-lemma gdeg_mul_sphE (l) : gdeg hI hmax h𝔭 (d := d) l * sphE hI hmax h𝔭 l = 2 * d.factorial := by
+lemma gdeg_mul_sphE [Fact (Constructive.HasPres A)] [Constructive.Enum A] (l) : gdeg hI hmax h𝔭 (d := d) l * sphE hI hmax h𝔭 l = 2 * d.factorial := by
   have hle : gdeg hI hmax h𝔭 (d := d) l ≤ d := by
     have := genDeg_le hI hmax h𝔭 d (by omega) l; simp only [gdeg]; omega
   have hdvd : gdeg hI hmax h𝔭 (d := d) l ∣ d.factorial :=
@@ -185,16 +185,16 @@ lemma gdeg_mul_sphE (l) : gdeg hI hmax h𝔭 (d := d) l * sphE hI hmax h𝔭 l =
   rw [mul_left_comm, Nat.mul_div_cancel' hdvd]
 
 include hd in
-lemma sphE_pos (l) : 0 < sphE hI hmax h𝔭 (d := d) l := by
+lemma sphE_pos [Fact (Constructive.HasPres A)] [Constructive.Enum A] (l) : 0 < sphE hI hmax h𝔭 (d := d) l := by
   have h := gdeg_mul_sphE hI hmax h𝔭 hd l
   rcases Nat.eq_zero_or_pos (sphE hI hmax h𝔭 (d := d) l) with h0 | h0
   · rw [h0, mul_zero] at h; have := Nat.factorial_pos d; omega
   · exact h0
 
-lemma sphE_even (l) : Even (sphE hI hmax h𝔭 (d := d) l) := even_two_mul _
+lemma sphE_even [Fact (Constructive.HasPres A)] [Constructive.Enum A] (l) : Even (sphE hI hmax h𝔭 (d := d) l) := even_two_mul _
 
 /-- `s^{jₗ} yₗ = gₗ` in the Rees algebra. -/
-lemma torsorY_mul_s_pow (l : Fin (nGen hI hmax h𝔭 d + 1)) :
+lemma torsorY_mul_s_pow [Fact (Constructive.HasPres A)] [Constructive.Enum A] (l : Fin (nGen hI hmax h𝔭 d + 1)) :
     torsorY hI hmax h𝔭 d hπ l *
       reesS (compFil hI hmax h𝔭 d) (fun _j hj => compFil_F_nonpos hI hmax h𝔭 d hj) ^
         gdeg hI hmax h𝔭 l =
@@ -207,18 +207,18 @@ lemma torsorY_mul_s_pow (l : Fin (nGen hI hmax h𝔭 d + 1)) :
     mul_one, LaurentPolynomial.C_eq_algebraMap]
 
 /-- The image of a torsor generator in `U`. -/
-abbrev yU (l : Fin (nGen hI hmax h𝔭 d + 1)) : Torsor hI hmax h𝔭 d hπ :=
+abbrev yU [Fact (Constructive.HasPres A)] [Constructive.Enum A] (l : Fin (nGen hI hmax h𝔭 d + 1)) : Torsor hI hmax h𝔭 d hπ :=
   algebraMap (ReesAlg (compFil hI hmax h𝔭 d)) (Torsor hI hmax h𝔭 d hπ) (torsorY hI hmax h𝔭 d hπ l)
 
 /-- **The compact set of real points on the torsor**: the weighted sphere bundle. -/
-def torsorK (K : Set (RealPt A)) : Set (RealPt (Torsor hI hmax h𝔭 d hπ)) :=
+def torsorK [Fact (Constructive.HasPres A)] [Constructive.Enum A] (K : Set (RealPt A)) : Set (RealPt (Torsor hI hmax h𝔭 d hπ)) :=
   {w | RealPt.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) w ∈ K ∧ 0 ≤ w (torsorS hI hmax h𝔭 hπ) ∧
     ∑ l, w (yU hI hmax h𝔭 hπ l) ^ sphE hI hmax h𝔭 l = 1 ∧
     ∀ l, w (σ (torsorY hI hmax h𝔭 d hπ) l) = w (yU hI hmax h𝔭 hπ l) ^ (sphE hI hmax h𝔭 l - 1)}
 
 include hd in
 /-- On the sphere, `s^{2d!} = ∑ gₗ^{Eₗ}`. -/
-lemma s_pow_eq (w : RealPt (Torsor hI hmax h𝔭 d hπ))
+lemma s_pow_eq [Fact (Constructive.HasPres A)] [Constructive.Enum A] (w : RealPt (Torsor hI hmax h𝔭 d hπ))
     (hsph : ∑ l, w (yU hI hmax h𝔭 hπ l) ^ sphE hI hmax h𝔭 l = 1) :
     w (torsorS hI hmax h𝔭 hπ) ^ (2 * d.factorial) =
       ∑ l, w (algebraMap A _ (genCoeff hI hmax h𝔭 d π l)) ^ sphE hI hmax h𝔭 l := by
@@ -242,17 +242,17 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 /-- The generators of the torsor over `A`. -/
-def torsorGens : Set (Torsor hI hmax h𝔭 d hπ) :=
+def torsorGens [Fact (Constructive.HasPres A)] [Constructive.Enum A] : Set (Torsor hI hmax h𝔭 d hπ) :=
   {torsorS hI hmax h𝔭 hπ} ∪ Set.range (yU hI hmax h𝔭 hπ) ∪
     Set.range (σ (torsorY hI hmax h𝔭 d hπ))
 
 include hd hw in
-theorem torsor_adjoin : Algebra.adjoin A (torsorGens hI hmax h𝔭 hπ) = ⊤ := by
+theorem torsor_adjoin [Constructive.Enum A] [Fact (Constructive.HasPres A)] : Algebra.adjoin A (torsorGens hI hmax h𝔭 hπ) = ⊤ := by
   set S := Algebra.adjoin A (torsorGens hI hmax h𝔭 hπ)
   -- the image of the Rees algebra lies in `S`
   have hR : ∀ r : ReesAlg (compFil hI hmax h𝔭 d),
@@ -333,12 +333,12 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 include hd in
-lemma torsorK_y_le {K : Set (RealPt A)} {w : RealPt (Torsor hI hmax h𝔭 d hπ)}
+lemma torsorK_y_le [Fact (Constructive.HasPres A)] [Constructive.Enum A] {K : Set (RealPt A)} {w : RealPt (Torsor hI hmax h𝔭 d hπ)}
     (hwK : w ∈ torsorK hI hmax h𝔭 hπ K) (l) : |w (yU hI hmax h𝔭 hπ l)| ≤ 1 := by
   obtain ⟨-, -, hsph, -⟩ := hwK
   refine abs_le_one_of_pow_le (sphE_pos hI hmax h𝔭 hd l).ne' (sphE_even hI hmax h𝔭 l) ?_
@@ -348,7 +348,7 @@ lemma torsorK_y_le {K : Set (RealPt A)} {w : RealPt (Torsor hI hmax h𝔭 d hπ)
     (Finset.mem_univ l)
 
 include hd hw in
-theorem torsorK_isCompact {K : Set (RealPt A)} (hK : IsCompact K) :
+theorem torsorK_isCompact [Constructive.Enum A] [Fact (Constructive.HasPres A)] {K : Set (RealPt A)} (hK : IsCompact K) :
     IsCompact (torsorK hI hmax h𝔭 hπ K) := by
   have hclosed : IsClosed (torsorK hI hmax h𝔭 hπ K) := by
     have h1 : IsClosed {w : RealPt (Torsor hI hmax h𝔭 d hπ) |
@@ -404,34 +404,34 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 /-- The weighted norm `∑ gₗ^{Eₗ}` at a real point of `A`. -/
-def gNorm (d : ℕ) (π : A) (z : RealPt A) : ℝ :=
+def gNorm [Fact (Constructive.HasPres A)] [Constructive.Enum A] (d : ℕ) (π : A) (z : RealPt A) : ℝ :=
   ∑ l, z (genCoeff hI hmax h𝔭 d π l) ^ sphE hI hmax h𝔭 (d := d) l
 
-lemma gNorm_nonneg (z : RealPt A) : 0 ≤ gNorm hI hmax h𝔭 d π z :=
+lemma gNorm_nonneg [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) : 0 ≤ gNorm hI hmax h𝔭 d π z :=
   Finset.sum_nonneg fun l _ => (sphE_even hI hmax h𝔭 l).pow_nonneg _
 
 /-- The `2d!`-th root of the weighted norm. -/
-def gRoot (d : ℕ) (π : A) (z : RealPt A) : ℝ :=
+def gRoot [Fact (Constructive.HasPres A)] [Constructive.Enum A] (d : ℕ) (π : A) (z : RealPt A) : ℝ :=
   gNorm hI hmax h𝔭 d π z ^ (((2 * d.factorial : ℕ) : ℝ)⁻¹)
 
-lemma gRoot_pos {z : RealPt A} (hz : 0 < gNorm hI hmax h𝔭 d π z) : 0 < gRoot hI hmax h𝔭 d π z :=
+lemma gRoot_pos [Fact (Constructive.HasPres A)] [Constructive.Enum A] {z : RealPt A} (hz : 0 < gNorm hI hmax h𝔭 d π z) : 0 < gRoot hI hmax h𝔭 d π z :=
   Real.rpow_pos_of_pos hz _
 
-lemma gRoot_pow (z : RealPt A) :
+lemma gRoot_pow [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) :
     gRoot hI hmax h𝔭 d π z ^ (2 * d.factorial) = gNorm hI hmax h𝔭 d π z :=
   Real.rpow_inv_natCast_pow (gNorm_nonneg hI hmax h𝔭 z) (by positivity)
 
 /-- The Rees real point over `z` with `s ↦ gRoot z`. -/
-def ptA_R (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
+def ptA_R [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
     RealPt (ReesAlg (compFil hI hmax h𝔭 d)) :=
   reesPt _ (RealPt.toHom z) (Units.mk0 (gRoot hI hmax h𝔭 d π z) (gRoot_pos hI hmax h𝔭 hz).ne')⁻¹
 
-lemma ptA_R_y (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) (l) :
+lemma ptA_R_y [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) (l) :
     ptA_R hI hmax h𝔭 z hz (torsorY hI hmax h𝔭 d hπ l) =
       z (genCoeff hI hmax h𝔭 d π l) * (gRoot hI hmax h𝔭 d π z ^ gdeg hI hmax h𝔭 l)⁻¹ := by
   rw [ptA_R, torsorY, reesPt_C_mul_T _ _ _ (genCoeff_mem hI hmax h𝔭 d hπ l),
@@ -440,7 +440,7 @@ lemma ptA_R_y (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) (l) :
   rfl
 
 include hd in
-lemma ptA_R_sph (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
+lemma ptA_R_sph [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
     ∑ l, ptA_R hI hmax h𝔭 z hz (torsorY hI hmax h𝔭 d hπ l) ^ sphE hI hmax h𝔭 l = 1 := by
   have hcpow := gRoot_pow hI hmax h𝔭 (d := d) (π := π) z
   simp_rw [ptA_R_y hI hmax h𝔭 hπ z hz, mul_pow, inv_pow, ← pow_mul,
@@ -448,7 +448,7 @@ lemma ptA_R_sph (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
   exact mul_inv_cancel₀ hz.ne'
 
 include hd in
-lemma ptA_rel (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
+lemma ptA_rel [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
     ∑ l, ptA_R hI hmax h𝔭 z hz (torsorY hI hmax h𝔭 d hπ l) ^ (sphE hI hmax h𝔭 l - 1) *
       ptA_R hI hmax h𝔭 z hz (torsorY hI hmax h𝔭 d hπ l) = 1 := by
   rw [← ptA_R_sph hI hmax h𝔭 hd hπ z hz]
@@ -456,7 +456,7 @@ lemma ptA_rel (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
   rw [← pow_succ, Nat.sub_add_cancel (sphE_pos hI hmax h𝔭 hd l)]
 
 /-- **The point of the torsor over `z ∉ V(𝔭)`.** -/
-def ptA (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) : RealPt (Torsor hI hmax h𝔭 d hπ) :=
+def ptA [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) : RealPt (Torsor hI hmax h𝔭 d hπ) :=
   jPt (torsorY hI hmax h𝔭 d hπ) (RealPt.toHom (ptA_R hI hmax h𝔭 z hz))
     (fun l => ptA_R hI hmax h𝔭 z hz (torsorY hI hmax h𝔭 d hπ l) ^ (sphE hI hmax h𝔭 l - 1))
     (ptA_rel hI hmax h𝔭 hd hπ z hz)
@@ -472,33 +472,33 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
-lemma ptA_algebraMap (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z)
+lemma ptA_algebraMap [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z)
     (r : ReesAlg (compFil hI hmax h𝔭 d)) :
     ptA hI hmax h𝔭 hd hπ z hz (algebraMap _ (Torsor hI hmax h𝔭 d hπ) r) = ptA_R hI hmax h𝔭 z hz r :=
   jPt_algebraMap _ _ _ _ r
 
-lemma ptA_σ (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) (l) :
+lemma ptA_σ [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) (l) :
     ptA hI hmax h𝔭 hd hπ z hz (σ (torsorY hI hmax h𝔭 d hπ) l) =
       ptA_R hI hmax h𝔭 z hz (torsorY hI hmax h𝔭 d hπ l) ^ (sphE hI hmax h𝔭 l - 1) :=
   jPt_σ _ _ _ _ l
 
-lemma ptA_comap (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
+lemma ptA_comap [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
     RealPt.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) (ptA hI hmax h𝔭 hd hπ z hz) = z := by
   ext a
   rw [RealPt.comap_apply, IsScalarTower.algebraMap_apply A (ReesAlg (compFil hI hmax h𝔭 d)),
     ptA_algebraMap, ptA_R, reesPt_algebraMap]
   rfl
 
-lemma ptA_s (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
+lemma ptA_s [Fact (Constructive.HasPres A)] [Constructive.Enum A] (z : RealPt A) (hz : 0 < gNorm hI hmax h𝔭 d π z) :
     ptA hI hmax h𝔭 hd hπ z hz (torsorS hI hmax h𝔭 hπ) = gRoot hI hmax h𝔭 d π z := by
   rw [torsorS, ptA_algebraMap, ptA_R, reesPt_s]
   simp
 
-lemma ptA_mem (K : Set (RealPt A)) {z : RealPt A} (hzK : z ∈ K)
+lemma ptA_mem [Fact (Constructive.HasPres A)] [Constructive.Enum A] (K : Set (RealPt A)) {z : RealPt A} (hzK : z ∈ K)
     (hz : 0 < gNorm hI hmax h𝔭 d π z) : ptA hI hmax h𝔭 hd hπ z hz ∈ torsorK hI hmax h𝔭 hπ K := by
   refine ⟨by rw [ptA_comap]; exact hzK, ?_, ?_, fun l => ?_⟩
   · rw [ptA_s]; exact (gRoot_pos hI hmax h𝔭 hz).le
@@ -507,7 +507,7 @@ lemma ptA_mem (K : Set (RealPt A)) {z : RealPt A} (hzK : z ∈ K)
   · simp only [yU, ptA_algebraMap, ptA_σ]
 
 /-- **Uniqueness over `z ∉ V(𝔭)`.** -/
-theorem eq_ptA (K : Set (RealPt A)) {w : RealPt (Torsor hI hmax h𝔭 d hπ)}
+theorem eq_ptA [Fact (Constructive.HasPres A)] [Constructive.Enum A] (K : Set (RealPt A)) {w : RealPt (Torsor hI hmax h𝔭 d hπ)}
     (hwK : w ∈ torsorK hI hmax h𝔭 hπ K) {z : RealPt A}
     (hwz : RealPt.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) w = z)
     (hz : 0 < gNorm hI hmax h𝔭 d π z) : w = ptA hI hmax h𝔭 hd hπ z hz := by
@@ -555,8 +555,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 /-- **Local presentation data** at a real point `z` of `V(𝔭)`. -/
@@ -597,7 +597,7 @@ theorem LocPres.nonempty (z : RealPt A) (hz : ∀ g ∈ 𝔭, z g = 0) :
   obtain ⟨𝔪, h𝔪, h𝔮𝔪⟩ := Ideal.exists_le_maximal 𝔮 h𝔮
   have := h𝔪
   have h𝔭𝔪 : 𝔭 ≤ 𝔪 := fun g hg => h𝔮𝔪 (by rw [RingHom.mem_ker]; exact hz g hg)
-  obtain ⟨hI𝔪, hv⟩ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
+  obtain ⟨hI𝔪, hv⟩ := mem_maxLocus_of_minimal hI (IsMaxInvPt.toMax hmax) h𝔭.toMin 𝔪 h𝔭𝔪
   obtain ⟨D⟩ := LocData.nonempty hI 𝔪 hI𝔪 hv
   -- the extension of `z` to the local ring
   have hunit : ∀ m : 𝔪.primeCompl, IsUnit ((RealPt.toHom z) (m : A)) := fun m => by
@@ -624,7 +624,7 @@ theorem LocPres.nonempty (z : RealPt A) (hz : ∀ g ∈ 𝔭, z g = 0) :
       exact absurd hv1.symm h1
   · rw [compFil_loc_F hI hmax h𝔭 d 𝔪 h𝔭𝔪, D.cRF_eq_transport hI]; rfl
   · have h1 := D.map_p
-    rw [← D.eq_p_of_minimal h𝔭 h𝔭𝔪] at h1
+    rw [← D.eq_p_of_minimal h𝔭.toMin h𝔭𝔪] at h1
     rw [h1, LocData.P]
     congr 2
     ext i
@@ -642,8 +642,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   {z : RealPt A} (hz : ∀ g ∈ 𝔭, z g = 0) (P : LocPres hI hmax h𝔭 (d := d) z)
 
 /-- The presentation of the local Rees algebra. -/
@@ -714,8 +714,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   {z : RealPt A} (hz : ∀ g ∈ 𝔭, z g = 0) (P : LocPres hI hmax h𝔭 (d := d) z)
 
 /-- The real point `Ψ(u)` of the global Rees algebra. -/
@@ -797,8 +797,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   {z : RealPt A} (hz : ∀ g ∈ 𝔭, z g = 0) (P : LocPres hI hmax h𝔭 (d := d) z)
 
 /-- **Every real point over `z` on the exceptional divisor is some `Ψ(u)`.** -/
@@ -862,8 +862,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   {z : RealPt A} (hz : ∀ g ∈ 𝔭, z g = 0) (P : LocPres hI hmax h𝔭 (d := d) z)
 
 /-- The weighted scaling `c ⋆ u`. -/
@@ -991,13 +991,13 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   {z : RealPt A} (hz : ∀ g ∈ 𝔭, z g = 0) (P : LocPres hI hmax h𝔭 (d := d) z)
   {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 /-- **Weighted homogeneity** of the torsor generators on the fibre. -/
-theorem LocPres.Psi_scale_y (c : ℝ) (u : Fin P.k → ℝ) (l : Fin (nGen hI hmax h𝔭 d + 1)) :
+theorem LocPres.Psi_scale_y [Fact (Constructive.HasPres A)] [Constructive.Enum A] (c : ℝ) (u : Fin P.k → ℝ) (l : Fin (nGen hI hmax h𝔭 d + 1)) :
     P.Psi hI hmax h𝔭 hd hz (P.scale hI hmax h𝔭 c u) (torsorY hI hmax h𝔭 d hπ l) =
       c ^ gdeg hI hmax h𝔭 l * P.Psi hI hmax h𝔭 hd hz u (torsorY hI hmax h𝔭 d hπ l) := by
   set g' := algebraMap A (Localization.AtPrime P.𝔪) (genCoeff hI hmax h𝔭 d π l)
@@ -1017,7 +1017,7 @@ theorem LocPres.Psi_scale_y (c : ℝ) (u : Fin P.k → ℝ) (l : Fin (nGen hI hm
   exact P.psiPt_scale hI hmax h𝔭 hd hz c u _ hg hmem
 
 /-- If all torsor generators vanish at `Ψ(u)`, then `u = 0`. -/
-theorem LocPres.eq_zero_of_Psi_y (u : Fin P.k → ℝ)
+theorem LocPres.eq_zero_of_Psi_y [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : Fin P.k → ℝ)
     (h0 : ∀ l, P.Psi hI hmax h𝔭 hd hz u (torsorY hI hmax h𝔭 d hπ l) = 0) : u = 0 := by
   funext i
   set i' := ιk P.hkn i
@@ -1118,25 +1118,25 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   {z : RealPt A} (hz : ∀ g ∈ 𝔭, z g = 0) (P : LocPres hI hmax h𝔭 (d := d) z)
   {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 /-- The weighted norm on the fibre coordinates. -/
-def LocPres.phi (u : Fin P.k → ℝ) : ℝ :=
+def LocPres.phi [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : Fin P.k → ℝ) : ℝ :=
   ∑ l, P.Psi hI hmax h𝔭 hd hz u (torsorY hI hmax h𝔭 d hπ l) ^ sphE hI hmax h𝔭 l
 
-lemma LocPres.phi_nonneg (u : Fin P.k → ℝ) : 0 ≤ P.phi hI hmax h𝔭 hd hz hπ u :=
+lemma LocPres.phi_nonneg [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : Fin P.k → ℝ) : 0 ≤ P.phi hI hmax h𝔭 hd hz hπ u :=
   Finset.sum_nonneg fun l _ => (sphE_even hI hmax h𝔭 l).pow_nonneg _
 
-lemma LocPres.phi_scale (c : ℝ) (u : Fin P.k → ℝ) :
+lemma LocPres.phi_scale [Fact (Constructive.HasPres A)] [Constructive.Enum A] (c : ℝ) (u : Fin P.k → ℝ) :
     P.phi hI hmax h𝔭 hd hz hπ (P.scale hI hmax h𝔭 c u) =
       c ^ (2 * d.factorial) * P.phi hI hmax h𝔭 hd hz hπ u := by
   simp only [LocPres.phi, P.Psi_scale_y hI hmax h𝔭 hd hz hπ, mul_pow, ← pow_mul,
     gdeg_mul_sphE hI hmax h𝔭 hd, ← Finset.mul_sum]
 
-lemma LocPres.phi_pos {u : Fin P.k → ℝ} (hu : u ≠ 0) : 0 < P.phi hI hmax h𝔭 hd hz hπ u := by
+lemma LocPres.phi_pos [Fact (Constructive.HasPres A)] [Constructive.Enum A] {u : Fin P.k → ℝ} (hu : u ≠ 0) : 0 < P.phi hI hmax h𝔭 hd hz hπ u := by
   rcases (P.phi_nonneg hI hmax h𝔭 hd hz hπ u).lt_or_eq with h | h
   · exact h
   exfalso
@@ -1147,31 +1147,31 @@ lemma LocPres.phi_pos {u : Fin P.k → ℝ} (hu : u ≠ 0) : 0 < P.phi hI hmax h
     h.symm l (Finset.mem_univ l)
   exact pow_eq_zero_iff (sphE_pos hI hmax h𝔭 hd l).ne' |>.1 h0
 
-lemma LocPres.continuous_phi : Continuous (P.phi hI hmax h𝔭 hd hz hπ) :=
+lemma LocPres.continuous_phi [Fact (Constructive.HasPres A)] [Constructive.Enum A] : Continuous (P.phi hI hmax h𝔭 hd hz hπ) :=
   continuous_finsetSum _ fun _l _ =>
     ((RealPt.continuous_eval _).comp (P.continuous_Psi hI hmax h𝔭 hd hz)).pow _
 
 /-- The normalizing factor. -/
-def LocPres.lam (u : Fin P.k → ℝ) : ℝ :=
+def LocPres.lam [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : Fin P.k → ℝ) : ℝ :=
   P.phi hI hmax h𝔭 hd hz hπ u ^ (-(((2 * d.factorial : ℕ) : ℝ)⁻¹))
 
 /-- The normalization onto the weighted sphere. -/
-def LocPres.nu (u : Fin P.k → ℝ) : Fin P.k → ℝ :=
+def LocPres.nu [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : Fin P.k → ℝ) : Fin P.k → ℝ :=
   P.scale hI hmax h𝔭 (P.lam hI hmax h𝔭 hd hz hπ u) u
 
-lemma LocPres.phi_nu {u : Fin P.k → ℝ} (hu : u ≠ 0) :
+lemma LocPres.phi_nu [Fact (Constructive.HasPres A)] [Constructive.Enum A] {u : Fin P.k → ℝ} (hu : u ≠ 0) :
     P.phi hI hmax h𝔭 hd hz hπ (P.nu hI hmax h𝔭 hd hz hπ u) = 1 := by
   have hpos := P.phi_pos hI hmax h𝔭 hd hz hπ hu
   rw [LocPres.nu, P.phi_scale, LocPres.lam, Real.rpow_neg hpos.le, inv_pow,
     Real.rpow_inv_natCast_pow hpos.le (by positivity)]
   exact inv_mul_cancel₀ hpos.ne'
 
-lemma LocPres.nu_eq {u : Fin P.k → ℝ} (h : P.phi hI hmax h𝔭 hd hz hπ u = 1) :
+lemma LocPres.nu_eq [Fact (Constructive.HasPres A)] [Constructive.Enum A] {u : Fin P.k → ℝ} (h : P.phi hI hmax h𝔭 hd hz hπ u = 1) :
     P.nu hI hmax h𝔭 hd hz hπ u = u := by
   funext i
   simp [LocPres.nu, LocPres.lam, h, LocPres.scale]
 
-lemma LocPres.continuousOn_nu : ContinuousOn (P.nu hI hmax h𝔭 hd hz hπ) {u | u ≠ 0} := by
+lemma LocPres.continuousOn_nu [Fact (Constructive.HasPres A)] [Constructive.Enum A] : ContinuousOn (P.nu hI hmax h𝔭 hd hz hπ) {u | u ≠ 0} := by
   have hlam : ContinuousOn (P.lam hI hmax h𝔭 hd hz hπ) {u | u ≠ 0} := by
     intro u hu
     refine ContinuousAt.continuousWithinAt ?_
@@ -1191,12 +1191,12 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   {z : RealPt A} (hz : ∀ g ∈ 𝔭, z g = 0) (P : LocPres hI hmax h𝔭 (d := d) z)
   {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
-lemma LocPres.Gamma_rel (u : ({0}ᶜ : Set (Fin P.k → ℝ))) :
+lemma LocPres.Gamma_rel [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : ({0}ᶜ : Set (Fin P.k → ℝ))) :
     ∑ l, P.Psi hI hmax h𝔭 hd hz (P.nu hI hmax h𝔭 hd hz hπ u.1) (torsorY hI hmax h𝔭 d hπ l) ^
         (sphE hI hmax h𝔭 l - 1) *
       (RealPt.toHom (P.Psi hI hmax h𝔭 hd hz (P.nu hI hmax h𝔭 hd hz hπ u.1)))
@@ -1206,23 +1206,23 @@ lemma LocPres.Gamma_rel (u : ({0}ᶜ : Set (Fin P.k → ℝ))) :
   rw [RealPt.toHom_apply, ← pow_succ, Nat.sub_add_cancel (sphE_pos hI hmax h𝔭 hd l)]
 
 /-- **The fibre over `z ∈ V(𝔭)` as a continuous image of `ℝ^k ∖ {0}`.** -/
-def LocPres.Gamma (u : ({0}ᶜ : Set (Fin P.k → ℝ))) : RealPt (Torsor hI hmax h𝔭 d hπ) :=
+def LocPres.Gamma [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : ({0}ᶜ : Set (Fin P.k → ℝ))) : RealPt (Torsor hI hmax h𝔭 d hπ) :=
   jPt (torsorY hI hmax h𝔭 d hπ) (RealPt.toHom (P.Psi hI hmax h𝔭 hd hz (P.nu hI hmax h𝔭 hd hz hπ u.1)))
     (fun l => P.Psi hI hmax h𝔭 hd hz (P.nu hI hmax h𝔭 hd hz hπ u.1) (torsorY hI hmax h𝔭 d hπ l) ^
       (sphE hI hmax h𝔭 l - 1)) (P.Gamma_rel hI hmax h𝔭 hd hz hπ u)
 
-lemma LocPres.Gamma_algebraMap (u : ({0}ᶜ : Set (Fin P.k → ℝ))) (r : ReesAlg (compFil hI hmax h𝔭 d)) :
+lemma LocPres.Gamma_algebraMap [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : ({0}ᶜ : Set (Fin P.k → ℝ))) (r : ReesAlg (compFil hI hmax h𝔭 d)) :
     P.Gamma hI hmax h𝔭 hd hz hπ u (algebraMap _ (Torsor hI hmax h𝔭 d hπ) r) =
       P.Psi hI hmax h𝔭 hd hz (P.nu hI hmax h𝔭 hd hz hπ u.1) r :=
   jPt_algebraMap _ _ _ _ r
 
-lemma LocPres.Gamma_σ (u : ({0}ᶜ : Set (Fin P.k → ℝ))) (l) :
+lemma LocPres.Gamma_σ [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : ({0}ᶜ : Set (Fin P.k → ℝ))) (l) :
     P.Gamma hI hmax h𝔭 hd hz hπ u (σ (torsorY hI hmax h𝔭 d hπ) l) =
       P.Psi hI hmax h𝔭 hd hz (P.nu hI hmax h𝔭 hd hz hπ u.1) (torsorY hI hmax h𝔭 d hπ l) ^
         (sphE hI hmax h𝔭 l - 1) :=
   jPt_σ _ _ _ _ l
 
-lemma LocPres.continuous_Gamma : Continuous (P.Gamma hI hmax h𝔭 hd hz hπ) := by
+lemma LocPres.continuous_Gamma [Fact (Constructive.HasPres A)] [Constructive.Enum A] : Continuous (P.Gamma hI hmax h𝔭 hd hz hπ) := by
   have hnu : Continuous fun u : ({0}ᶜ : Set (Fin P.k → ℝ)) => P.nu hI hmax h𝔭 hd hz hπ u.1 :=
     (P.continuousOn_nu hI hmax h𝔭 hd hz hπ).comp_continuous continuous_subtype_val
       (fun u => u.2)
@@ -1230,13 +1230,13 @@ lemma LocPres.continuous_Gamma : Continuous (P.Gamma hI hmax h𝔭 hd hz hπ) :=
   refine continuous_jPt _ _ (fun a => (RealPt.continuous_eval a).comp hPsi) _
     (fun l => ((RealPt.continuous_eval _).comp hPsi).pow _) _
 
-lemma LocPres.Gamma_comap (u : ({0}ᶜ : Set (Fin P.k → ℝ))) :
+lemma LocPres.Gamma_comap [Fact (Constructive.HasPres A)] [Constructive.Enum A] (u : ({0}ᶜ : Set (Fin P.k → ℝ))) :
     RealPt.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) (P.Gamma hI hmax h𝔭 hd hz hπ u) = z := by
   ext a
   rw [RealPt.comap_apply, IsScalarTower.algebraMap_apply A (ReesAlg (compFil hI hmax h𝔭 d)),
     P.Gamma_algebraMap, P.Psi_algebraMap]
 
-lemma LocPres.Gamma_mem {K : Set (RealPt A)} (hzK : z ∈ K) (u : ({0}ᶜ : Set (Fin P.k → ℝ))) :
+lemma LocPres.Gamma_mem [Fact (Constructive.HasPres A)] [Constructive.Enum A] {K : Set (RealPt A)} (hzK : z ∈ K) (u : ({0}ᶜ : Set (Fin P.k → ℝ))) :
     P.Gamma hI hmax h𝔭 hd hz hπ u ∈ torsorK hI hmax h𝔭 hπ K := by
   refine ⟨by rw [P.Gamma_comap]; exact hzK, ?_, ?_, fun l => ?_⟩
   · rw [torsorS, P.Gamma_algebraMap, P.Psi_s]
@@ -1255,33 +1255,31 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 include hd hw hπ in
-lemma genCoeff_mem_p (l : Fin (nGen hI hmax h𝔭 d + 1)) : genCoeff hI hmax h𝔭 d π l ∈ 𝔭 := by
+lemma genCoeff_mem_p [Constructive.Enum A] [Fact (Constructive.HasPres A)] (l : Fin (nGen hI hmax h𝔭 d + 1)) : genCoeff hI hmax h𝔭 d π l ∈ 𝔭 := by
   have h1 := genCoeff_mem hI hmax h𝔭 d hπ l
   rw [compFil_F] at h1
   have hj := genDeg_pos hI hmax h𝔭 d l
-  have h2 : compF I 𝔭 ((genDeg hI hmax h𝔭 d l : ℚ) / d) ≤ compF I 𝔭 (1 / d) := by
-    refine compF_antitone ?_ hI (fun 𝔪 _ h𝔭𝔪' => ?_)
-    · have : (1 : ℚ) ≤ genDeg hI hmax h𝔭 d l := by exact_mod_cast hj
-      have hd' : (0 : ℚ) < d := by exact_mod_cast hd
-      exact div_le_div_of_nonneg_right this hd'.le
-    · have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪'
-      exact ⟨hZ.1, v₀, hZ.2⟩
-  rw [compF_one_div hI hmax h𝔭 hd hw] at h2
+  have h2 : compFPt I 𝔭 ((genDeg hI hmax h𝔭 d l : ℚ) / d) ≤ compFPt I 𝔭 (1 / d) := by
+    refine h𝔭.compFPt_antitone' hI hmax ?_
+    have : (1 : ℚ) ≤ genDeg hI hmax h𝔭 d l := by exact_mod_cast hj
+    have hd' : (0 : ℚ) < d := by exact_mod_cast hd
+    exact div_le_div_of_nonneg_right this hd'.le
+  rw [h𝔭.compFPt_one_div hI hmax hd hw] at h2
   exact h2 h1
 
 /-- The fibre of the compact set over a real point of the base. -/
-def torsorFib (K : Set (RealPt A)) (z : RealPt A) : Set (RealPt (Torsor hI hmax h𝔭 d hπ)) :=
+def torsorFib [Fact (Constructive.HasPres A)] [Constructive.Enum A] (K : Set (RealPt A)) (z : RealPt A) : Set (RealPt (Torsor hI hmax h𝔭 d hπ)) :=
   {w | w ∈ torsorK hI hmax h𝔭 hπ K ∧ RealPt.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) w = z}
 
 variable {z : RealPt A} (hz : ∀ g ∈ 𝔭, z g = 0) (P : LocPres hI hmax h𝔭 (d := d) z)
 
 include hw in
-theorem LocPres.fib_eq {K : Set (RealPt A)} (hzK : z ∈ K) :
+theorem LocPres.fib_eq [Constructive.Enum A] [Fact (Constructive.HasPres A)] {K : Set (RealPt A)} (hzK : z ∈ K) :
     torsorFib hI hmax h𝔭 hπ K z = Set.range (P.Gamma hI hmax h𝔭 hd hz hπ) := by
   ext w
   constructor
@@ -1323,7 +1321,7 @@ theorem LocPres.fib_eq {K : Set (RealPt A)} (hzK : z ∈ K) :
     exact ⟨P.Gamma_mem hI hmax h𝔭 hd hz hπ hzK u, P.Gamma_comap hI hmax h𝔭 hd hz hπ u⟩
 
 include hd hw hz in
-theorem fib_connected (hk2 : v₀ 1 ≠ 0) {K : Set (RealPt A)} (hzK : z ∈ K) :
+theorem fib_connected [Constructive.Enum A] [Fact (Constructive.HasPres A)] (hk2 : v₀ 1 ≠ 0) {K : Set (RealPt A)} (hzK : z ∈ K) :
     IsConnected (torsorFib hI hmax h𝔭 hπ K z) := by
   obtain ⟨P⟩ := LocPres.nonempty hI hmax h𝔭 hw z hz
   rw [P.fib_eq hI hmax h𝔭 hd hw hπ hz hzK]
@@ -1359,19 +1357,19 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 include hd hw in
-lemma kills_of_gNorm_zero {z : RealPt A} (h0 : gNorm hI hmax h𝔭 d π z = 0) : ∀ g ∈ 𝔭, z g = 0 := by
+lemma kills_of_gNorm_zero [Constructive.Enum A] [Fact (Constructive.HasPres A)] {z : RealPt A} (h0 : gNorm hI hmax h𝔭 d π z = 0) : ∀ g ∈ 𝔭, z g = 0 := by
   have hl : ∀ l, z (genCoeff hI hmax h𝔭 d π l) = 0 := fun l => by
     have := (Finset.sum_eq_zero_iff_of_nonneg (fun l _ =>
       (sphE_even hI hmax h𝔭 l).pow_nonneg (z (genCoeff hI hmax h𝔭 d π l)))).1 h0 l
       (Finset.mem_univ l)
     exact (pow_eq_zero_iff (sphE_pos hI hmax h𝔭 hd l).ne').1 this
   have hle : 𝔭 ≤ RingHom.ker (RealPt.toHom z) := by
-    rw [← compF_one_div hI hmax h𝔭 hd hw, show (1 : ℚ) / d = ((1 : ℤ) : ℚ) / d by push_cast; ring,
+    rw [← h𝔭.compFPt_one_div hI hmax hd hw, show (1 : ℚ) / d = ((1 : ℤ) : ℚ) / d by push_cast; ring,
       ← compFil_F hI hmax h𝔭 d 1, ← span_gensF hI hmax h𝔭 d 1, Ideal.span_le]
     intro g hg
     obtain ⟨l, -, hl2⟩ := exists_index hI hmax h𝔭 (π := π) le_rfl (by exact_mod_cast hd) hg

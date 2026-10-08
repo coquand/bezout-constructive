@@ -1,4 +1,5 @@
 import BezoutCounterexample.Principalization.Globalize
+import BezoutCounterexample.Principalization.PolyQuot
 
 /-!
 # Derivation-stability of the canonical centre and the length bound
@@ -740,10 +741,9 @@ lemma isUnit_det_of_lowerTri {R : Type*} [CommRing R] [IsLocalRing R] {m : ℕ}
     · intro i j hij
       simp only [RingHom.mapMatrix_apply, Matrix.map_apply]
       exact (residue_eq_zero_iff _).2 (hup i j (by simpa using hij))
-  by_contra h
-  have : M.det ∈ maximalIdeal R := h
-  rw [← residue_eq_zero_iff, h1] at this
-  exact one_ne_zero this
+  refine (IsLocalRing.notMem_maximalIdeal).1 fun h => ?_
+  rw [← residue_eq_zero_iff, h1] at h
+  exact one_ne_zero h
 
 section FlowChart
 
@@ -883,10 +883,12 @@ lemma nextE_pad_antitone {n n' : ℕ} {ek : Fin n → ℚ} (hnn : ∀ i, 0 ≤ e
 
 section K
 
-variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S] {n : ℕ}
+variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] {n : ℕ}
 
-instance polyLoc_noetherian : IsNoetherianRing (PolyLoc S) :=
-  IsLocalization.isNoetherianRing (polyMax S).primeCompl _ inferInstance
+instance fact_polyIndNoeth_polyLoc [Fact (Constructive.PolyIndNoeth S)] :
+    Fact (Constructive.PolyIndNoeth (PolyLoc S)) :=
+  ⟨((Fact.out : Constructive.PolyIndNoeth S).of_finiteType (S := S[X])).of_isLocalization
+    (polyMax S).primeCompl⟩
 
 /-- **Derivations preserving an ideal preserve its canonical centre** (on each coordinate). -/
 theorem deriv_mem_RF {I : Ideal S} {c : Chart S n} {k : ℕ} {ck : Chart S n} {ek : Fin n → ℚ}
@@ -1244,7 +1246,7 @@ open IsLocalRing
 
 section Length
 
-variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S] {n : ℕ}
+variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] {n : ℕ}
 
 /-- **Length bound.** If `I` is stable under `m` derivations that are independent at the closed
 point, the maximal centre of `I` has at most `n - m` coordinates. -/

@@ -1,6 +1,7 @@
 import BezoutCounterexample.Principalization.Vertex
 import BezoutCounterexample.Principalization.DerivExt
 import BezoutCounterexample.SplitConormal
+import BezoutCounterexample.Constructive.SatBar
 
 /-!
 # Smoothness of the local weighted Rees algebra
@@ -20,7 +21,7 @@ open MvPowerSeries IsLocalRing
 
 section GradedCI
 
-variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S] {n : ℕ}
+variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [Fact (QuotSeqCond S)] {n : ℕ}
 
 /-- **Weighted `GradedCI`**: a weighted-homogeneous combination of monomials in the first `k`
 coordinates of weight `j` lies in `𝓕_{(j+1)/d}` only if all its coefficients lie in
@@ -48,7 +49,7 @@ theorem gradedCI {c : Chart S n} (hc : c.IsCentred) {e : Fin n → ℚ} (he : �
     have : (0 : ℚ) < w i := by rw [h2]; exact mul_pos hdq (lt_of_le_of_ne (he i) (Ne.symm h1))
     exact_mod_cast this
   intro α₀ hα₀
-  rw [hc.mem_span_iff]
+  rw [hc.mem_span_iff_Q_dec Fact.out]
   intro β hβ
   -- the coefficient at `α₀ + β` of the combination vanishes
   have hlam : lam e (α₀ + β) < (((j + 1 : ℕ) : ℚ) / d) := by
@@ -61,7 +62,7 @@ theorem gradedCI {c : Chart S n} (hc : c.IsCentred) {e : Fin n → ℚ} (he : �
       · rw [show e i = 0 by by_contra h; exact hi ((hsupp i).1 h), mul_zero]
     rw [hβ0, add_zero, div_lt_div_iff_of_pos_right hdq]
     exact_mod_cast Nat.lt_succ_self j
-  have h0 := (hc.mem_RF_iff he _ _).1 hmem (α₀ + β) hlam
+  have h0 := hc.coeff_tau_eq_zero_of_mem_RF he hmem (α₀ + β) hlam
   rw [map_sum] at h0
   simp only [map_mul, hc.tau_monomial, map_sum] at h0
   rw [Finset.sum_eq_single α₀] at h0
@@ -411,7 +412,7 @@ open LaurentPolynomial MvPolynomial IsLocalRing
 
 section ReesStepA3
 
-variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S] {n : ℕ}
+variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [Fact (QuotSeqCond S)] {n : ℕ}
 variable {c : Chart S n} (hc : c.IsCentred) {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ}
   (he : ∀ i, 0 ≤ e i) (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i) {k : ℕ} (hkn : k ≤ n)
   (hsupp : ∀ i, e i ≠ 0 ↔ (i : ℕ) < k)
@@ -461,14 +462,14 @@ open LaurentPolynomial MvPolynomial IsLocalRing
 
 section ReesStepA4
 
-variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S] {n : ℕ}
+variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [Fact (QuotSeqCond S)] {n : ℕ}
 variable (c : Chart S n) (hc : c.IsCentred) {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ}
   {Φ : WFil S} (hF : ∀ j, Φ.F j = chartFil c e d j) (he : ∀ i, 0 ≤ e i) (hd : 0 < d)
   (hw : ∀ i, (w i : ℚ) = d * e i) {k : ℕ} (hkn : k ≤ n)
   (hsupp : ∀ i, e i ≠ 0 ↔ (i : ℕ) < k)
 
 include hd hw hsupp in
-omit [IsLocalRing S] [IsNoetherianRing S] in
+omit [IsLocalRing S] [Fact (QuotSeqCond S)] in
 lemma C_mem_rel_sup (a : S) (ha : a ∈ Ideal.span (c.x '' {i | (i : ℕ) < k})) :
     (MvPolynomial.C a : MvPolynomial (Option (Fin k)) S) ∈
       Ideal.span (Set.range (reesRel c w hkn)) ⊔ Ideal.span {X none} := by
@@ -582,7 +583,7 @@ open LaurentPolynomial MvPolynomial IsLocalRing
 
 section ReesKer
 
-variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S] {n : ℕ}
+variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [Fact (Constructive.PolyIndNoeth S)] {n : ℕ}
 variable (c : Chart S n) (hc : c.IsCentred) {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ}
   {Φ : WFil S} (hF : ∀ j, Φ.F j = chartFil c e d j) (he : ∀ i, 0 ≤ e i) (hd : 0 < d)
   (hw : ∀ i, (w i : ℚ) = d * e i) {k : ℕ} (hkn : k ≤ n)
@@ -599,16 +600,13 @@ theorem reesPsi_ker :
   set Kb : Ideal (MvPolynomial (Option (Fin k)) S ⧸ K₀) :=
     (RingHom.ker (reesPsi c hF he hd hw hkn)).map π with hKb
   set sb := π (X none) with hsb
-  -- `K̄ ⊆ s̄ K̄`
-  have hle : Kb ≤ Ideal.span {sb} • Kb := by
+  -- `K̄ ⊆ s̄ K̄`, elementwise
+  have hdiv : ∀ y ∈ Kb, ∃ y' ∈ Kb, y = sb * y' := by
     intro y hy
     rw [hKb, Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective] at hy
     obtain ⟨p, hp, rfl⟩ := hy
     obtain ⟨p', hp', hk⟩ := rees_stepA c hc hF he hd hw hkn hsupp p hp
-    have : π p = sb * π p' := by
-      rw [hsb, ← map_mul, Ideal.Quotient.eq]; exact hk
-    rw [this, smul_eq_mul]
-    exact Ideal.mul_mem_mul (Ideal.subset_span rfl) (Ideal.mem_map_of_mem _ hp')
+    exact ⟨π p', Ideal.mem_map_of_mem _ hp', by rw [hsb, ← map_mul, Ideal.Quotient.eq]; exact hk⟩
   -- torsion
   have htor : ∀ y ∈ Kb, ∃ N : ℕ, sb ^ N * y = 0 := by
     intro y hy
@@ -616,30 +614,16 @@ theorem reesPsi_ker :
     obtain ⟨p, hp, rfl⟩ := hy
     obtain ⟨N, hN⟩ := rees_torsion c hF he hd hw hkn p hp
     exact ⟨N, by rw [hsb, ← map_pow, ← map_mul, Ideal.Quotient.eq_zero_iff_mem]; exact hN⟩
-  -- Nakayama
-  have hfg : (Kb : Submodule _ _).FG := IsNoetherian.noetherian _
-  obtain ⟨r, hr1, hr⟩ := Submodule.exists_sub_one_mem_and_smul_eq_zero_of_fg_of_le_smul
-    (Ideal.span {sb}) (Kb : Submodule _ _) hfg hle
-  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.1 hr1
+  -- divisible torsion vanishes (Perdry's argument along the bar; no finite generation of `K̄`)
+  have hA : Constructive.IndNoeth (MvPolynomial (Option (Fin k)) S ⧸ K₀) :=
+    (((Fact.out : Constructive.PolyIndNoeth S).of_finiteType
+      (S := MvPolynomial (Option (Fin k)) S)).quotient K₀).indNoeth
   have hK0 : Kb = ⊥ := by
     rw [eq_bot_iff]
     intro y hy
-    obtain ⟨N, hN⟩ := htor y hy
-    have hy1 : y = (-(b * sb)) * y := by
-      have := hr y hy
-      rw [smul_eq_mul] at this
-      have hr' : r = 1 + b * sb := by rw [hb]; ring
-      rw [hr'] at this
-      linear_combination this
-    have hyN : ∀ m : ℕ, y = (-(b * sb)) ^ m * y := by
-      intro m
-      induction m with
-      | zero => simp
-      | succ m ih => rw [pow_succ, mul_assoc, ← hy1, ← ih]
     rw [Ideal.mem_bot]
-    calc y = (-(b * sb)) ^ N * y := hyN N
-      _ = (-b) ^ N * (sb ^ N * y) := by ring
-      _ = 0 := by rw [hN, mul_zero]
+    exact hA.eq_zero_of_divisible_torsion (P := (· ∈ Kb))
+      (fun y hy => by obtain ⟨y', hy', h⟩ := hdiv y hy; exact ⟨y', hy', h⟩) htor hy
   intro p hp
   have : π p ∈ Kb := Ideal.mem_map_of_mem _ hp
   rw [hK0, Ideal.mem_bot, Ideal.Quotient.eq_zero_iff_mem] at this
@@ -656,13 +640,13 @@ open LaurentPolynomial MvPolynomial IsLocalRing
 
 section ReesSmooth
 
-variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S] {n : ℕ}
+variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [Fact (Constructive.PolyIndNoeth S)] {n : ℕ}
 variable (c : Chart S n) (hc : c.IsCentred) {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ}
   {Φ : WFil S} (hF : ∀ j, Φ.F j = chartFil c e d j) (he : ∀ i, 0 ≤ e i) (hd : 0 < d)
   (hw : ∀ i, (w i : ℚ) = d * e i) {k : ℕ} (hkn : k ≤ n)
   (hsupp : ∀ i, e i ≠ 0 ↔ (i : ℕ) < k)
 
-omit [IsLocalRing S] [IsNoetherianRing S] in
+omit [IsLocalRing S] [Fact (Constructive.PolyIndNoeth S)] in
 lemma mapCoeffs_X_mul (δ : Derivation ℚ S S) (a : ℕ) (o : Option (Fin k)) :
     BezoutCounterexample.mapCoeffs δ (X none ^ a * X o : MvPolynomial (Option (Fin k)) S) = 0 := by
   rw [Derivation.leibniz, Derivation.leibniz_pow, BezoutCounterexample.mapCoeffs_X,

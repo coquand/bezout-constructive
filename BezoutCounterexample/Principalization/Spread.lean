@@ -215,20 +215,39 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A]
 
 namespace Loc
 
-/-- `M` is controlled by `g`: at every prime not containing `g`, `M` consists of units. -/
-def Ctrl (M : Submonoid A) (g : A) : Prop := ∀ (P : Ideal A) [P.IsPrime], g ∉ P → M ≤ P.primeCompl
+/-- `M` is controlled by `g`: at every prime not containing `g`, `M` consists of units, and,
+explicitly, every element of `M` divides a power of `g` (D3.2: the divisibility makes
+`M⁻¹A[1/g] = A[1/g]` constructive; the prime form follows from it but is kept as the field used by
+the engine). Applied as a function, `h P hg : M ≤ P.primeCompl` (`CoeFun`). -/
+structure Ctrl (M : Submonoid A) (g : A) : Prop where
+  le : ∀ (P : Ideal A) [P.IsPrime], g ∉ P → M ≤ P.primeCompl
+  dvd : ∀ m ∈ M, ∃ b : ℕ, m ∣ g ^ b
+
+instance (M : Submonoid A) (g : A) :
+    CoeFun (Ctrl M g) (fun _ => ∀ (P : Ideal A) [P.IsPrime], g ∉ P → M ≤ P.primeCompl) :=
+  ⟨Ctrl.le⟩
 
 omit [IsDomain A] [Algebra ℚ A] in
 lemma Ctrl.sup_powers {M : Submonoid A} {g : A} (h : Ctrl M g) (s : A) :
-    Ctrl (M ⊔ Submonoid.powers s) (g * s) := by
-  intro P _ hgs
-  have hg : g ∉ P := fun hg => hgs (P.mul_mem_right _ hg)
-  have hs : s ∉ P := fun hs => hgs (P.mul_mem_left _ hs)
-  exact sup_le (h P hg) ((Submonoid.powers_le).2 hs)
+    Ctrl (M ⊔ Submonoid.powers s) (g * s) where
+  le P _ hgs := by
+    have hg : g ∉ P := fun hg => hgs (P.mul_mem_right _ hg)
+    have hs : s ∉ P := fun hs => hgs (P.mul_mem_left _ hs)
+    exact sup_le (h P hg) ((Submonoid.powers_le).2 hs)
+  dvd m hm := by
+    obtain ⟨y, hy, z, ⟨j, rfl⟩, rfl⟩ := Submonoid.mem_sup.1 hm
+    obtain ⟨b, hb⟩ := h.dvd y hy
+    refine ⟨b + j, ?_⟩
+    rw [mul_pow]
+    exact mul_dvd_mul (hb.trans (pow_dvd_pow g (Nat.le_add_right b j)))
+      (pow_dvd_pow s (Nat.le_add_left j b))
 
 omit [IsDomain A] [Algebra ℚ A] in
-lemma ctrl_powers (g : A) : Ctrl (Submonoid.powers g) g :=
-  fun _P _ hg => (Submonoid.powers_le).2 hg
+lemma ctrl_powers (g : A) : Ctrl (Submonoid.powers g) g where
+  le _P _ hg := (Submonoid.powers_le).2 hg
+  dvd := by
+    rintro _ ⟨j, rfl⟩
+    exact ⟨j, dvd_rfl⟩
 
 omit [IsDomain A] [Algebra ℚ A] in
 lemma map_mem_map_trans {M₁ M₂ M₃ : Submonoid A} (h₁ : M₁ ≤ M₂) (h₂ : M₂ ≤ M₃)
@@ -309,12 +328,12 @@ variable {M N : Submonoid A}
 
 omit [IsDomain A] [Algebra ℚ A] in
 /-- Spreading containment of an extended ideal. -/
-lemma spread_ideal_le [IsNoetherianRing A] (h : M ≤ N) (hN : N ≤ nonZeroDivisors A)
-    (I : Ideal A) (J : Ideal (Localization M))
+lemma spread_ideal_le (h : M ≤ N) (hN : N ≤ nonZeroDivisors A)
+    (I : Ideal A) (hI : I.FG) (J : Ideal (Localization M))
     (hIJ : I.map (algebraMap A (Localization N)) ≤ J.map (map h)) :
     ∃ M', ∃ hE : Ext M N M', I.map (algebraMap A (Localization M')) ≤ J.map (map hE.le₁) := by
   classical
-  obtain ⟨s, rfl⟩ := (IsNoetherian.noetherian I : I.FG)
+  obtain ⟨s, rfl⟩ := hI
   have key : ∀ t : Finset A, (t : Set A) ⊆ s → ∃ M', ∃ hE : Ext M N M', ∀ a ∈ t,
       algebraMap A (Localization M') a ∈ J.map (map hE.le₁) := by
     intro t
@@ -397,10 +416,11 @@ lemma MC.ext' {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] {n : ℕ}
     (hc : J.c = J'.c) (he : J.e = J'.e) : J = J' := by
   cases J; cases J'; simp only at hc he; subst hc; subst he; rfl
 
-variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [IsNoetherianRing A]
-  (𝔪 : Ideal A) [𝔪.IsMaximal] {n : ℕ} (I : Ideal A)
+variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A]
+  (𝔪 : Ideal A) [𝔪.IsMaximal] [Fact (QuotSeqCond (Localization.AtPrime 𝔪))] {n : ℕ} (I : Ideal A)
+  (hIfg : I.FG)
 
-omit [IsNoetherianRing A] [IsDomain A] [Algebra ℚ A] in
+omit [IsDomain A] [Algebra ℚ A] in
 lemma Loc.map_map_algebraMap {M N : Submonoid A} (h : M ≤ N) (J : Ideal A) :
     (J.map (algebraMap A (Localization M))).map (Loc.map h) =
       J.map (algebraMap A (Localization N)) := by
@@ -408,15 +428,19 @@ lemma Loc.map_map_algebraMap {M N : Submonoid A} (h : M ≤ N) (J : Ideal A) :
   congr 1
   exact RingHom.ext fun a => Loc.map_algebraMap h a
 
+omit [Fact (QuotSeqCond (Localization.AtPrime 𝔪))] in
+include hIfg in
 lemma spread_adm {M : Submonoid A} (hM : M ≤ 𝔪.primeCompl) (c : Chart (Localization M) n)
     (e : Fin n → ℚ)
     (hadm : I.map (algebraMap A (Localization.AtPrime 𝔪)) ≤ (Loc.transport hM c).RF e 1) :
     ∃ M', ∃ hE : Loc.Ext M 𝔪.primeCompl M',
       I.map (algebraMap A (Localization M')) ≤ (Loc.transport hE.le₁ c).RF e 1 := by
   rw [← Loc.map_RF] at hadm
-  obtain ⟨M', hE, hle⟩ := Loc.spread_ideal_le hM (Ideal.primeCompl_le_nonZeroDivisors 𝔪) I _ hadm
+  obtain ⟨M', hE, hle⟩ := Loc.spread_ideal_le hM (Ideal.primeCompl_le_nonZeroDivisors 𝔪) I
+    hIfg _ hadm
   exact ⟨M', hE, by rwa [← Loc.map_RF]⟩
 
+include hIfg in
 /-- **Spreading of Method-1 runs**: a run at the local ring `A_𝔪` comes from a run over a
 localization `M'⁻¹A` with `M'` controlled by a single element outside `𝔪`. -/
 theorem spread_run :
@@ -438,17 +462,17 @@ theorem spread_run :
     intro j hj M hM c e hc hnn ha hSA
     by_cases hadm : MC.Adm (I.map (algebraMap A (Localization.AtPrime 𝔪)))
         (⟨Loc.transport hM c, e, hc, hnn, ha⟩ : MC (Localization.AtPrime 𝔪) n)
-    · obtain ⟨M', hE, hle⟩ := spread_adm 𝔪 I hM c e hadm
+    · obtain ⟨M', hE, hle⟩ := spread_adm 𝔪 I hIfg hM c e hadm
       exact ⟨M', hE, j, _, e, .refl _ _ _, hle, hSA.supp, hnn, ha,
         by rw [Loc.transport_trans]; exact hc⟩
-    · obtain ⟨hjn, -⟩ := hSA.step_data hadm
+    · obtain ⟨hjn, -⟩ := hSA.step_data_Q Fact.out hadm
       omega
   | succ d ih =>
     intro j hj M hM c e hc hnn ha hSA
     set Jc := Loc.transport hM c with hJc
     by_cases hadm : MC.Adm (I.map (algebraMap A (Localization.AtPrime 𝔪)))
         (⟨Jc, e, hc, hnn, ha⟩ : MC (Localization.AtPrime 𝔪) n)
-    · obtain ⟨M', hE, hle⟩ := spread_adm 𝔪 I hM c e hadm
+    · obtain ⟨M', hE, hle⟩ := spread_adm 𝔪 I hIfg hM c e hadm
       exact ⟨M', hE, j, _, e, .refl _ _ _, hle, hSA.supp, hnn, ha,
         by rw [Loc.transport_trans]; exact hc⟩
     obtain ⟨hjn, f, hf, β, l, hl, hβl, hlam, hNt, hunit, hb, u, hu, hc', hnn', ha', hSA'⟩ :=

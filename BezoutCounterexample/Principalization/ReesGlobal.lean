@@ -1,4 +1,11 @@
 import BezoutCounterexample.Principalization.MaxLocus
+import BezoutCounterexample.Principalization.CRFGen
+import BezoutCounterexample.Principalization.ComponentFilPt
+import BezoutCounterexample.Constructive.ChainLiftCanon
+import BezoutCounterexample.Constructive.Enum
+import BezoutCounterexample.Constructive.ChainLiftSmoothK
+import BezoutCounterexample.Principalization.CompFilDecPtL
+import BezoutCounterexample.Principalization.ComponentFilPtL
 
 /-!
 # The global weighted extended Rees algebra of a component
@@ -8,7 +15,9 @@ Notation 3.4 and Lemma 3.5 (2), (4) (`lem:rees`) of the paper.
 * `WFil.loc`, `reesMap_isLocalization`: extended Rees algebras localize.
 * `compFil`: the filtration `F_j = 𝓕_{j/d}` of a component of the maximal locus.
 * `compFil_le_iSup`, `reesAlg_eq_adjoin`, `reesAlg_finiteType`: generation in degrees `≤ d`.
-* `reesLoc_formallySmooth`, `rees_smooth`: the extended Rees algebra is smooth over `ℚ`.
+* `reesLoc_formallySmooth`, `rees_smooth`: the extended Rees algebra is smooth over `ℚ`: smooth
+  on a basic open `D(a)` around each point (spreading out the local computation), and glued over a
+  cover (`Constructive.ChainLiftSmoothK`); no quantification over the primes of the Rees algebra.
 -/
 
 noncomputable section
@@ -45,11 +54,11 @@ lemma lmap_C_mul_T {L : Type*} [CommRing L] [Algebra ℚ L] (f : B →+* L) (b :
 
 lemma laurent_coeff_sum {L : Type*} [CommRing L] {ι : Type*} (s : Finset ι) (f : ι → L[T;T⁻¹]) (j : ℤ) :
     (∑ i ∈ s, f i).coeff j = ∑ i ∈ s, (f i).coeff j := by
-  classical
-  induction s using Finset.induction_on with
+  show ((s.val.map f).sum).coeff j = (s.val.map fun i => (f i).coeff j).sum
+  induction s.val using Multiset.induction_on with
   | empty => simp
-  | insert i s his ih =>
-    rw [Finset.sum_insert his, Finset.sum_insert his, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, ih]
+  | cons a m ih => rw [Multiset.map_cons, Multiset.map_cons, Multiset.sum_cons,
+      Multiset.sum_cons, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, ih]
 
 /-- The induced map of extended Rees algebras. -/
 def reesMap : ReesAlg Φ →+* ReesAlg (Φ.loc L) :=
@@ -94,33 +103,46 @@ theorem reesMap_isLocalization (hM : M ≤ nonZeroDivisors B) :
       intro j
       obtain ⟨⟨a, m⟩, hm⟩ := (IsLocalization.mem_map_algebraMap_iff M L).1 (z.2 j)
       exact ⟨a, m, a.2, hm⟩
-    choose a m ha hm using hco
-    set S := (z : L[T;T⁻¹]).coeff.support
-    set μ : M := ∏ j ∈ S, m j
-    set q : B[T;T⁻¹] := ∑ j ∈ S,
-      LaurentPolynomial.C (a j * ∏ j' ∈ S.erase j, (m j' : B)) * T j
-    have hq : q ∈ ReesAlg Φ := by
-      refine Subalgebra.sum_mem _ fun j _ => C_mul_T_mem_ReesAlg ?_
-      exact Ideal.mul_mem_right _ _ (ha j)
+    -- a common denominator over a finite set of degrees, by induction (no choice)
+    have key : ∀ S : Finset ℤ, ∃ (μ : M) (q : B[T;T⁻¹]), q ∈ ReesAlg Φ ∧ ∀ j,
+        (if j ∈ S then (z : L[T;T⁻¹]).coeff j else 0) * algebraMap B L μ =
+          algebraMap B L (q.coeff j) := by
+      intro S
+      induction S using Finset.induction_on with
+      | empty => exact ⟨1, 0, zero_mem _, fun j => by simp⟩
+      | insert j₀ S hj₀ ih =>
+        obtain ⟨μ, q, hq, hμq⟩ := ih
+        obtain ⟨a, m, ha, hm⟩ := hco j₀
+        refine ⟨μ * m, LaurentPolynomial.C (m : B) * q +
+          LaurentPolynomial.C (a * μ) * T j₀, ?_, fun j => ?_⟩
+        · refine add_mem (mul_mem ?_ hq) (C_mul_T_mem_ReesAlg (Ideal.mul_mem_right _ _ ha))
+          rw [LaurentPolynomial.C_eq_algebraMap]; exact Subalgebra.algebraMap_mem _ _
+        · rw [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, coeff_C_mul', coeff_C_mul_T,
+            Submonoid.coe_mul, map_add, map_mul, map_mul]
+          by_cases hj : j = j₀
+          · subst hj
+            have h0 := hμq j
+            rw [if_neg hj₀, zero_mul] at h0
+            rw [if_pos (Finset.mem_insert_self _ _), if_pos rfl, ← h0, mul_zero, zero_add,
+              map_mul, ← hm]
+            ring
+          · rw [if_neg hj, map_zero, add_zero]
+            have h1 := hμq j
+            have hS : (j ∈ insert j₀ S) = (j ∈ S) := propext (by simp [hj])
+            simp only [hS]
+            rw [← h1]
+            ring
+    obtain ⟨μ, q, hq, hμq⟩ := key (z : L[T;T⁻¹]).coeff.support
     refine ⟨⟨⟨q, hq⟩, ⟨algebraMap B (ReesAlg Φ) μ, ⟨μ, μ.2, rfl⟩⟩⟩, ?_⟩
     apply Subtype.ext
     simp only
     rw [hmapB]
     show (z : L[T;T⁻¹]) * algebraMap L L[T;T⁻¹] (algebraMap B L μ) = lmap (algebraMap B L) q
     ext j
-    rw [← LaurentPolynomial.C_eq_algebraMap, mul_comm, coeff_C_mul', lmap_coeff]
-    have hqj : q.coeff j = if j ∈ S then a j * ∏ j' ∈ S.erase j, (m j' : B) else 0 := by
-      simp only [q]
-      rw [laurent_coeff_sum]
-      simp_rw [coeff_C_mul_T]
-      rw [Finset.sum_ite_eq]
-    rw [hqj]
-    split_ifs with hj
-    · rw [map_mul, ← hm j, map_prod, mul_comm, mul_assoc]
-      congr 1
-      rw [Submonoid.coe_finsetProd, map_prod, ← Finset.mul_prod_erase S _ hj]
-    · have : (z : L[T;T⁻¹]).coeff j = 0 := Finsupp.notMem_support_iff.1 hj
-      rw [this, mul_zero, map_zero]
+    rw [← LaurentPolynomial.C_eq_algebraMap, mul_comm, coeff_C_mul', lmap_coeff, ← hμq j]
+    by_cases hj : j ∈ (z : L[T;T⁻¹]).coeff.support
+    · rw [if_pos hj, mul_comm]
+    · rw [if_neg hj, Finsupp.notMem_support_iff.1 hj, mul_zero, zero_mul]
   · intro x y hxy
     refine ⟨1, ?_⟩
     have : (reesMap Φ L x : L[T;T⁻¹]) = reesMap Φ L y := congrArg Subtype.val hxy
@@ -171,37 +193,54 @@ lemma Ideal.le_of_forall_map {J J' : Ideal A}
   exact J'.mul_mem_left _ hmx
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) (d : ℕ)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) (d : ℕ)
 
-/-- The component filtration `F_j = 𝓕_{j/d}` as a filtration. -/
-def compFil : WFil A where
-  F j := compF I 𝔭 ((j : ℚ) / d)
+/-- The component filtration `F_j = 𝓕_{j/d}` as a filtration, at explicit points (D3.3d, R1). The
+proof fields need neither `LocusComp.mem` nor `cRF_eq` (CRFGen, D3.6); `hI hmax h𝔭` stay in the
+signature (explicit binders: `include` does not apply to definitions). -/
+def compFil (hI : I ≠ ⊥)
+    (hmax : IsMaxInvPt I v₀)
+    (h𝔭 : LocusComp I v₀ 𝔭) (d : ℕ) : WFil A where
+  F j := compFPt I 𝔭 ((j : ℚ) / d)
   mul_le a b := by
     rw [Ideal.mul_le]
     intro f hf g hg
-    rw [mem_compF] at hf hg ⊢
-    intro 𝔪 _ h𝔭𝔪
-    have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
-    have := cRF_mul_le hI hZ.1 hZ.2 _ _ (Ideal.mul_mem_mul (hf 𝔪 h𝔭𝔪) (hg 𝔪 h𝔭𝔪))
+    rw [mem_compFPt] at hf hg ⊢
+    intro p h𝔭p
+    have := cRF_mul_le_gen I p.ker _ _ (Ideal.mul_mem_mul (hf p h𝔭p) (hg p h𝔭p))
     rw [map_mul]
     convert this using 2
     push_cast; ring
   zero_eq := by
     ext f
     simp only [Int.cast_zero, zero_div, Submodule.mem_top, iff_true]
-    rw [mem_compF]
-    intro 𝔪 _ h𝔭𝔪
-    have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
-    rw [cRF_of_nonpos hI hZ.1 hZ.2 le_rfl]; trivial
+    rw [mem_compFPt]
+    intro p _
+    rw [cRF_of_nonpos_gen I p.ker le_rfl]; trivial
 
 include hI hmax h𝔭
 
-lemma compFil_F (j : ℤ) : (compFil hI hmax h𝔭 d).F j = compF I 𝔭 ((j : ℚ) / d) := rfl
 
+/-- **R1**: the steps of the filtration are the filtration at points. -/
+lemma compFil_F (j : ℤ) : (compFil hI hmax h𝔭 d).F j = compFPt I 𝔭 ((j : ℚ) / d) := rfl
+
+/-- The steps as the classical filtration (comparison; off the path). -/
+lemma compFil_F_eq_compF (j : ℤ) : (compFil hI hmax h𝔭 d).F j = compF I 𝔭 ((j : ℚ) / d) :=
+  compFPt_eq_compF I 𝔭 _
+
+/-- The localized filtration at a maximal ideal above `𝔭` (classical: `compF_map` at an arbitrary
+maximal ideal; off the path, see `compFil_loc_F_pt`). -/
 lemma compFil_loc_F (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : 𝔭 ≤ 𝔪) (j : ℤ) :
-    ((compFil hI hmax h𝔭 d).loc (Localization.AtPrime 𝔪)).F j = cRF I 𝔪 ((j : ℚ) / d) :=
-  compF_map hI hmax h𝔭 𝔪 h𝔭𝔪 _
+    ((compFil hI hmax h𝔭 d).loc (Localization.AtPrime 𝔪)).F j = cRF I 𝔪 ((j : ℚ) / d) := by
+  show ((compFil hI hmax h𝔭 d).F j).map _ = _
+  rw [compFil_F_eq_compF]
+  exact compF_map hI (IsMaxInvPt.toMax hmax) h𝔭.toMin 𝔪 h𝔭𝔪 _
+
+/-- **The localized filtration at a point above `𝔭`** (R3). -/
+lemma compFil_loc_F_pt [Fact (Constructive.HasPres A)] (p : Pt A) (h𝔭p : 𝔭 ≤ p.ker) (j : ℤ) :
+    ((compFil hI hmax h𝔭 d).loc (Localization.AtPrime p.ker)).F j = cRF I p.ker ((j : ℚ) / d) :=
+  h𝔭.map_compFPt_pt hI hmax _ p h𝔭p
 
 end BezoutCounterexample.Principalization
 
@@ -233,95 +272,119 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
 include hI hmax h𝔭 hd hw
 
-/-- **Generation in bounded degrees**: `F_j = ∑_{1 ≤ l ≤ d} F_l F_{j-l}` for `j > d`. -/
-theorem compFil_le_iSup {j : ℤ} (hj : (d : ℤ) < j) :
+/-- **Generation in bounded degrees**: `F_j = ∑_{1 ≤ l ≤ d} F_l F_{j-l}` for `j > d`.
+Constructive (D3.3d): comaximal local–global over a chart cover at points (`ChartCoverPt`,
+`Ideal.mem_of_cover`). On `D(i)`, `i ∈ 𝔭`, a power of `i` lies in `F_1 F_{j-1}` (I3); on the chart
+`D(gₖ)`, `F_t` is the chart ideal (I2) and a monomial of weight `≥ j/d` splits off one coordinate
+`x_i` of weight `wᵢ/d`, `1 ≤ wᵢ ≤ d`. -/
+theorem compFil_le_iSup [Fact (Constructive.HasPres A)] {j : ℤ} (hj : (d : ℤ) < j) :
     (compFil hI hmax h𝔭 d).F j ≤
       ⨆ l ∈ Finset.Icc (1 : ℤ) d, (compFil hI hmax h𝔭 d).F l * (compFil hI hmax h𝔭 d).F (j - l) := by
   set Φ := compFil hI hmax h𝔭 d
-  apply Ideal.le_of_forall_map
-  intro 𝔪 _
-  by_cases h𝔭𝔪 : 𝔭 ≤ 𝔪
-  · have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
-    obtain ⟨n, e, ⟨⟨J, hJ, hJe⟩, hmin⟩, hev⟩ := hZ.2
-    have hJi : IsInv (Iloc I 𝔪) n J.e := ⟨⟨J, hJ, rfl⟩, by rw [hJe]; exact hmin⟩
-    have hloc : ∀ l : ℤ, (Φ.F l).map (algebraMap A (Localization.AtPrime 𝔪)) =
-        J.RF ((l : ℚ) / d) := fun l => by
-      rw [show (Φ.F l).map _ = (Φ.loc (Localization.AtPrime 𝔪)).F l from rfl,
-        compFil_loc_F hI hmax h𝔭 d 𝔪 h𝔭𝔪, cRF_eq hI hZ.1 hJ hJi]
-    rw [hloc, MC.RF, Chart.RF, Ideal.span_le]
-    rintro _ ⟨α, h0, hα, rfl⟩
-    -- pick a coordinate occurring in `α`
-    have hα0 : α ≠ 0 := by
-      rintro rfl
-      rw [lam_zero] at hα
-      have : (0 : ℚ) < (j : ℚ) / d := div_pos (by exact_mod_cast (by omega : (0 : ℤ) < j))
-        (by exact_mod_cast hd)
+  set Rj := ⨆ l ∈ Finset.Icc (1 : ℤ) d, Φ.F l * Φ.F (j - l)
+  have hdq : (0 : ℚ) < d := by exact_mod_cast hd
+  have hR : ∀ l : ℤ, 1 ≤ l → l ≤ d → Φ.F l * Φ.F (j - l) ≤ Rj := fun l h1 h2 =>
+    le_iSup₂_of_le (f := fun l (_ : l ∈ Finset.Icc (1 : ℤ) d) => Φ.F l * Φ.F (j - l)) l
+      (Finset.mem_Icc.2 ⟨h1, h2⟩) le_rfl
+  -- D3.8 (E2): the cover `exists_chartCoverPtL` from the generators and charts of `h𝔭`
+  obtain ⟨lI, hlI⟩ := h𝔭.gensI
+  obtain ⟨dim, hchartn⟩ := h𝔭.chartn
+  have hchart := h𝔭.hchart
+  obtain ⟨C, -, -⟩ := h𝔭.exists_chartCoverPtL hI hmax lI hlI dim hchartn
+  have hZ : ∀ p : Pt A, 𝔭 ≤ p.ker → I ≤ p.ker ∧ InvAt I p.ker v₀ :=
+    fun p h => h𝔭.mem_ptL hI lI hlI hchart hmax p h
+  intro x hx
+  have h1 : (1 : A) ∈ Constructive.lspan (C.i :: List.ofFn fun k => (C.D k).g) := by
+    rw [← C.one]
+    refine Ideal.add_mem _ (Ideal.subset_span List.mem_cons_self)
+      (Ideal.sum_mem _ fun k _ => Ideal.mul_mem_left _ _ (Ideal.subset_span ?_))
+    exact List.mem_cons_of_mem _ (List.mem_ofFn.2 ⟨k, rfl⟩)
+  refine Ideal.mem_of_cover _ h1 fun g hg => ?_
+  rcases List.mem_cons.1 hg with rfl | hg
+  · -- `D(i)`: `i^(b + b') ∈ F_1 F_{j-1}`
+    obtain ⟨b, hb⟩ := h𝔭.exists_pow_mem_compFPt_ptL hI lI hlI hchart hmax hd hw C.hi
+      (((1 : ℤ) : ℚ) / d)
+    obtain ⟨b', hb'⟩ := h𝔭.exists_pow_mem_compFPt_ptL hI lI hlI hchart hmax hd hw C.hi
+      (((j - 1 : ℤ) : ℚ) / d)
+    have hb1 : C.i ^ b ∈ Φ.F 1 := hb
+    have hb2 : C.i ^ b' ∈ Φ.F (j - 1) := hb'
+    refine ⟨b + b', ?_⟩
+    rw [pow_add]
+    exact Ideal.mul_mem_right _ _ (hR 1 le_rfl (by exact_mod_cast hd) (Ideal.mul_mem_mul hb1 hb2))
+  obtain ⟨k, rfl⟩ := List.mem_ofFn.1 hg
+  set D := C.D k
+  have hmap : ∀ l : ℤ, (Φ.F l).map (algebraMap A D.B) = D.RFB ((l : ℚ) / d) := fun l =>
+    C.map_compFPt_L hI lI hlI hchart hZ _ k
+  refine exists_pow_mul_mem_of_away D.g D.B ?_
+  have hxB : algebraMap A D.B x ∈ D.RFB ((j : ℚ) / d) := by
+    rw [← hmap]; exact Ideal.mem_map_of_mem _ hx
+  have hI' : I ≤ (C.pt k).ker := (hZ _ (C.le k)).1
+  revert hxB
+  generalize algebraMap A D.B x = y
+  intro hy
+  refine (show D.RFB ((j : ℚ) / d) ≤ Rj.map (algebraMap A D.B) from ?_) hy
+  rw [LocDataPt.RFB, Chart.RF, Ideal.span_le]
+  rintro _ ⟨α, h0, hα, rfl⟩
+  -- pick a coordinate occurring in `α` (decided coordinatewise)
+  obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := by
+    rcases Constructive.fin_forall_or_exists (A := fun i => α i = 0) (B := fun i => α i ≠ 0)
+      (fun i => (Nat.decEq (α i) 0).em) with h | h
+    · exfalso
+      rw [show α = 0 from Finsupp.ext h, lam_zero] at hα
+      have : (0 : ℚ) < (j : ℚ) / d := div_pos (by exact_mod_cast (by omega : (0 : ℤ) < j)) hdq
       linarith
-    obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := by
-      by_contra h; push Not at h; exact hα0 (Finsupp.ext h)
-    have hei : J.e i ≠ 0 := fun h => hi (h0 i h)
-    have hv : J.e i = v₀ i := by
-      rw [← hev, hJe, ext0_apply]
-    obtain ⟨w, hw'⟩ := hw i
-    rw [← hv] at hw'
-    have hle1 : J.e i ≤ 1 := hJi.le_one (Iloc_le hZ.1) i
-    have hpos : 0 < J.e i := lt_of_le_of_ne (J.nonneg i) (Ne.symm hei)
-    have hdq : (0 : ℚ) < d := by exact_mod_cast hd
-    have hw1 : 1 ≤ w := by
-      have : (0 : ℚ) < w := by rw [hw']; positivity
-      exact_mod_cast this
-    have hwd : w ≤ d := by
-      have : (w : ℚ) ≤ d := by rw [hw']; nlinarith
-      exact_mod_cast this
-    have hei' : J.e i = (w : ℚ) / d := by rw [hw']; field_simp
-    -- split off `x_i`
-    set β := α - Finsupp.single i 1
-    have hαβ : α = β + Finsupp.single i 1 := by
-      rw [tsub_add_cancel_of_le]
-      exact Finsupp.single_le_iff.2 (Nat.one_le_iff_ne_zero.2 hi)
-    have hprod : ∏ l, J.c.x l ^ α l = J.c.x i * ∏ l, J.c.x l ^ β l := by
-      rw [hαβ]
-      simp only [Finsupp.add_apply, pow_add, Finset.prod_mul_distrib]
-      rw [mul_comm, Finset.prod_eq_single i]
-      · simp
-      · intro l _ hl; simp [Ne.symm hl]
-      · simp
-    have hlamβ : lam J.e β = lam J.e α - J.e i := by
-      rw [hαβ, lam_add, lam_single]; ring
-    have h1 : J.c.x i ∈ J.RF ((w : ℤ) / (d : ℚ)) := by
-      have := J.c.x_mem_RF J.e i hei
-      rw [hei'] at this; push_cast; exact this
-    have h2 : ∏ l, J.c.x l ^ β l ∈ J.RF (((j - w : ℤ) : ℚ) / d) := by
-      apply Ideal.subset_span
-      refine ⟨β, fun l hl => ?_, ?_, rfl⟩
-      · have := h0 l hl
-        rw [hαβ, Finsupp.add_apply] at this
-        omega
-      · rw [hlamβ, hei']
-        push_cast
-        rw [sub_div]
-        linarith
-    rw [SetLike.mem_coe, hprod, Ideal.map_iSup]
-    refine Ideal.mem_iSup_of_mem (w : ℤ) ?_
-    rw [Ideal.map_iSup]
-    refine Ideal.mem_iSup_of_mem (Finset.mem_Icc.2 ⟨by exact_mod_cast hw1, by exact_mod_cast hwd⟩) ?_
-    rw [Ideal.map_mul, hloc, hloc]
-    exact Ideal.mul_mem_mul h1 h2
-  · have htop : ∀ l : ℤ, (Φ.F l).map (algebraMap A (Localization.AtPrime 𝔪)) = ⊤ := fun l =>
-      compF_map_of_not_le hI hmax h𝔭 hd hw 𝔪 h𝔭𝔪 _
-    rw [htop]
-    refine le_top.trans (le_of_eq ?_)
-    symm
-    rw [Ideal.map_iSup, eq_top_iff]
-    refine le_trans ?_ (le_iSup _ (1 : ℤ))
-    rw [Ideal.map_iSup]
-    refine le_trans ?_ (le_iSup _ (Finset.mem_Icc.2 ⟨le_rfl, by exact_mod_cast hd⟩))
-    rw [Ideal.map_mul, htop, htop, Ideal.top_mul]
+    · exact h
+  have hei : D.ek i ≠ 0 := fun h => hi (h0 i h)
+  have hv : D.ek i = v₀ i := by
+    have := congrFun D.hv i
+    rwa [ext0_apply] at this
+  obtain ⟨w, hw'⟩ := hw i
+  rw [← hv] at hw'
+  have hle1 : D.ek i ≤ 1 := D.inv.le_one (Iloc_le hI') i
+  have hpos : 0 < D.ek i := lt_of_le_of_ne (D.inv.nonneg i) (Ne.symm hei)
+  have hw1 : 1 ≤ w := by
+    have : (0 : ℚ) < w := by rw [hw']; positivity
+    exact_mod_cast this
+  have hwd : w ≤ d := by
+    have : (w : ℚ) ≤ d := by rw [hw']; nlinarith
+    exact_mod_cast this
+  have hei' : D.ek i = (w : ℚ) / d := by rw [hw']; field_simp
+  -- split off `x_i`
+  set β := α - Finsupp.single i 1
+  have hαβ : α = β + Finsupp.single i 1 := by
+    rw [tsub_add_cancel_of_le]
+    exact Finsupp.single_le_iff.2 (Nat.one_le_iff_ne_zero.2 hi)
+  have hprod : ∏ l, D.cB.x l ^ α l = D.cB.x i * ∏ l, D.cB.x l ^ β l := by
+    rw [hαβ]
+    simp only [Finsupp.add_apply, pow_add, Finset.prod_mul_distrib]
+    rw [mul_comm, Finset.prod_eq_single i]
+    · simp
+    · intro l _ hl; simp [Ne.symm hl]
+    · simp
+  have hlamβ : lam D.ek β = lam D.ek α - D.ek i := by
+    rw [hαβ, lam_add, lam_single]; ring
+  have h1 : D.cB.x i ∈ D.RFB (((w : ℤ) : ℚ) / d) := by
+    have := D.cB.x_mem_RF D.ek i hei
+    rw [hei'] at this; push_cast; exact this
+  have h2 : ∏ l, D.cB.x l ^ β l ∈ D.RFB (((j - w : ℤ) : ℚ) / d) := by
+    apply Ideal.subset_span
+    refine ⟨β, fun l hl => ?_, ?_, rfl⟩
+    · have := h0 l hl
+      rw [hαβ, Finsupp.add_apply] at this
+      omega
+    · rw [hlamβ, hei']
+      push_cast
+      rw [sub_div]
+      linarith
+  rw [SetLike.mem_coe, hprod]
+  refine Ideal.map_mono (hR w (by exact_mod_cast hw1) (by exact_mod_cast hwd)) ?_
+  rw [Ideal.map_mul, hmap, hmap]
+  exact Ideal.mul_mem_mul h1 h2
 
 end BezoutCounterexample.Principalization
 
@@ -334,39 +397,74 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) (d : ℕ)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) (d : ℕ)
 
 include hI hmax h𝔭 in
 lemma compFil_F_nonpos {j : ℤ} (hj : j ≤ 0) : (compFil hI hmax h𝔭 d).F j = ⊤ := by
   rw [eq_top_iff]
   intro f _
-  rw [compFil_F, mem_compF]
-  intro 𝔪 _ h𝔭𝔪
-  have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
-  rw [cRF_of_nonpos hI hZ.1 hZ.2 (div_nonpos_of_nonpos_of_nonneg (by exact_mod_cast hj)
+  rw [compFil_F, mem_compFPt]
+  intro p _
+  -- D3.8: `cRF_of_nonpos_gen` (no `LocusComp.mem`, no `cRF_eq`)
+  rw [cRF_of_nonpos_gen I p.ker (div_nonpos_of_nonpos_of_nonneg (by exact_mod_cast hj)
     (Nat.cast_nonneg d))]
   trivial
 
-/-- Finite generating sets of the filtration steps. -/
-def gensF (j : ℤ) : Finset A :=
-  (IsNoetherian.noetherian ((compFil hI hmax h𝔭 d).F j : Submodule A A)).choose
+/-- **Canonical generators of the filtration steps** (data; R2): the canonical generators
+(`ChainLiftCanon`) of `F_j`, for an enumeration `en` of `A`. A function of the ideal `F_j` alone. -/
+def canonGensF [hp : Fact (Constructive.HasPres A)] (en : ℕ → A) (hen : Function.Surjective en)
+    (j : ℤ) : List A :=
+  Constructive.canonGens en hen hp.out.mem_dec ((compFil hI hmax h𝔭 d).F j)
+    (h𝔭.exists_lspan_compFPtP hI hmax _)
 
-lemma span_gensF (j : ℤ) : Ideal.span (gensF hI hmax h𝔭 d j : Set A) = (compFil hI hmax h𝔭 d).F j :=
-  (IsNoetherian.noetherian ((compFil hI hmax h𝔭 d).F j : Submodule A A)).choose_spec
+lemma lspan_canonGensF [Fact (Constructive.HasPres A)] (en : ℕ → A) (hen : Function.Surjective en)
+    (j : ℤ) : Constructive.lspan (canonGensF hI hmax h𝔭 d en hen j) = (compFil hI hmax h𝔭 d).F j :=
+  Constructive.lspan_canonGens _ _ _ _ _
+
+/-- **Generating lists of the filtration steps** (group B): the canonical generators of the stage
+enumeration (`Constructive.Enum`). -/
+def gensF [Fact (Constructive.HasPres A)] [Constructive.Enum A] (j : ℤ) : List A :=
+  canonGensF hI hmax h𝔭 d Constructive.Enum.en Constructive.Enum.hen j
+
+lemma span_gensF [Fact (Constructive.HasPres A)] [Constructive.Enum A] (j : ℤ) :
+    Ideal.span {g | g ∈ gensF hI hmax h𝔭 d j} = (compFil hI hmax h𝔭 d).F j :=
+  lspan_canonGensF hI hmax h𝔭 d _ _ j
+
+/-- The pairs `(j, g)`, `1 ≤ j ≤ d`, `g ∈ canonGensF j` (over `List.range`, no `Finset.toList`). -/
+def canonGenPairs [Fact (Constructive.HasPres A)] (en : ℕ → A) (hen : Function.Surjective en) :
+    List (ℤ × A) :=
+  (List.range d).flatMap fun k : ℕ => (canonGensF hI hmax h𝔭 d en hen ((k : ℤ) + 1)).map fun g =>
+    ((k : ℤ) + 1, g)
+
+lemma mem_canonGenPairs [Fact (Constructive.HasPres A)] (en : ℕ → A) (hen : Function.Surjective en)
+    {q : ℤ × A} : q ∈ canonGenPairs hI hmax h𝔭 d en hen ↔
+      1 ≤ q.1 ∧ q.1 ≤ d ∧ q.2 ∈ canonGensF hI hmax h𝔭 d en hen q.1 := by
+  obtain ⟨j, g⟩ := q
+  rw [canonGenPairs, List.mem_flatMap]
+  constructor
+  · rintro ⟨k, hk, hq⟩
+    obtain ⟨g', hg', he⟩ := List.mem_map.1 hq
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj he
+    have := List.mem_range.1 hk
+    exact ⟨by omega, by omega, hg'⟩
+  · rintro ⟨h1, hd, hg⟩
+    refine ⟨(j - 1).toNat, List.mem_range.2 (by omega), List.mem_map.2 ⟨g, ?_, ?_⟩⟩
+    · rwa [show ((j - 1).toNat : ℤ) + 1 = j by omega]
+    · rw [show ((j - 1).toNat : ℤ) + 1 = j by omega]
 
 /-- Generators of the extended Rees algebra: `T⁻¹` and `g T^j` for generators `g` of `F_j`,
 `1 ≤ j ≤ d`. -/
-def reesGenSet : Set A[T;T⁻¹] :=
+def reesGenSet [Fact (Constructive.HasPres A)] [Constructive.Enum A] : Set A[T;T⁻¹] :=
   {T (-1)} ∪ ⋃ j ∈ Finset.Icc (1 : ℤ) d,
-    (fun g => LaurentPolynomial.C g * T j) '' (gensF hI hmax h𝔭 d j : Set A)
+    (fun g => LaurentPolynomial.C g * T j) '' {g | g ∈ gensF hI hmax h𝔭 d j}
 
-lemma reesGenSet_finite : (reesGenSet hI hmax h𝔭 d).Finite := by
+lemma reesGenSet_finite [Fact (Constructive.HasPres A)] [Constructive.Enum A] : (reesGenSet hI hmax h𝔭 d).Finite := by
   refine (Set.finite_singleton _).union ?_
   refine Set.Finite.biUnion (Finset.finite_toSet _) fun j _ => ?_
-  exact (Finset.finite_toSet _).image _
+  exact (List.finite_toSet _).image _
 
-lemma reesGenSet_subset : reesGenSet hI hmax h𝔭 d ⊆ ReesAlg (compFil hI hmax h𝔭 d) := by
+lemma reesGenSet_subset [Fact (Constructive.HasPres A)] [Constructive.Enum A] : reesGenSet hI hmax h𝔭 d ⊆ ReesAlg (compFil hI hmax h𝔭 d) := by
   rintro _ (h | h)
   · rw [Set.mem_singleton_iff] at h
     subst h
@@ -380,10 +478,15 @@ lemma reesGenSet_subset : reesGenSet hI hmax h𝔭 d ⊆ ReesAlg (compFil hI hma
 variable (hd : 0 < d) (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
 include hd hw
 
-/-- Every homogeneous element lies in the algebra generated by `reesGenSet`. -/
-theorem C_mul_T_mem_adjoin (j : ℤ) (f : A) (hf : f ∈ (compFil hI hmax h𝔭 d).F j) :
-    LaurentPolynomial.C f * T j ∈ Algebra.adjoin A (reesGenSet hI hmax h𝔭 d) := by
-  set R' := Algebra.adjoin A (reesGenSet hI hmax h𝔭 d)
+/-- **R2, generic in the generators**: every homogeneous element lies in the algebra generated by
+`T⁻¹` and `g T^j` for `g` in a generating set of `F_j`, `1 ≤ j ≤ d`. -/
+theorem C_mul_T_mem_adjoin_set [Fact (Constructive.HasPres A)] (gens : ℤ → Set A)
+    (hgens : ∀ j : ℤ, 1 ≤ j → j ≤ d → Ideal.span (gens j) = (compFil hI hmax h𝔭 d).F j)
+    (j : ℤ) (f : A) (hf : f ∈ (compFil hI hmax h𝔭 d).F j) :
+    LaurentPolynomial.C f * T j ∈ Algebra.adjoin A ({T (-1)} ∪ ⋃ j ∈ Finset.Icc (1 : ℤ) d,
+      (fun g => LaurentPolynomial.C g * T j) '' gens j) := by
+  set R' := Algebra.adjoin A ({T (-1)} ∪ ⋃ j ∈ Finset.Icc (1 : ℤ) d,
+      (fun g => LaurentPolynomial.C g * T j) '' gens j)
   set Φ := compFil hI hmax h𝔭 d
   -- the ideal of coefficients in degree `j`
   let Mj : ℤ → Ideal A := fun j =>
@@ -405,7 +508,7 @@ theorem C_mul_T_mem_adjoin (j : ℤ) (f : A) (hf : f ∈ (compFil hI hmax h𝔭 
     · have hj1 : 1 ≤ j := by omega
       rw [← hMj]
       have hle : Φ.F j ≤ Mj j := by
-        rw [← span_gensF, Ideal.span_le]
+        rw [← hgens j hj1 hjd, Ideal.span_le]
         intro g hg
         rw [SetLike.mem_coe, hMj]
         apply Algebra.subset_adjoin
@@ -438,8 +541,28 @@ theorem C_mul_T_mem_adjoin (j : ℤ) (f : A) (hf : f ∈ (compFil hI hmax h𝔭 
         rw [this]; exact R'.mul_mem h1 h2
   exact main j.toNat j (Int.self_le_toNat j) f hf
 
+/-- Every homogeneous element lies in the algebra generated by `reesGenSet`. -/
+theorem C_mul_T_mem_adjoin [Constructive.Enum A] [Fact (Constructive.HasPres A)] (j : ℤ) (f : A)
+    (hf : f ∈ (compFil hI hmax h𝔭 d).F j) :
+    LaurentPolynomial.C f * T j ∈ Algebra.adjoin A (reesGenSet hI hmax h𝔭 d) :=
+  C_mul_T_mem_adjoin_set hI hmax h𝔭 d hd hw (fun j => {g | g ∈ gensF hI hmax h𝔭 d j})
+    (fun j _ _ => span_gensF hI hmax h𝔭 d j) j f hf
+
+omit hd hw in
+/-- The generating set of a generator family given as lists. -/
+def reesGenSetOf (gens : ℤ → List A) : Set A[T;T⁻¹] :=
+  {T (-1)} ∪ ⋃ j ∈ Finset.Icc (1 : ℤ) d, (fun g => LaurentPolynomial.C g * T j) '' {g | g ∈ gens j}
+
+/-- **R2 for a list family of generators** (the interface of the Rees certificate; any `gens` with
+`lspan (gens j) = F_j` for `1 ≤ j ≤ d`, e.g. `canonGensF`). -/
+theorem C_mul_T_mem_adjoin_of [Fact (Constructive.HasPres A)] (gens : ℤ → List A)
+    (hgens : ∀ j : ℤ, 1 ≤ j → j ≤ d → Constructive.lspan (gens j) = (compFil hI hmax h𝔭 d).F j)
+    (j : ℤ) (f : A) (hf : f ∈ (compFil hI hmax h𝔭 d).F j) :
+    LaurentPolynomial.C f * T j ∈ Algebra.adjoin A (reesGenSetOf d gens) :=
+  C_mul_T_mem_adjoin_set hI hmax h𝔭 d hd hw (fun j => {g | g ∈ gens j}) hgens j f hf
+
 /-- **The extended Rees algebra is generated by `reesGenSet`.** -/
-theorem reesAlg_eq_adjoin :
+theorem reesAlg_eq_adjoin [Constructive.Enum A] [Fact (Constructive.HasPres A)] :
     ReesAlg (compFil hI hmax h𝔭 d) = Algebra.adjoin A (reesGenSet hI hmax h𝔭 d) := by
   apply le_antisymm
   · intro p hp
@@ -454,7 +577,9 @@ theorem reesAlg_eq_adjoin :
     exact reesGenSet_subset hI hmax h𝔭 d
 
 /-- **The extended Rees algebra is of finite type.** -/
-theorem reesAlg_finiteType : Algebra.FiniteType A (ReesAlg (compFil hI hmax h𝔭 d)) := by
+theorem reesAlg_finiteType [Fact (Constructive.HasPres A)] : Algebra.FiniteType A (ReesAlg (compFil hI hmax h𝔭 d)) := by
+  obtain ⟨_E⟩ := Constructive.HasPres.nonempty_enum (Fact.out : Constructive.HasPres A)
+  letI := _E
   have hfg : (ReesAlg (compFil hI hmax h𝔭 d)).FG := by
     rw [reesAlg_eq_adjoin hI hmax h𝔭 d hd hw]
     exact Subalgebra.fg_def.2 ⟨_, reesGenSet_finite hI hmax h𝔭 d, rfl⟩
@@ -485,8 +610,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
 include hI hmax h𝔭 hd hw
 
@@ -495,7 +620,7 @@ theorem reesLoc_formallySmooth (𝔪 : Ideal A) [𝔪.IsMaximal] :
     Algebra.FormallySmooth ℚ (ReesAlg ((compFil hI hmax h𝔭 d).loc (Localization.AtPrime 𝔪))) := by
   set Φ' := (compFil hI hmax h𝔭 d).loc (Localization.AtPrime 𝔪)
   by_cases h𝔭𝔪 : 𝔭 ≤ 𝔪
-  · have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
+  · have hZ := h𝔭.mem_max hI hmax 𝔪 h𝔭𝔪
     obtain ⟨n, e, ⟨⟨J, hJ, hJe⟩, hmin⟩, hev⟩ := hZ.2
     have hJi : IsInv (Iloc I 𝔪) n J.e := ⟨⟨J, hJ, rfl⟩, by rw [hJe]; exact hmin⟩
     have := residueField_isIntegral 𝔪
@@ -514,7 +639,7 @@ theorem reesLoc_formallySmooth (𝔪 : Ideal A) [𝔪.IsMaximal] :
       rw [eq_top_iff]
       intro p _ j
       show p.coeff j ∈ ((compFil hI hmax h𝔭 d).F j).map _
-      rw [compFil_F, compF_map_of_not_le hI hmax h𝔭 hd hw 𝔪 h𝔭𝔪]; trivial
+      rw [compFil_F_eq_compF, compF_map_of_not_le hI (IsMaxInvPt.toMax hmax) h𝔭.toMin hd hw 𝔪 h𝔭𝔪]; trivial
     exact Algebra.FormallySmooth.of_equiv
       (((Subalgebra.equivOfEq _ _ htop).trans Subalgebra.topEquiv).restrictScalars ℚ).symm
 
@@ -529,59 +654,56 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
 include hI hmax h𝔭 hd hw
 
-theorem rees_finitePresentation :
+theorem rees_finitePresentation [Fact (Constructive.HasPres A)] :
     Algebra.FinitePresentation ℚ (ReesAlg (compFil hI hmax h𝔭 d)) := by
   have := reesAlg_finiteType hI hmax h𝔭 d hd hw
   have : Algebra.FiniteType ℚ (ReesAlg (compFil hI hmax h𝔭 d)) :=
     Algebra.FiniteType.trans (S := A) inferInstance inferInstance
   exact Algebra.FinitePresentation.of_finiteType.1 inferInstance
 
-/-- **The extended Rees algebra is smooth over `ℚ`.** -/
-theorem rees_smooth : Algebra.Smooth ℚ (ReesAlg (compFil hI hmax h𝔭 d)) := by
+omit hI hmax h𝔭 hd hw in
+/-- The only use of maximal ideals in `rees_smooth`: a set of elements meeting the complement of
+every maximal ideal generates the unit ideal (Zorn; to be replaced by explicit points, Task C). -/
+lemma span_eq_top_of_forall_isMaximal {B : Type*} [CommRing B] (s : Set B)
+    (h : ∀ 𝔪 : Ideal B, 𝔪.IsMaximal → ∃ a ∈ s, a ∉ 𝔪) : Ideal.span s = ⊤ := by
+  by_contra hne
+  obtain ⟨𝔪, h𝔪, hle⟩ := Ideal.exists_le_maximal _ hne
+  obtain ⟨a, ha, ha𝔪⟩ := h 𝔪 h𝔪
+  exact ha𝔪 (hle (Ideal.subset_span ha))
+
+/-- **The extended Rees algebra is smooth over `ℚ`.** Around each maximal ideal `𝔪` of `A` the
+localized Rees algebra is formally smooth (`reesLoc_formallySmooth`); this spreads out to a basic
+open `D(a)`, `a ∉ 𝔪` (`exists_away_smooth_of_isLocalization`), and the pieces glue
+(`smooth_of_span_cover`). -/
+theorem rees_smooth [Fact (Constructive.HasPres A)] : Algebra.Smooth ℚ (ReesAlg (compFil hI hmax h𝔭 d)) := by
   set Φ := compFil hI hmax h𝔭 d
   set R := ReesAlg Φ
   have := rees_finitePresentation hI hmax h𝔭 hd hw
-  refine ⟨?_, inferInstance⟩
-  rw [← Algebra.smoothLocus_eq_univ_iff, Set.eq_univ_iff_forall]
-  intro P
-  show Algebra.FormallySmooth ℚ (Localization.AtPrime P.asIdeal)
-  set 𝔮 := P.asIdeal.comap (algebraMap A R)
-  have : 𝔮.IsPrime := Ideal.comap_isPrime _ _
-  obtain ⟨𝔪, h𝔪, h𝔮𝔪⟩ := Ideal.exists_le_maximal 𝔮 (Ideal.IsPrime.ne_top ‹_›)
-  have := h𝔪
-  set Rm := ReesAlg (Φ.loc (Localization.AtPrime 𝔪))
-  let : Algebra R Rm := (reesMap Φ (Localization.AtPrime 𝔪)).toAlgebra
-  set M := 𝔪.primeCompl.map (algebraMap A R)
-  have : IsLocalization M Rm :=
-    reesMap_isLocalization Φ (Localization.AtPrime 𝔪) 𝔪.primeCompl
-      (Ideal.primeCompl_le_nonZeroDivisors 𝔪)
-  have : Algebra.FormallySmooth ℚ Rm := reesLoc_formallySmooth hI hmax h𝔭 hd hw 𝔪
-  have hdisj : Disjoint (M : Set R) (P.asIdeal : Set R) := by
-    rw [Set.disjoint_left]
-    rintro _ ⟨a, ha, rfl⟩ haP
-    exact ha (h𝔮𝔪 haP)
-  set P' := P.asIdeal.map (algebraMap R Rm)
-  have hP' : P'.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint M Rm _ P.isPrime hdisj
-  have hcomap : P'.comap (algebraMap R Rm) = P.asIdeal :=
-    IsLocalization.under_map_of_isPrime_disjoint M Rm P.isPrime hdisj
-  have : IsLocalization P.asIdeal.primeCompl (Localization.AtPrime P') := by
-    have h := IsLocalization.isLocalization_isLocalization_atPrime_isLocalization M
-      (Localization.AtPrime P') P'
-    have he : (P'.under R).primeCompl = P.asIdeal.primeCompl := by
-      ext x; show x ∉ P'.comap (algebraMap R Rm) ↔ x ∉ P.asIdeal; rw [hcomap]
-    exact he ▸ h
-  have hT : Algebra.FormallySmooth ℚ (Localization.AtPrime P') := inferInstance
-  let e0 := IsLocalization.algEquiv P.asIdeal.primeCompl (Localization.AtPrime P')
-    (Localization.AtPrime P.asIdeal)
-  let e : Localization.AtPrime P' ≃ₐ[ℚ] Localization.AtPrime P.asIdeal :=
-    AlgEquiv.ofRingEquiv (f := e0.toRingEquiv) (fun q => RingHom.map_rat_algebraMap e0.toRingEquiv.toRingHom q)
-  exact @Algebra.FormallySmooth.of_equiv ℚ _ (Localization.AtPrime P') (Localization.AtPrime P.asIdeal)
-    _ _ _ _ hT e
+  have hloc : ∀ 𝔪 : Ideal A, 𝔪.IsMaximal →
+      ∃ a ∈ {a : A | Algebra.Smooth ℚ (Localization.Away (algebraMap A R a))}, a ∉ 𝔪 := by
+    intro 𝔪 h𝔪
+    set Rm := ReesAlg (Φ.loc (Localization.AtPrime 𝔪))
+    let : Algebra R Rm := (reesMap Φ (Localization.AtPrime 𝔪)).toAlgebra
+    have : IsScalarTower ℚ R Rm := IsScalarTower.of_algebraMap_eq fun q =>
+      congrArg (fun f : ℚ →+* Rm => f q)
+        (RingHom.ext_rat (algebraMap ℚ Rm) ((algebraMap R Rm).comp (algebraMap ℚ R)))
+    have : IsLocalization (𝔪.primeCompl.map (algebraMap A R)) Rm :=
+      reesMap_isLocalization Φ (Localization.AtPrime 𝔪) 𝔪.primeCompl
+        (Ideal.primeCompl_le_nonZeroDivisors 𝔪)
+    have : Algebra.FormallySmooth ℚ Rm := reesLoc_formallySmooth hI hmax h𝔭 hd hw 𝔪
+    obtain ⟨a, ha, hsm⟩ :=
+      Constructive.exists_away_smooth_of_isLocalization (S := R) (Sₘ := Rm) 𝔪.primeCompl
+    exact ⟨a, hsm, ha⟩
+  refine Constructive.smooth_of_span_cover (algebraMap A R '' {a : A |
+    Algebra.Smooth ℚ (Localization.Away (algebraMap A R a))}) ?_ ?_
+  · rw [← Ideal.map_span, span_eq_top_of_forall_isMaximal _ hloc, Ideal.map_top]
+  · rintro _ ⟨a, ha, rfl⟩
+    exact ha
 
 end BezoutCounterexample.Principalization
 

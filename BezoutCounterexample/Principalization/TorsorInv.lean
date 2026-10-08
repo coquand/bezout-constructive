@@ -1,4 +1,5 @@
 import BezoutCounterexample.Principalization.Torsor
+import BezoutCounterexample.Principalization.DropBridge
 
 /-!
 # Invariants and components on the torsor
@@ -45,7 +46,7 @@ end UnitPre
 
 section SILoc
 
-variable {S S' : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S]
+variable {S S' : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [Fact (QuotSeqCond S)]
   [CommRing S'] [Algebra ℚ S'] [IsLocalRing S'] [IsNoetherianRing S']
   [Algebra.FormallySmooth ℚ S'] [Algebra.FormallySmooth ℚ (ResidueField S')]
   [Algebra.IsIntegral ℚ (ResidueField S')] {n : ℕ}
@@ -63,7 +64,7 @@ theorem IsInv.transfer_mvLoc {r : ℕ} (θ : MvPolynomial (Fin r) S →+* S')
   have := isLocalization_unitPre θ hinj hsurj
   have hcc := (c.compat_mvPolynomial r).trans
     ((c.mvPolynomial r).compat_localization (L := S') (unitPre θ))
-  exact IsInv.transfer (fun a ha => hloc a ha) hc hcc hI hIm he
+  exact IsInv.transfer (fun a ha => hloc a ha) hc hcc hI hIm he (IsNoetherian.noetherian _)
 
 /-- **Smooth invariance** for a target which is a localization of `S[X]`. -/
 theorem IsInv.transfer_polyLoc (θ : Polynomial S →+* S')
@@ -77,7 +78,7 @@ theorem IsInv.transfer_polyLoc (θ : Polynomial S →+* S')
     IsScalarTower.of_algebraMap_eq (fun q => (RingHom.map_rat_algebraMap θ q).symm)
   have := isLocalization_unitPre θ hinj hsurj
   have hcc := c.compat_polynomial.trans (c.polynomial.compat_localization (L := S') (unitPre θ))
-  exact IsInv.transfer (fun a ha => hloc a ha) hc hcc hI hIm he
+  exact IsInv.transfer (fun a ha => hloc a ha) hc hcc hI hIm he (IsNoetherian.noetherian _)
 
 end SILoc
 
@@ -529,22 +530,22 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
   (hπ0 : π ≠ 0)
 
 /-- The new ideal `I_w U` on the torsor. -/
-abbrev torsorI : Ideal (Torsor hI hmax h𝔭 d hπ) :=
+abbrev torsorI [Fact (Constructive.HasPres A)] [Constructive.Enum A] : Ideal (Torsor hI hmax h𝔭 d hπ) :=
   (weakT (compFil hI hmax h𝔭 d) I d (I_le_compFil hI hmax h𝔭 hd)).map
     (algebraMap (ReesAlg (compFil hI hmax h𝔭 d)) (Torsor hI hmax h𝔭 d hπ))
 
 /-- The exceptional element `s` on the torsor. -/
-abbrev torsorS : Torsor hI hmax h𝔭 d hπ :=
+abbrev torsorS [Fact (Constructive.HasPres A)] [Constructive.Enum A] : Torsor hI hmax h𝔭 d hπ :=
   algebraMap (ReesAlg (compFil hI hmax h𝔭 d)) (Torsor hI hmax h𝔭 d hπ)
     (reesS (compFil hI hmax h𝔭 d) (fun _j hj => compFil_F_nonpos hI hmax h𝔭 d hj))
 
-lemma torsor_map_eq : I.map (algebraMap A (Torsor hI hmax h𝔭 d hπ)) =
+lemma torsor_map_eq [Fact (Constructive.HasPres A)] [Constructive.Enum A] : I.map (algebraMap A (Torsor hI hmax h𝔭 d hπ)) =
     Ideal.span {torsorS hI hmax h𝔭 hπ ^ d} * torsorI hI hmax h𝔭 hd hπ := by
   rw [IsScalarTower.algebraMap_eq A (ReesAlg (compFil hI hmax h𝔭 d)) (Torsor hI hmax h𝔭 d hπ),
     ← Ideal.map_map, map_eq_weakT _ (fun j hj => compFil_F_nonpos hI hmax h𝔭 d hj) I d
@@ -561,13 +562,13 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
   (hπ0 : π ≠ 0)
 
 /-- Some torsor generator is a unit at every point. -/
-lemma exists_torsorY_not_mem (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [Q.IsPrime] :
+lemma exists_torsorY_not_mem [Fact (Constructive.HasPres A)] [Constructive.Enum A] (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [Q.IsPrime] :
     ∃ l, torsorY hI hmax h𝔭 d hπ l ∉
       Q.comap (algebraMap (ReesAlg (compFil hI hmax h𝔭 d)) (Torsor hI hmax h𝔭 d hπ)) := by
   by_contra h
@@ -578,7 +579,7 @@ lemma exists_torsorY_not_mem (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [Q.IsPrime
 
 include hd hw in
 /-- On the exceptional divisor-free part, the points lie away from `V(𝔭)`. -/
-lemma torsor_not_le_of_s_not_mem (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [Q.IsPrime]
+lemma torsor_not_le_of_s_not_mem [Constructive.Enum A] [Fact (Constructive.HasPres A)] (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [Q.IsPrime]
     (hsQ : torsorS hI hmax h𝔭 hπ ∉ Q) :
     ¬ 𝔭 ≤ Q.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) := by
   intro hle
@@ -591,14 +592,12 @@ lemma torsor_not_le_of_s_not_mem (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [Q.IsP
   have hg : genCoeff hI hmax h𝔭 d π l ∈ 𝔭 := by
     have h1 := genCoeff_mem hI hmax h𝔭 d hπ l
     rw [compFil_F] at h1
-    have h2 : compF I 𝔭 ((genDeg hI hmax h𝔭 d l : ℚ) / d) ≤ compF I 𝔭 (1 / d) := by
-      refine compF_antitone ?_ hI (fun 𝔪 _ h𝔭𝔪' => ?_)
-      · have : (1 : ℚ) ≤ genDeg hI hmax h𝔭 d l := by exact_mod_cast hj
-        have hd' : (0 : ℚ) < d := by exact_mod_cast hd
-        exact div_le_div_of_nonneg_right this hd'.le
-      · have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪'
-        exact ⟨hZ.1, v₀, hZ.2⟩
-    rw [compF_one_div hI hmax h𝔭 hd hw] at h2
+    have h2 : compFPt I 𝔭 ((genDeg hI hmax h𝔭 d l : ℚ) / d) ≤ compFPt I 𝔭 (1 / d) := by
+      refine h𝔭.compFPt_antitone' hI hmax ?_
+      have : (1 : ℚ) ≤ genDeg hI hmax h𝔭 d l := by exact_mod_cast hj
+      have hd' : (0 : ℚ) < d := by exact_mod_cast hd
+      exact div_le_div_of_nonneg_right this hd'.le
+    rw [h𝔭.compFPt_one_div hI hmax hd hw] at h2
     exact h2 h1
   have hgP : algebraMap A (ReesAlg (compFil hI hmax h𝔭 d)) (genCoeff hI hmax h𝔭 d π l) ∈ P := by
     have := hle hg
@@ -630,8 +629,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
   (hπ0 : π ≠ 0)
 
@@ -639,7 +638,7 @@ include hd hw hπ0 in
 /-- **The invariant on the torsor.** At a point `Q` of `V(I_w U)`, either `s ∈ Q` and the
 invariant has strictly increased, or `s ∉ Q`, `Q` lies over a point of `V(I) ∖ V(𝔭)` and the
 invariant is unchanged. -/
-theorem torsor_invAt (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [hQ : Q.IsMaximal]
+theorem torsor_invAt [Constructive.Enum A] [Fact (Constructive.HasPres A)] [Fact (∃ k, ChartDim A k)] (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [hQ : Q.IsMaximal]
     (hIQ : torsorI hI hmax h𝔭 hd hπ ≤ Q) {v : ℕ → ℚ}
     (hv : InvAt (torsorI hI hmax h𝔭 hd hπ) Q v) :
     (torsorS hI hmax h𝔭 hπ ∈ Q ∧ toLex v₀ < toLex v) ∨
@@ -678,7 +677,8 @@ theorem torsor_invAt (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [hQ : Q.IsMaximal]
   by_cases hsQ : torsorS hI hmax h𝔭 hπ ∈ Q
   · left
     refine ⟨hsQ, ?_⟩
-    exact drop hI hmax h𝔭 hd hw _ hIwP hsQ (genDeg_pos hI hmax h𝔭 d l)
+    -- through `drop_pt` at `Pt.ofIsMaximal` (DropBridge)
+    exact drop_of_pt hI hmax h𝔭 hd hw _ hIwP hsQ (genDeg_pos hI hmax h𝔭 d l)
       (genCoeff_mem hI hmax h𝔭 d hπ l) hl hw'
   · right
     have hcomap : Q.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) =
@@ -786,33 +786,26 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
   (hπ0 : π ≠ 0)
 
-include hd hw in
-lemma compFil_sup_eq_top {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIdeal I v₀).minimalPrimes)
-    (hne : 𝔭 ≠ 𝔭') (j : ℤ) : (compFil hI hmax h𝔭 d).F j ⊔ 𝔭' = ⊤ := by
-  have hsup := minimalPrimes_sup_eq_top hI hmax h𝔭 h𝔭' hne
-  by_cases hj : j ≤ 0
-  · rw [compFil_F_nonpos hI hmax h𝔭 d hj, top_sup_eq]
-  · obtain ⟨N, rfl⟩ : ∃ N : ℕ, j = N := ⟨j.toNat, by omega⟩
-    have h1 : 𝔭 ^ N ≤ (compFil hI hmax h𝔭 d).F N := by
-      rw [compFil_F]; push_cast; exact pow_le_compF hI hmax h𝔭 hd hw N
-    have h2 : 𝔭 ^ N ⊔ 𝔭' = ⊤ := by
-      rw [← Ideal.isCoprime_iff_sup_eq] at hsup ⊢; exact hsup.pow_left
-    exact eq_top_iff.2 (h2 ▸ sup_le_sup_right h1 _)
+/-- TEMPORARY (rehearsal): another minimal prime of the locus ideal as a `LocusComp`, sharing the
+generators and the bound of `h𝔭` (classical through `locusPt_eq_locusIdeal`). -/
+theorem LocusComp.sibling {𝔭₀ : Ideal A} (h₀ : LocusComp I v₀ 𝔭₀) {𝔭' : Ideal A}
+    (h𝔭' : 𝔭' ∈ (locusIdeal I v₀).minimalPrimes) : LocusComp I v₀ 𝔭' :=
+  ⟨h₀.Pg, h₀.bd, locusPt_eq_locusIdeal I v₀ ▸ h𝔭', h₀.gensI, h₀.chartn⟩
 
 include hd hw in
-lemma exists_torsorY_not_mem_map {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIdeal I v₀).minimalPrimes)
+lemma exists_torsorY_not_mem_map [Constructive.Enum A] [Fact (Constructive.HasPres A)] {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIdeal I v₀).minimalPrimes)
     (hne : 𝔭 ≠ 𝔭') : ∃ l, torsorY hI hmax h𝔭 d hπ l ∉
       𝔭'.map (algebraMap A (ReesAlg (compFil hI hmax h𝔭 d))) := by
   have hF1 : ¬ (compFil hI hmax h𝔭 d).F 1 ≤ 𝔭' := by
     intro hle
     rw [compFil_F, show ((1 : ℤ) : ℚ) / d = 1 / d by push_cast; ring,
-      compF_one_div hI hmax h𝔭 hd hw] at hle
-    have := minimalPrimes_sup_eq_top hI hmax h𝔭 h𝔭' hne
+      h𝔭.compFPt_one_div hI hmax hd hw] at hle
+    have := minimalPrimes_sup_eq_top hI (IsMaxInvPt.toMax hmax) h𝔭.toMin h𝔭' hne
     rw [sup_eq_right.2 hle] at this
     exact h𝔭'.1.1.ne_top this
   obtain ⟨g, hg, hg'⟩ : ∃ g ∈ gensF hI hmax h𝔭 d 1, g ∉ 𝔭' := by
@@ -823,7 +816,7 @@ lemma exists_torsorY_not_mem_map {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIde
     exact Ideal.span_le.2 hcon
   obtain ⟨l, hl1, hl2⟩ := exists_index hI hmax h𝔭 (π := π) le_rfl (by exact_mod_cast hd) hg
   refine ⟨l, fun hmem => hg' ?_⟩
-  rw [map_eq_ker_reesRed _ _ (compFil_sup_eq_top hI hmax h𝔭 hd hw h𝔭' hne), RingHom.mem_ker] at hmem
+  rw [map_eq_ker_reesRed _ _ (compFil_sup_eq_top_pt hI hmax h𝔭 hd hw (h𝔭.sibling h𝔭') hne), RingHom.mem_ker] at hmem
   have h1 := congrArg (fun p => p.coeff 1) hmem
   simp only [reesRed_coeff] at h1
   have h2 : ((torsorY hI hmax h𝔭 d hπ l : ReesAlg (compFil hI hmax h𝔭 d)) : A[T;T⁻¹]).coeff 1 = g := by
@@ -834,11 +827,11 @@ lemma exists_torsorY_not_mem_map {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIde
 
 include hd hw in
 /-- **The other components stay prime on the torsor.** -/
-theorem torsor_comp_isPrime {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIdeal I v₀).minimalPrimes)
+theorem torsor_comp_isPrime [Constructive.Enum A] [Fact (Constructive.HasPres A)] {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIdeal I v₀).minimalPrimes)
     (hne : 𝔭 ≠ 𝔭') : (𝔭'.map (algebraMap A (Torsor hI hmax h𝔭 d hπ))).IsPrime := by
   have := h𝔭'.1.1
   have : (𝔭'.map (algebraMap A (ReesAlg (compFil hI hmax h𝔭 d)))).IsPrime :=
-    isPrime_map_rees _ _ (compFil_sup_eq_top hI hmax h𝔭 hd hw h𝔭' hne)
+    isPrime_map_rees _ _ (compFil_sup_eq_top_pt hI hmax h𝔭 hd hw (h𝔭.sibling h𝔭') hne)
   obtain ⟨l, hl⟩ := exists_torsorY_not_mem_map hI hmax h𝔭 hd hw hπ h𝔭' hne
   rw [IsScalarTower.algebraMap_eq A (ReesAlg (compFil hI hmax h𝔭 d)) (Torsor hI hmax h𝔭 d hπ),
     ← Ideal.map_map]
@@ -903,19 +896,19 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
   (hπ0 : π ≠ 0)
 
 include hd hw in
 /-- A point containing `s` lies over `V(𝔭)`. -/
-lemma le_comap_of_s_mem (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) (hsQ : torsorS hI hmax h𝔭 hπ ∈ Q) :
+lemma le_comap_of_s_mem [Constructive.Enum A] [Fact (Constructive.HasPres A)] (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) (hsQ : torsorS hI hmax h𝔭 hπ ∈ Q) :
     𝔭 ≤ Q.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) := by
   intro g hg
   have hg1 : g ∈ (compFil hI hmax h𝔭 d).F 1 := by
     rw [compFil_F, show ((1 : ℤ) : ℚ) / d = 1 / d by push_cast; ring,
-      compF_one_div hI hmax h𝔭 hd hw]
+      h𝔭.compFPt_one_divP hI hmax hd hw]
     exact hg
   rw [Ideal.mem_comap, IsScalarTower.algebraMap_apply A (ReesAlg (compFil hI hmax h𝔭 d))
     (Torsor hI hmax h𝔭 d hπ)]
@@ -929,7 +922,7 @@ lemma le_comap_of_s_mem (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) (hsQ : torsorS 
   exact Q.mul_mem_right _ hsQ
 
 include hπ0 in
-theorem torsorI_ne_bot : torsorI hI hmax h𝔭 hd hπ ≠ ⊥ := by
+theorem torsorI_ne_bot [Fact (Constructive.HasPres A)] [Constructive.Enum A] : torsorI hI hmax h𝔭 hd hπ ≠ ⊥ := by
   have hinj : Function.Injective (algebraMap (ReesAlg (compFil hI hmax h𝔭 d))
       (Torsor hI hmax h𝔭 d hπ)) := Jou.algebraMap_injective (torsorY_zero_ne hI hmax h𝔭 hπ hπ0)
   rw [Ne, Ideal.map_eq_bot_iff_of_injective hinj]
@@ -937,7 +930,7 @@ theorem torsorI_ne_bot : torsorI hI hmax h𝔭 hd hπ ≠ ⊥ := by
 
 include hd hw hπ0 in
 /-- Invariants on the torsor are at least `v₀`. -/
-theorem torsor_inv_ge (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [Q.IsMaximal]
+theorem torsor_inv_ge [Constructive.Enum A] [Fact (Constructive.HasPres A)] [Fact (∃ k, ChartDim A k)] (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [Q.IsMaximal]
     (hIQ : torsorI hI hmax h𝔭 hd hπ ≤ Q) {v : ℕ → ℚ}
     (hv : InvAt (torsorI hI hmax h𝔭 hd hπ) Q v) : toLex v₀ ≤ toLex v := by
   have : Algebra.FiniteType ℚ (Torsor hI hmax h𝔭 d hπ) := torsor_finiteType hI hmax h𝔭 hd hw hπ
@@ -945,11 +938,11 @@ theorem torsor_inv_ge (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [Q.IsMaximal]
   · exact hlt.le
   · have : (Q.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ))).IsMaximal :=
       comap_isMaximal_of_finiteType Q
-    exact hmax _ hI𝔪 v hv'
+    exact IsMaxInvPt.toMax hmax _ hI𝔪 v hv'
 
 include hd hw hπ0 in
 /-- Points over the other components belong to the new maximal locus. -/
-theorem mem_maxLocus_torsor {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIdeal I v₀).minimalPrimes)
+theorem mem_maxLocus_torsor [Constructive.Enum A] [Fact (Constructive.HasPres A)] [Fact (∃ k, ChartDim A k)] {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIdeal I v₀).minimalPrimes)
     (hne : 𝔭 ≠ 𝔭') (Q : Ideal (Torsor hI hmax h𝔭 d hπ)) [hQ : Q.IsMaximal]
     (hle : 𝔭'.map (algebraMap A (Torsor hI hmax h𝔭 d hπ)) ≤ Q) :
     Q ∈ maxLocus (torsorI hI hmax h𝔭 hd hπ) v₀ := by
@@ -961,9 +954,9 @@ theorem mem_maxLocus_torsor {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIdeal I 
   have h𝔪 : 𝔭' ≤ Q.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) := Ideal.map_le_iff_le_comap.1 hle
   have : (Q.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ))).IsMaximal :=
     comap_isMaximal_of_finiteType Q
-  obtain ⟨hI𝔪, hinv⟩ := mem_maxLocus_of_minimal hI hmax h𝔭' _ h𝔪
+  obtain ⟨hI𝔪, hinv⟩ := mem_maxLocus_of_minimal hI (IsMaxInvPt.toMax hmax) h𝔭' _ h𝔪
   have hn𝔭 : ¬ 𝔭 ≤ Q.comap (algebraMap A (Torsor hI hmax h𝔭 d hπ)) := fun h => by
-    have := minimalPrimes_sup_eq_top hI hmax h𝔭 h𝔭' hne
+    have := minimalPrimes_sup_eq_top hI (IsMaxInvPt.toMax hmax) h𝔭.toMin h𝔭' hne
     exact (Ideal.IsMaximal.ne_top ‹_›) (eq_top_iff.2 (this ▸ sup_le h h𝔪))
   have hsQ : torsorS hI hmax h𝔭 hπ ∉ Q := fun h => hn𝔭 (le_comap_of_s_mem hI hmax h𝔭 hd hw hπ Q h)
   have hIQ : torsorI hI hmax h𝔭 hd hπ ≤ Q := by
@@ -980,7 +973,7 @@ theorem mem_maxLocus_torsor {𝔭' : Ideal A} (h𝔭' : 𝔭' ∈ (locusIdeal I 
 
 include hd hw hπ0 in
 /-- **The number of components drops.** -/
-theorem torsor_count :
+theorem torsor_count [Constructive.Enum A] [Fact (Constructive.HasPres A)] [Fact (∃ k, ChartDim A k)] :
     (locusIdeal (torsorI hI hmax h𝔭 hd hπ) v₀).minimalPrimes.ncard <
       (locusIdeal I v₀).minimalPrimes.ncard := by
   classical
@@ -992,7 +985,7 @@ theorem torsor_count :
     (hfin.toFinset.erase 𝔭) (fun 𝔭' => 𝔭'.map (algebraMap A (Torsor hI hmax h𝔭 d hπ))) ?_ ?_ ?_
   · have hcard : (hfin.toFinset.erase 𝔭).card < (locusIdeal I v₀).minimalPrimes.ncard := by
       rw [Set.ncard_eq_toFinset_card _ hfin]
-      exact Finset.card_erase_lt_of_mem (hfin.mem_toFinset.2 h𝔭)
+      exact Finset.card_erase_lt_of_mem (hfin.mem_toFinset.2 h𝔭.toMin)
     exact lt_of_le_of_lt hle hcard
   · intro 𝔭' h𝔭'
     rw [Finset.mem_erase, Set.Finite.mem_toFinset] at h𝔭'

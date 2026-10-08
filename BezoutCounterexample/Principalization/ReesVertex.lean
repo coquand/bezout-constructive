@@ -1,4 +1,5 @@
 import BezoutCounterexample.Principalization.ReesGlobal
+import BezoutCounterexample.Principalization.ComponentFilPtL
 
 /-!
 # The global Rees algebra: exceptional divisor, weak transform, vertex
@@ -73,14 +74,14 @@ lemma lam_eq_weight {n : ℕ} {e : Fin n → ℚ} {d : ℕ} (hd : 0 < d) {w : Fi
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [smul_eq_mul, Nat.cast_mul, hw i]; ring
 
-variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S] {n : ℕ}
+variable {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [Fact (QuotSeqCond S)] {n : ℕ}
   (c : Chart S n) (hc : c.IsCentred) {e : Fin n → ℚ} (he : ∀ i, 0 ≤ e i) {d : ℕ} (hd : 0 < d)
   {w : Fin n → ℕ} (hw : ∀ i, (w i : ℚ) = d * e i)
 include hc he hd hw
 
 lemma mem_RF_iff_weight (a : ℕ) (z : S) :
     z ∈ c.RF e ((a : ℚ) / d) ↔ ∀ β, Finsupp.weight w β < a → coeff β (c.tau z) = 0 := by
-  rw [hc.mem_RF_iff he]
+  rw [hc.mem_RF_iff_Q Fact.out he]
   refine forall_congr' fun β => imp_congr_left ?_
   rw [lam_eq_weight hd hw, div_lt_div_iff_of_pos_right (by exact_mod_cast hd)]
   exact Nat.cast_lt
@@ -130,8 +131,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
 include hI hmax h𝔭 hd hw
 
@@ -140,7 +141,7 @@ omit hd in
 lemma exists_centre_data (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : 𝔭 ≤ 𝔪) :
     ∃ (n : ℕ) (J : MC (Localization.AtPrime 𝔪) n) (w : Fin n → ℕ),
       (∀ i, (w i : ℚ) = d * J.e i) ∧ ∀ t, cRF I 𝔪 t = J.RF t := by
-  have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
+  have hZ := h𝔭.mem_max hI hmax 𝔪 h𝔭𝔪
   obtain ⟨n, e, ⟨⟨J, hJ, hJe⟩, hmin⟩, hev⟩ := hZ.2
   have hJi : IsInv (Iloc I 𝔪) n J.e := ⟨⟨J, hJ, rfl⟩, by rw [hJe]; exact hmin⟩
   have hw' : ∀ i : Fin n, ∃ w : ℕ, (w : ℚ) = d * J.e i := fun i => by
@@ -152,43 +153,122 @@ lemma exists_centre_data (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : 𝔭 ≤
 omit hd hw in
 lemma compFil_mem_iff (j : ℤ) (x : A) : x ∈ (compFil hI hmax h𝔭 d).F j ↔
     ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], 𝔭 ≤ 𝔪 →
-      algebraMap A (Localization.AtPrime 𝔪) x ∈ cRF I 𝔪 ((j : ℚ) / d) := mem_compF
+      algebraMap A (Localization.AtPrime 𝔪) x ∈ cRF I 𝔪 ((j : ℚ) / d) := by
+  rw [compFil_F_eq_compF]; exact mem_compF
 
-/-- **Torsion-freeness of the graded pieces**: a non-member of `F_{a+1}` is locally a
-non-member at every point of the component. -/
-theorem not_mem_loc {a : ℕ} {x : A} (hx : x ∈ (compFil hI hmax h𝔭 d).F a)
-    (hx1 : x ∉ (compFil hI hmax h𝔭 d).F (a + 1)) (𝔪₀ : Ideal A) [𝔪₀.IsMaximal] (h𝔭𝔪₀ : 𝔭 ≤ 𝔪₀) :
-    algebraMap A (Localization.AtPrime 𝔪₀) x ∉ cRF I 𝔪₀ (((a + 1 : ℕ) : ℚ) / d) := by
+end BezoutCounterexample.Principalization
+
+namespace BezoutCounterexample.Principalization
+
+open IsLocalRing IsLocalization Constructive
+
+section Dec
+
+variable {A : Type} [CommRing A] [Algebra ℚ A]
+
+/-- **Membership in an extended ideal at an explicit point is decided.** -/
+theorem Pt.mem_map_dec [hpA : Fact (HasPres A)] (q : Pt A) (l : List A) (x : A) :
+    algebraMap A (Localization.AtPrime q.ker) x ∈ (lspan l).map (algebraMap A _) ∨
+      algebraMap A (Localization.AtPrime q.ker) x ∉ (lspan l).map (algebraMap A _) := by
+  obtain ⟨C, hC⟩ := HasPres.exists_colon hpA.out l [x]
+  have hx1 : ∀ y, y ∈ lspan C ↔ y * x ∈ lspan l := fun y => by
+    rw [hC]
+    refine ⟨fun hy => hy x (Ideal.subset_span List.mem_cons_self), fun hy z hz => ?_⟩
+    rw [lspan_singleton] at hz
+    obtain ⟨w, rfl⟩ := Ideal.mem_span_singleton'.1 hz
+    rw [mul_left_comm]
+    exact Ideal.mul_mem_left _ _ hy
+  rw [IsLocalization.algebraMap_mem_map_algebraMap_iff q.ker.primeCompl]
+  -- decide whether some generator of the colon lies outside `q.ker`
+  have key : ∀ C' : List A, (∀ c ∈ C', c ∈ q.ker) ∨ ∃ c ∈ C', c ∉ q.ker := fun C' => by
+    induction C' with
+    | nil => exact Or.inl fun _ h => absurd h List.not_mem_nil
+    | cons c C' ih =>
+      rcases q.mem_ker_dec c with hc | hc
+      · exact ih.imp (fun h c' hc' => (List.mem_cons.1 hc').elim (fun e => e ▸ hc) (h c'))
+          fun ⟨c', hc', hc'q⟩ => ⟨c', List.mem_cons_of_mem _ hc', hc'q⟩
+      · exact Or.inr ⟨c, List.mem_cons_self, hc⟩
+  rcases key C with hall | ⟨c, hcC, hcq⟩
+  · right
+    rintro ⟨s, hs, hsx⟩
+    refine hs ?_
+    have : s ∈ lspan C := (hx1 s).2 hsx
+    have hle : lspan C ≤ q.ker := by
+      rw [lspan, Ideal.span_le]; exact fun c hc => hall c hc
+    exact hle this
+  · exact Or.inl ⟨c, hcq, (hx1 c).1 (Ideal.subset_span hcC)⟩
+
+end Dec
+
+variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth ℚ A]
+  [IsNoetherianRing A]
+
+variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
+  (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
+
+include hI hmax h𝔭 in
+/-- **Membership in the centre's weighted ideals at a point above `𝔭` is decided.** -/
+theorem LocusComp.mem_cRF_dec [Fact (HasPres A)] (q : Pt A) (h𝔭q : 𝔭 ≤ q.ker) (t : ℚ) (x : A) :
+    algebraMap A (Localization.AtPrime q.ker) x ∈ cRF I q.ker t ∨
+      algebraMap A (Localization.AtPrime q.ker) x ∉ cRF I q.ker t := by
+  obtain ⟨l, hl⟩ := h𝔭.exists_lspan_compFPt hI hmax t
+  rw [← h𝔭.map_compFPt_pt hI hmax t q h𝔭q, hl]
+  exact q.mem_map_dec l x
+
+include hI hmax h𝔭 hw in
+omit [IsNoetherianRing A] in
+/-- The local data at an explicit point of the component (point form of `exists_centre_data`). -/
+lemma exists_centre_data_pt (q : Pt A) (h𝔭q : 𝔭 ≤ q.ker) :
+    ∃ (n : ℕ) (J : MC (Localization.AtPrime q.ker) n) (w : Fin n → ℕ),
+      (∀ i, (w i : ℚ) = d * J.e i) ∧ ∀ t, cRF I q.ker t = J.RF t := by
+  have hZ := h𝔭.mem hI hmax q h𝔭q
+  obtain ⟨n, e, ⟨⟨J, hJ, hJe⟩, hmin⟩, hev⟩ := hZ.2
+  have hJi : IsInv (Iloc I q.ker) n J.e := ⟨⟨J, hJ, rfl⟩, by rw [hJe]; exact hmin⟩
+  have hw' : ∀ i : Fin n, ∃ w : ℕ, (w : ℚ) = d * J.e i := fun i => by
+    obtain ⟨w, hw⟩ := hw i
+    exact ⟨w, by rw [hw, ← hev, hJe, ext0_apply]⟩
+  obtain ⟨w, hwe⟩ := Constructive.finite_choice_dep hw'
+  exact ⟨n, J, w, hwe, fun t => cRF_eq hI hZ.1 hJ hJi t⟩
+
+include hI hmax h𝔭 hd hw in
+/-- **Torsion-freeness of the graded pieces, at points** (point form of `not_mem_loc`). -/
+theorem not_mem_loc_pt [Fact (HasPres A)] {a : ℕ} {x : A} (hx : x ∈ (compFil hI hmax h𝔭 d).F a)
+    (hx1 : x ∉ (compFil hI hmax h𝔭 d).F (a + 1)) (p₀ : Pt A) (h𝔭p₀ : 𝔭 ≤ p₀.ker) :
+    algebraMap A (Localization.AtPrime p₀.ker) x ∉ cRF I p₀.ker (((a + 1 : ℕ) : ℚ) / d) := by
   intro hmem
   apply hx1
-  -- a multiple `h x` with `h ∉ 𝔪₀` lies in `F_{a+1}`
-  have h1 : algebraMap A (Localization.AtPrime 𝔪₀) x ∈
+  -- a multiple `h x` with `h ∉ p₀` lies in `F_{a+1}` (R3)
+  have h1 : algebraMap A (Localization.AtPrime p₀.ker) x ∈
       ((compFil hI hmax h𝔭 d).F (a + 1)).map (algebraMap A _) := by
-    rw [compFil_F, compF_map hI hmax h𝔭 𝔪₀ h𝔭𝔪₀]; push_cast at hmem ⊢; exact hmem
-  rw [IsLocalization.algebraMap_mem_map_algebraMap_iff 𝔪₀.primeCompl] at h1
+    rw [compFil_F, h𝔭.map_compFPt_pt hI hmax _ p₀ h𝔭p₀]; push_cast at hmem ⊢; exact hmem
+  rw [IsLocalization.algebraMap_mem_map_algebraMap_iff p₀.ker.primeCompl] at h1
   obtain ⟨h, hh, hhx⟩ := h1
-  have hh𝔭 : h ∉ 𝔭 := fun h' => hh (h𝔭𝔪₀ h')
-  rw [compFil_mem_iff]
-  intro 𝔪 _ h𝔭𝔪
-  obtain ⟨n, J, w, hwe, hcRF⟩ := exists_centre_data hI hmax h𝔭 hw 𝔪 h𝔭𝔪
-  have hx' := (compFil_mem_iff hI hmax h𝔭 a x).1 hx 𝔪 h𝔭𝔪
-  have hhx' := (compFil_mem_iff hI hmax h𝔭 (a + 1) (h * x)).1 hhx 𝔪 h𝔭𝔪
-  rw [hcRF] at hx' hhx' ⊢
-  by_contra hne
+  have hh𝔭 : h ∉ 𝔭 := fun h' => hh (h𝔭p₀ h')
+  rw [compFil_F, mem_compFPt]
+  intro q h𝔭q
+  obtain ⟨n, J, w, hwe, hcRF⟩ := exists_centre_data_pt hI hmax h𝔭 hw q h𝔭q
+  have hx' := mem_compFPt.1 hx q h𝔭q
+  have hhx' := mem_compFPt.1 hhx q h𝔭q
+  rcases h𝔭.mem_cRF_dec hI hmax q h𝔭q (((a + 1 : ℤ) : ℚ) / d) x with hin | hne
+  · exact hin
+  exfalso
+  rw [hcRF] at hx' hhx' hne
   -- `h` is not in `F_1 = 𝔭` locally
-  have hh1 : algebraMap A (Localization.AtPrime 𝔪) h ∉ J.RF (((0 + 1 : ℕ) : ℚ) / d) := by
+  have hh1 : algebraMap A (Localization.AtPrime q.ker) h ∉ J.RF (((0 + 1 : ℕ) : ℚ) / d) := by
     intro hmem'
     rw [← hcRF] at hmem'
-    have : algebraMap A (Localization.AtPrime 𝔪) h ∈
-        (compF I 𝔭 (1 / d)).map (algebraMap A (Localization.AtPrime 𝔪)) := by
-      rw [compF_map hI hmax h𝔭 𝔪 h𝔭𝔪]; simpa using hmem'
-    rw [compF_one_div hI hmax h𝔭 hd hw] at this
-    have hp := h𝔭.1.1
-    rw [← under_map_atPrime h𝔭𝔪] at hh𝔭
+    have : algebraMap A (Localization.AtPrime q.ker) h ∈
+        (compFPt I 𝔭 (1 / d)).map (algebraMap A (Localization.AtPrime q.ker)) := by
+      rw [h𝔭.map_compFPt_pt hI hmax _ q h𝔭q]; simpa using hmem'
+    rw [h𝔭.compFPt_one_div hI hmax hd hw] at this
+    have hp := h𝔭.isPrime
+    rw [← under_map_atPrime h𝔭q] at hh𝔭
     exact hh𝔭 this
-  have hh0 : algebraMap A (Localization.AtPrime 𝔪) h ∈ J.RF (((0 : ℕ) : ℚ) / d) := by
+  have hh0 : algebraMap A (Localization.AtPrime q.ker) h ∈ J.RF (((0 : ℕ) : ℚ) / d) := by
     rw [Nat.cast_zero, zero_div, MC.RF, J.c.RF_of_nonpos J.nonneg le_rfl]; trivial
-  have := RF_mul_not_mem J.c J.centred J.nonneg hd hwe hh0 hh1 hx'
+  have := RF_mul_not_mem J.c J.centred J.nonneg hd hwe hh0 hh1 (by push_cast at hx' ⊢; exact hx')
     (by push_cast at hne ⊢; exact hne)
   rw [← map_mul] at this
   apply this
@@ -196,25 +276,44 @@ theorem not_mem_loc {a : ℕ} {x : A} (hx : x ∈ (compFil hI hmax h𝔭 d).F a)
   rw [zero_add]
   exact hhx'
 
-/-- **The associated graded ring is a domain.** -/
-theorem compFil_mul_not_mem {a b : ℕ} {x y : A} (hx : x ∈ (compFil hI hmax h𝔭 d).F a)
-    (hx1 : x ∉ (compFil hI hmax h𝔭 d).F (a + 1)) (hy : y ∈ (compFil hI hmax h𝔭 d).F b)
-    (hy1 : y ∉ (compFil hI hmax h𝔭 d).F (b + 1)) :
+include hI hmax h𝔭 hd hw in
+/-- **The associated graded ring is a domain** (point form of `compFil_mul_not_mem`: the point above
+`𝔭` comes from its generators, `HasPres.exists_pt`, not from Zorn). -/
+theorem compFil_mul_not_mem_pt [hpA : Fact (HasPres A)] {a b : ℕ} {x y : A}
+    (hx : x ∈ (compFil hI hmax h𝔭 d).F a) (hx1 : x ∉ (compFil hI hmax h𝔭 d).F (a + 1))
+    (hy : y ∈ (compFil hI hmax h𝔭 d).F b) (hy1 : y ∉ (compFil hI hmax h𝔭 d).F (b + 1)) :
     x * y ∉ (compFil hI hmax h𝔭 d).F (a + b + 1) := by
-  have := h𝔭.1.1
-  obtain ⟨𝔪, h𝔪, hle⟩ := Ideal.exists_le_maximal 𝔭 (Ideal.IsPrime.ne_top ‹_›)
-  have := h𝔪
-  obtain ⟨n, J, w, hwe, hcRF⟩ := exists_centre_data hI hmax h𝔭 hw 𝔪 hle
-  have hx' := (compFil_mem_iff hI hmax h𝔭 a x).1 hx 𝔪 hle
-  have hy' := (compFil_mem_iff hI hmax h𝔭 b y).1 hy 𝔪 hle
-  have hx1' := not_mem_loc hI hmax h𝔭 hd hw hx hx1 𝔪 hle
-  have hy1' := not_mem_loc hI hmax h𝔭 hd hw hy hy1 𝔪 hle
+  have := h𝔭.isPrime
+  obtain ⟨C, hC, -⟩ := h𝔭.gens
+  obtain ⟨q, hq⟩ := HasPres.exists_pt hpA.out C fun h =>
+    (Ideal.IsPrime.ne_top ‹_›) ((Ideal.eq_top_iff_one _).2 (hC ▸ h))
+  rw [← hC] at hq
+  obtain ⟨n, J, w, hwe, hcRF⟩ := exists_centre_data_pt hI hmax h𝔭 hw q hq
+  have hx' := mem_compFPt.1 hx q hq
+  have hy' := mem_compFPt.1 hy q hq
+  have hx1' := not_mem_loc_pt hI hmax h𝔭 hd hw hx hx1 q hq
+  have hy1' := not_mem_loc_pt hI hmax h𝔭 hd hw hy hy1 q hq
   rw [hcRF] at hx' hy' hx1' hy1'
   intro hxy
-  have hxy' := (compFil_mem_iff hI hmax h𝔭 (a + b + 1) (x * y)).1 hxy 𝔪 hle
+  have hxy' := mem_compFPt.1 hxy q hq
   rw [hcRF, map_mul] at hxy'
-  exact RF_mul_not_mem J.c J.centred J.nonneg hd hwe hx' hx1'
-    hy' hy1' (by push_cast at hxy' ⊢; exact hxy')
+  exact RF_mul_not_mem J.c J.centred J.nonneg hd hwe (by push_cast at hx' ⊢; exact hx') hx1'
+    (by push_cast at hy' ⊢; exact hy') hy1' (by push_cast at hxy' ⊢; exact hxy')
+
+include hI hmax h𝔭 hd hw in
+/-- **The filtration is comaximal with another component** (point form of `compFil_sup_eq_top`,
+over `LocusComp.sup_eq_top`). -/
+lemma compFil_sup_eq_top_pt [Fact (HasPres A)] {𝔭' : Ideal A} (h𝔭' : LocusComp I v₀ 𝔭')
+    (hne : 𝔭 ≠ 𝔭') (j : ℤ) : (compFil hI hmax h𝔭 d).F j ⊔ 𝔭' = ⊤ := by
+  have hsup := h𝔭.sup_eq_topP hI hmax h𝔭' hne
+  rcases le_or_gt j 0 with hj | hj
+  · rw [compFil_F_nonpos hI hmax h𝔭 d hj, top_sup_eq]
+  · obtain ⟨N, rfl⟩ : ∃ N : ℕ, j = N := ⟨j.toNat, by omega⟩
+    have h1 : 𝔭 ^ N ≤ (compFil hI hmax h𝔭 d).F N := by
+      rw [compFil_F]; push_cast; exact h𝔭.pow_le_compFPtP hI hmax hd hw N
+    have h2 : 𝔭 ^ N ⊔ 𝔭' = ⊤ := by
+      rw [← Ideal.isCoprime_iff_sup_eq] at hsup ⊢; exact hsup.pow_left
+    exact eq_top_iff.2 (h2 ▸ sup_le_sup_right h1 _)
 
 end BezoutCounterexample.Principalization
 
@@ -380,9 +479,8 @@ theorem isLocalization_away_s : IsLocalization.Away (reesS Φ hneg) B[T;T⁻¹] 
       by_cases hj : j ≤ 0
       · rw [hneg j hj]; trivial
       · have : z.coeff (j - -(N : ℤ)) = 0 := by
-          by_contra hne
-          have hmem : j + N ∈ z.coeff.support := by
-            rw [Finsupp.mem_support_iff]; simpa using hne
+          refine Finsupp.notMem_support_iff.1 fun hmem₀ => ?_
+          have hmem : j + N ∈ z.coeff.support := by simpa using hmem₀
           have := Finset.le_sup (f := fun j : ℤ => j.toNat) hmem
           have h2 : (j + N).toNat ≤ N := this
           omega
@@ -430,7 +528,7 @@ namespace BezoutCounterexample.Principalization
 open IsLocalRing IsLocalization LaurentPolynomial
 
 /-- A semi-associated admissible centre computes the invariant. -/
-lemma MC.SA.isInv {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S]
+lemma MC.SA.isInv {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S]
     {n : ℕ} {I : Ideal S} {k : ℕ} {J : MC S n} (hSA : MC.SA I k J) (hadm : J.Adm I) :
     IsInv I n J.e := by
   refine ⟨⟨J, hadm, rfl⟩, fun J' hJ' => ?_⟩
@@ -444,7 +542,8 @@ lemma MC.SA.isInv {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNo
 
 section Vertex
 
-variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [IsNoetherianRing B] [IsDomain B]
+variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [Fact (Constructive.PolyIndNoeth B)]
+  [IsDomain B]
   {n : ℕ} {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ} {Φ : WFil B}
   (he : ∀ i, 0 ≤ e i) (hanti : Antitone e) (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i)
   (hpos : ∀ j : ℤ, 0 < j → Φ.F j ≤ maximalIdeal B)
@@ -459,7 +558,7 @@ theorem vertex_isInv (c₀ : Chart B n) (hc₀ : c₀.IsCentred)
       IsInv (S := VLoc hpos) (weakV hpos I hId) (n + 1) (pad (n + 1) e) ∧
       (vChart he hd hw hpos c' hF').IsCentred ∧
       weakV hpos I hId ≤ (vChart he hd hw hpos c' hF').RF (pad (n + 1) e) 1 := by
-  have := VLoc_noeth hpos c₀ hF₀ he hd hw
+  have := VLoc_polyIndNoeth hpos c₀ hF₀ he hd hw
   obtain ⟨c', hc', hF', hSA⟩ := vertex_invariant he hanti hd hw hpos c₀ hc₀ hF₀ hsupp hkn I hI0 hId hmax
   have hadm : weakV hpos I hId ≤ (vChart he hd hw hpos c' hF').RF (pad (n + 1) e) 1 := by
     rw [vChart, Chart.localization_RF]
@@ -946,22 +1045,18 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i)
 include hI hmax h𝔭
 
 /-- The ideal lies in the `d`-th step of the filtration. -/
 lemma I_le_compFil (hd : 0 < d) : I ≤ (compFil hI hmax h𝔭 d).F d := by
   intro f hf
-  rw [compFil_F, mem_compF]
-  intro 𝔪 _ h𝔭𝔪
-  have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
-  obtain ⟨n, e, ⟨⟨J, hJ, hJe⟩, hmin⟩, -⟩ := hZ.2
-  have hJi : IsInv (Iloc I 𝔪) n J.e := ⟨⟨J, hJ, rfl⟩, by rw [hJe]; exact hmin⟩
-  rw [cRF_eq hI hZ.1 hJ hJi, show ((d : ℤ) : ℚ) / d = 1 by
-    push_cast; exact div_self (by exact_mod_cast hd.ne')]
-  exact hJ (Ideal.mem_map_of_mem _ hf)
+  rw [compFil_F, mem_compFPt]
+  intro p _
+  rw [show ((d : ℤ) : ℚ) / d = 1 by push_cast; exact div_self (by exact_mod_cast hd.ne')]
+  exact Iloc_le_cRF_one I p.ker (Ideal.mem_map_of_mem _ hf)
 
 /-- The local chart data at a point of the component, packaged for the vertex. -/
 structure VertexData (𝔪 : Ideal A) [𝔪.IsMaximal] where
@@ -980,7 +1075,7 @@ structure VertexData (𝔪 : Ideal A) [𝔪.IsMaximal] where
 include hw in
 lemma VertexData.nonempty (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : 𝔭 ≤ 𝔪) :
     Nonempty (VertexData hI hmax h𝔭 (d := d) (v₀ := v₀) 𝔪) := by
-  have hZ := mem_maxLocus_of_minimal hI hmax h𝔭 𝔪 h𝔭𝔪
+  have hZ := h𝔭.mem_max hI hmax 𝔪 h𝔭𝔪
   obtain ⟨n, e, ⟨⟨J, hJ, hJe⟩, hmin⟩, hev⟩ := hZ.2
   have hJi : IsInv (Iloc I 𝔪) n J.e := ⟨⟨J, hJ, rfl⟩, by rw [hJe]; exact hmin⟩
   have := residueField_isIntegral 𝔪
@@ -992,6 +1087,24 @@ lemma VertexData.nonempty (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔭𝔪 : 𝔭 �
   choose w hwe using hw'
   exact ⟨⟨n, J, w, k, hwe, hJ, hJi, by rw [hJe, hev], hsupp, hrun.stage_le (Nat.zero_le _),
     fun m => by rw [compFil_loc_F hI hmax h𝔭 d 𝔪 h𝔭𝔪, cRF_eq hI hZ.1 hJ hJi]; rfl⟩⟩
+
+include hw in
+/-- `VertexData` at an explicit point above `𝔭`, with the filtration identified by R3
+(`compFil_loc_F_pt`) instead of the classical `compF_map`. -/
+lemma VertexData.nonempty_pt [Fact (Constructive.HasPres A)] (q : Pt A) (h𝔭q : 𝔭 ≤ q.ker) :
+    Nonempty (VertexData hI hmax h𝔭 (d := d) (v₀ := v₀) q.ker) := by
+  have hZ := h𝔭.mem hI hmax q h𝔭q
+  obtain ⟨n, e, ⟨⟨J, hJ, hJe⟩, hmin⟩, hev⟩ := hZ.2
+  have hJi : IsInv (Iloc I q.ker) n J.e := ⟨⟨J, hJ, rfl⟩, by rw [hJe]; exact hmin⟩
+  have := residueField_isIntegral q.ker
+  obtain ⟨k, ck, hrun, -, -, hsupp⟩ := hJi.exists_run (Iloc_ne_bot hI q.ker) (Iloc_le hZ.1) J.c
+    J.centred
+  have hw' : ∀ i : Fin n, ∃ w : ℕ, (w : ℚ) = d * J.e i := fun i => by
+    obtain ⟨w, hw⟩ := hw i
+    exact ⟨w, by rw [hw, ← hev, hJe, ext0_apply]⟩
+  obtain ⟨w, hwe⟩ := Constructive.finite_choice_dep hw'
+  exact ⟨⟨n, J, w, k, hwe, hJ, hJi, by rw [hJe, hev], hsupp, hrun.stage_le (Nat.zero_le _),
+    fun m => by rw [compFil_loc_F_pt hI hmax h𝔭 d q h𝔭q, cRF_eq hI hZ.1 hJ hJi]; rfl⟩⟩
 
 variable {hI hmax h𝔭}
 
@@ -1053,8 +1166,8 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
   [IsNoetherianRing A]
 
 variable {I : Ideal A} {hI : I ≠ ⊥} {v₀ : ℕ → ℚ}
-  {hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v}
-  {𝔭 : Ideal A} {h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes} {d : ℕ} (hd : 0 < d)
+  {hmax : IsMaxInvPt I v₀}
+  {𝔭 : Ideal A} {h𝔭 : LocusComp I v₀ 𝔭} {d : ℕ} (hd : 0 < d)
 
 set_option maxHeartbeats 800000 in
 /-- **The weak transform at the global vertex.** -/

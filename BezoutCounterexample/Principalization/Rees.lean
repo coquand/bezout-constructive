@@ -24,7 +24,7 @@ namespace BezoutCounterexample.Principalization
 
 open MvPowerSeries IsLocalRing
 
-variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] [IsNoetherianRing R] {n : ℕ}
+variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] [Fact (QuotSeqCond R)] {n : ℕ}
 
 namespace MC
 
@@ -44,7 +44,7 @@ theorem SA.step_run_of (hSA : SA I j J) (hna : ¬ J.Adm I) (βs : Fin n →₀ �
       SA I (j + 1) ⟨nextChart J.c ⟨j, hj⟩ l (J.c.Dv (βs - Finsupp.single l 1) f) u hu,
         nextE J.e j (nextW J.e j βs), hc, hnn, ha⟩ := by
   classical
-  obtain ⟨hj, β₀, f₀, hf₀, hf₀ne, hlt₀, hN₀, hmin₀, hnext₀, hbJ₀⟩ := hSA.step_data hna
+  obtain ⟨hj, β₀, f₀, hf₀, hf₀ne, hlt₀, hN₀, hmin₀, hnext₀, hbJ₀⟩ := hSA.step_data_Q Fact.out hna
   have hXi : Xi J.e j βs = Xi J.e j β₀ :=
     le_antisymm (hmin β₀ ⟨f₀, hf₀, hf₀ne⟩ hlt₀) (hmin₀ βs ⟨f, hf, hfne⟩ hlt)
   have hW : (1 - lam J.e βs) / tailSum j βs = (1 - lam J.e β₀) / tailSum j β₀ := by
@@ -79,6 +79,10 @@ theorem SA.step_run_of (hSA : SA I j J) (hna : ¬ J.Adm I) (βs : Fin n →₀ �
     simp only [compl]; split_ifs
     · exact J.nonneg i
     · exact hbp.le
+  have hc_ne : ∀ i, compl J.e j bp i ≠ 0 := fun i => by
+    simp only [compl]; split_ifs with h
+    · exact (hSA.e_pos h).ne'
+    · exact hbp.ne'
   have hc_anti : Antitone (compl J.e j bp) := by
     intro i i' hii'
     simp only [compl]
@@ -91,7 +95,7 @@ theorem SA.step_run_of (hSA : SA I j J) (hna : ¬ J.Adm I) (βs : Fin n →₀ �
       · rw [ite_eq_right h2]
   have hc_adm : I ≤ J.c.RF (compl J.e j bp) 1 := by
     intro g hg
-    rw [J.centred.mem_RF_iff hc_nonneg]
+    rw [J.centred.mem_RF_iff_of_ne hc_nonneg hc_ne]
     intro β hβ
     by_contra hne
     rw [lam_compl hzero] at hβ
@@ -246,7 +250,7 @@ theorem SA.step_run_of (hSA : SA I j J) (hna : ¬ J.Adm I) (βs : Fin n →₀ �
       · rw [← hJ'j]; exact J'.anti (Fin.le_def.2 (by simp only [hjj, Fin.val_mk]; omega))
       · by_contra hlt'
         push Not at hlt'
-        have := (hc''.mem_RF_iff J'.nonneg bp xb).1 hxb_RF (Finsupp.single m 1) (by
+        have := hc''.coeff_tau_eq_zero_of_mem_RF J'.nonneg hxb_RF (Finsupp.single m 1) (by
           rw [lam_single]; simpa using hlt')
         rw [Chart.coeff_tau_eq_zero_iff, Chart.Dv_single_one] at this
         exact hmnm this
@@ -396,7 +400,7 @@ lemma coeff_T_mul (p : B[T;T⁻¹]) (m j : ℤ) : (T m * p).coeff j = p.coeff (j
       AddMonoidAlgebra.coeff_add, Finsupp.add_apply]
   | C_mul_T l a =>
     rw [mul_left_comm, ← T_add, coeff_C_mul_T, coeff_C_mul_T]
-    congr 1; apply propext; omega
+    simp only [sub_eq_iff_eq_add']
 
 lemma Chart.laurent_d_castSucc_coeff (c : Chart B n) (i : Fin n) (p : B[T;T⁻¹]) (j : ℤ) :
     (c.laurent.d (Fin.castSucc i) p).coeff j = c.d i (p.coeff j) := by
@@ -883,10 +887,11 @@ variable (c : Chart B n) {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ}
 omit [Algebra ℚ B] in
 lemma prod_T_eq {ι : Type*} (s : Finset ι) (f : ι → ℤ) :
     ∏ i ∈ s, (T (f i) : B[T;T⁻¹]) = T (∑ i ∈ s, f i) := by
-  classical
-  induction s using Finset.induction_on with
+  show (s.val.map fun i => (T (f i) : B[T;T⁻¹])).prod = T ((s.val.map f).sum)
+  induction s.val using Multiset.induction_on with
   | empty => simp [T_zero]
-  | insert a s ha ih => rw [Finset.prod_insert ha, Finset.sum_insert ha, ih, ← T_add]
+  | cons a m ih => rw [Multiset.map_cons, Multiset.map_cons, Multiset.prod_cons,
+      Multiset.sum_cons, ih, ← T_add]
 
 theorem reesX_span :
     Submodule.span (ReesAlg Φ) (Set.range fun i =>
@@ -1056,7 +1061,7 @@ def vtx (hpos : ∀ j : ℤ, 0 < j → Φ.F j ≤ maximalIdeal B) : ReesAlg Φ �
     rw [Finset.sum_eq_single (0 : ℤ), Finset.sum_eq_single (0 : ℤ)]
     · simp
     · intro b _ hb; rw [ite_eq_right (by simpa using hb), map_zero]
-    · intro h; simp only [Finsupp.mem_support_iff, not_not] at h; simp [h]
+    · intro h; rw [Finsupp.notMem_support_iff] at h; simp [h]
     · intro a _ ha
       refine Finset.sum_eq_zero fun b _ => ?_
       split_ifs with hab
@@ -1066,7 +1071,7 @@ def vtx (hpos : ∀ j : ℤ, 0 < j → Φ.F j ≤ maximalIdeal B) : ReesAlg Φ �
           rw [(residue_eq_zero_iff _).2 (hpos b hb (q.2 b)), mul_zero]
         · rw [(residue_eq_zero_iff _).2 (hpos a ha' (p.2 a)), zero_mul]
       · exact map_zero _
-    · intro h; simp only [Finsupp.mem_support_iff, not_not] at h
+    · intro h; rw [Finsupp.notMem_support_iff] at h
       refine Finset.sum_eq_zero fun b _ => ?_
       split_ifs <;> simp [h]
   map_zero' := by simp
@@ -1297,9 +1302,11 @@ theorem vertex_eq_span (hc : c.IsCentred) :
         rw [rees_mono_eq c hF he hd hw α j m hm hf]
         refine Ideal.mul_mem_right _ _ ?_
         obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := by
-          by_contra h; push Not at h
+          rcases Decidable.em (∃ i, α i ≠ 0) with h | h
+          · exact h
+          have h' : ∀ i, α i = 0 := fun i => Nat.eq_zero_of_not_pos fun hp => h ⟨i, Nat.pos_iff_ne_zero.1 hp⟩
           have : Finsupp.weight w α = 0 := by
-            rw [Finsupp.weight_eq_sum]; exact Finset.sum_eq_zero fun i _ => by rw [h i, zero_smul]
+            rw [Finsupp.weight_eq_sum]; exact Finset.sum_eq_zero fun i _ => by rw [h' i, zero_smul]
           omega
         have hdvd : reesX c hF he hd hw (Fin.castSucc i) ∣
             ∏ l, reesX c hF he hd hw (Fin.castSucc l) ^ α l :=
@@ -1372,6 +1379,14 @@ omit [IsLocalRing B] in
 theorem rees_noetherian [IsNoetherianRing B] : IsNoetherianRing (ReesAlg Φ) := by
   have := rees_finiteType c hF he hd hw
   exact Algebra.FiniteType.isNoetherianRing B _
+
+include c hF he hd hw in
+omit [IsLocalRing B] in
+/-- The Rees algebra is of finite type over `B`, hence inherits `PolyIndNoeth` (no choice). -/
+theorem fact_polyIndNoeth_rees [Fact (Constructive.PolyIndNoeth B)] :
+    Fact (Constructive.PolyIndNoeth (ReesAlg Φ)) :=
+  have := rees_finiteType c hF he hd hw
+  fact_polyIndNoeth_of_finiteType (R := B)
 
 end ReesLoc
 

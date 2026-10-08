@@ -1,3 +1,55 @@
+# A constructive version, by Claude, of the Hägg–Mörtberg Bézout counterexample
+
+> **What this is.** This repository contains a *constructive* version, produced by **Claude (Anthropic)**,
+> of the proof in
+> C. Hägg and A. Mörtberg, *A Bézout domain that is not an elementary divisor domain*,
+> [arXiv:2609.35229](https://arxiv.org/abs/2609.35229).
+> It is **not** the work of Hägg and Mörtberg, and they have not reviewed it.
+>
+> It is a fork of their Lean 4 formalization
+> [Zelaron/bezout-counterexample-lean](https://github.com/Zelaron/bezout-counterexample-lean)
+> (MIT licence, copyright Hägg and Mörtberg; see `LICENSE`), extended by Claude so that the main
+> construction no longer uses classical reasoning in the project's own code.
+
+## Contents
+
+- [`constructive/bezout-constructive-proof.pdf`](constructive/bezout-constructive-proof.pdf)
+  (LaTeX source alongside): an informal constructive proof, in the style of Lombardi–Quitté,
+  written by Claude. The only principles used beyond intuitionistic logic are unique choice and
+  Noetherianity in the inductive (Richman–Seidenberg / Coquand–Persson) sense. Maximal ideals,
+  Krull dimension and compactness are not used.
+- The Lean development. Claude's additions are mainly in `BezoutCounterexample/Constructive/`
+  and the `Principalization/ChainLift*` and `*Pt*` files. The constructive form of the main
+  theorem is `main_theorem_tower` in
+  [`Principalization/ChainLiftMain.lean`](BezoutCounterexample/Principalization/ChainLiftMain.lean).
+
+## Status of the constructive formalization (October 2026)
+
+- The full build succeeds, and Hägg and Mörtberg's original `main_theorem` is still proved.
+- `scripts/ConstructiveAudit.lean` passes. The audited declarations use no classical constant
+  except 8 explicitly marked `@[cprim]` primitives, which are constructively valid:
+  - sign splitting and cotransitivity on ℝ;
+  - inverses and roots of positive reals;
+  - a Banach fixed point with rate ½;
+  - polynomial gcd over a discrete field;
+  - a primitive-element shift.
+- No project declaration in the dependency cone of `main_theorem_tower` (about 4800
+  declarations) directly uses `Classical.*`, excluded middle or a hidden choice wrapper
+  (`Exists.choose`, `Finset.toList`, …). This was measured with `docs/pending/cone-count.lean`.
+- **Caveat:** `#print axioms main_theorem_tower` still reports
+  `[propext, Classical.choice, Quot.sound]`.
+  - These uses come from Mathlib lemmas (the Hilbert basis theorem, localisation, finite-set
+    bookkeeping). The lemmas are known to be constructively valid, but Mathlib proves them
+    classically.
+  - Unique choice is used.
+  - So the development is constructive *modulo Mathlib*; it is not a choice-free term.
+  - Details: [`docs/remaining-classical.md`](docs/remaining-classical.md),
+    [`docs/constructive-audit.md`](docs/constructive-audit.md).
+
+The rest of this README is the original one by Hägg and Mörtberg.
+
+---
+
 # A Bézout domain that is not an elementary divisor domain
 
 This Lean 4 / Mathlib project formalizes *A Bézout domain that is not an elementary divisor domain* by **Christian Hägg and Anders Mörtberg**. Numbered references below and in the Lean sources refer to that paper, which is distributed separately.

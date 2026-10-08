@@ -114,9 +114,9 @@ lemma recFun_mem [Algebra.IsIntegral ℚ (ResidueField R)] (c : Chart R n) (i : 
 
 end Chart
 
-variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [IsNoetherianRing A]
+variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A]
 
-omit [IsDomain A] [IsNoetherianRing A] in
+omit [IsDomain A] in
 lemma Loc.map_aeval {M N : Submonoid A} (h : M ≤ N) (a : Localization M) (p : ℚ[X]) :
     Loc.map h (aeval a p) = aeval (Loc.map h a) p :=
   (Polynomial.aeval_algHom_apply (Loc.map h).toRatAlgHom a p).symm
@@ -124,7 +124,7 @@ lemma Loc.map_aeval {M N : Submonoid A} (h : M ≤ N) (a : Localization M) (p : 
 /-- **Recentring over a localization**: after a controlled localization, a chart over `M⁻¹A`
 can be changed so that its transport to `A_𝔪` is centred. -/
 lemma exists_centred_transport [Algebra.FormallySmooth ℚ A] [Algebra.FiniteType ℚ A]
-    (𝔪 : Ideal A) [𝔪.IsMaximal] {n : ℕ} {M : Submonoid A} (hM : M ≤ 𝔪.primeCompl)
+    (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔪 : 𝔪.FG) {n : ℕ} {M : Submonoid A} (hM : M ≤ 𝔪.primeCompl)
     (c : Chart (Localization M) n) :
     ∃ M', ∃ hE : Loc.Ext M 𝔪.primeCompl M', ∃ c₁ : Chart (Localization M') n,
       (Loc.transport hE.le₂ c₁).IsCentred := by
@@ -152,7 +152,8 @@ lemma exists_centred_transport [Algebra.FormallySmooth ℚ A] [Algebra.FiniteTyp
     ext i j
     simp only [RingHom.mapMatrix_apply, Matrix.map_apply, Chart.jac, Matrix.of_apply, c',
       Loc.transport_d]
-  refine ⟨M', hE, c'.change _ (hjac ▸ hunit), Chart.isCentred_of_mem fun i => ?_⟩
+  refine ⟨M', hE, c'.change _ (hjac ▸ hunit), Chart.isCentred_of_mem
+    (by rw [← Localization.AtPrime.map_eq_maximalIdeal]; exact h𝔪.map _) fun i => ?_⟩
   rw [Loc.transport_x, Chart.change_x, Loc.map_apply_comp, hy]
   exact cN.recFun_mem i
 
@@ -182,10 +183,16 @@ theorem local_structure (I : Ideal A) (hI : I ≠ ⊥) (𝔪 : Ideal A) [𝔪.Is
           toLex ek ≤ toLex J'.e ∧
           (J'.e = ek → ∀ t, J'.RF t = (Loc.transport (hctrl 𝔪' hg') ck).RF ek t) := by
   classical
+  -- the only classical input: `I` and `𝔪` are f.g. (Hilbert basis theorem). At an explicit point
+  -- with a basis of its residue field, `𝔪.FG` is `Constructive.fg_ker_of_quotient_basis`.
+  -- (F1), (F2) at `𝔪` come from `QuotSeqCond`, i.e. from `Constructive.polyBar`.
   have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing ℚ A
+  have hIfg : I.FG := IsNoetherian.noetherian I
+  have h𝔪fg : 𝔪.FG := IsNoetherian.noetherian 𝔪
+  have hQ : Fact (QuotSeqCond (Localization.AtPrime 𝔪)) := fact_quotSeqCond_atPrime 𝔪
   obtain ⟨f, hf, n, ⟨c₀⟩⟩ := exists_chart_away 𝔪
   have hM₀ : Submonoid.powers f ≤ 𝔪.primeCompl := (Submonoid.powers_le).2 hf
-  obtain ⟨M₁, hE₁, c₁, hc₁⟩ := exists_centred_transport 𝔪 hM₀ c₀
+  obtain ⟨M₁, hE₁, c₁, hc₁⟩ := exists_centred_transport 𝔪 h𝔪fg hM₀ c₀
   -- Method 1 at `𝔪`
   set IR := I.map (algebraMap A (Localization.AtPrime 𝔪))
   have hIR : IR ≠ ⊥ := by
@@ -202,9 +209,9 @@ theorem local_structure (I : Ideal A) (hI : I ≠ ⊥) (𝔪 : Ideal A) [𝔪.Is
     intro a ha
     rw [Ideal.mem_comap, IsLocalization.AtPrime.to_map_mem_maximal_iff (Localization.AtPrime 𝔪) 𝔪 a]
     exact hI𝔪 ha
-  have hSA0 := MC.sa_zero hIR hIRm _ hc₁
+  have hSA0 := MC.sa_zero_Q hQ.out hIR hIRm _ hc₁
   obtain ⟨M', hE, k, ck, ek, hrun, hadm, hsupp, hnn, hanti, hcent⟩ :=
-    spread_run 𝔪 I (n - 0) 0 rfl M₁ hE₁.le₂ c₁ 0 hc₁ (fun _ => le_rfl) (fun _ _ _ => le_rfl) hSA0
+    spread_run 𝔪 I hIfg (n - 0) 0 rfl M₁ hE₁.le₂ c₁ 0 hc₁ (fun _ => le_rfl) (fun _ _ _ => le_rfl) hSA0
   -- control
   obtain ⟨t₁, ht₁, hct₁⟩ := hE₁.ctrl
   obtain ⟨t₂, ht₂, hct₂⟩ := hE.ctrl

@@ -33,10 +33,9 @@ def mapCoeffsLin (δ : Derivation R A A) : MvPolynomial σ A →ₗ[R] MvPolynom
 
 lemma mapCoeffsLin_monomial (δ : Derivation R A A) (m : σ →₀ ℕ) (a : A) :
     mapCoeffsLin δ (monomial m a) = monomial m (δ a) := by
-  classical
-  ext n
-  rw [coeff_mapCoeffsLin, coeff_monomial, coeff_monomial]
-  split_ifs <;> simp
+  show AddMonoidAlgebra.ofCoeff (Finsupp.mapRange δ (map_zero δ) (Finsupp.single m a)) = _
+  rw [Finsupp.mapRange_single]
+  rfl
 
 lemma mapCoeffsLin_mul (δ : Derivation R A A) (p q : MvPolynomial σ A) :
     mapCoeffsLin δ (p * q) = p * mapCoeffsLin δ q + q * mapCoeffsLin δ p := by

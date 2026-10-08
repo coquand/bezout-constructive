@@ -1,4 +1,5 @@
 import BezoutCounterexample.Principalization.Duality
+import BezoutCounterexample.Constructive.ChartP
 
 /-!
 # Marked centres and the uniqueness of the maximal admissible centre
@@ -7,7 +8,9 @@ For a Noetherian local `ℚ`-algebra with a centred chart we consider *marked ce
 `(x₀^{1/e₀}, x₁^{1/e₁}, …)`, given by a centred chart and antitone nonnegative weights `e`, with
 weighted ideals `RF e t = (x^α : ∑ αᵢ eᵢ ≥ t)`.  We prove:
 
-* rational weighted duality (`Chart.IsCentred.mem_RF_iff`);
+* rational weighted duality, in the `𝔭`-adic form without locality or Noetherian hypothesis
+  (`Chart.mem_RF_iff_P`, from `Constructive.PChart.mem_F_iff`) and in the residue form
+  (`Chart.IsCentred.mem_RF_iff`), which adds finite order along the centre (Krull for `R/𝔭`);
 * the monomial and derivation criteria comparing weighted ideals of two charts, the replacement
   lemma `Chart.IsCentred.RF_replace` and the fundamental chain rule lemmas;
 * **Method 1** of Brais (inductive construction of semi-associated centres, `MC.SA.step`);
@@ -116,6 +119,75 @@ lemma RF_eq_F {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ} (hd : 0 < d)
   · intro h; exact mul_le_mul_of_nonneg_left h (Nat.cast_nonneg _)
   · intro h; exact le_of_mul_le_mul_left h (by exact_mod_cast hd)
 
+/-- The head ideal `𝔭_e = (xᵢ : eᵢ ≠ 0)`. -/
+def head (e : Fin n → ℚ) : Ideal R := Ideal.span (c.x '' {i | e i ≠ 0})
+
+lemma x_mem_head {e : Fin n → ℚ} {i : Fin n} (hi : e i ≠ 0) : c.x i ∈ c.head e :=
+  Ideal.subset_span ⟨i, hi, rfl⟩
+
+/-- **`𝔭`-adic rational weighted duality** (`bezout-direct.tex`, Prop. 3.2): membership in
+`RF e t` is tested by head derivatives modulo the head ideal. No locality, no Noetherian
+hypothesis, no Krull intersection theorem (`Constructive.mem_F_iff_P`). -/
+theorem mem_RF_iff_P {e : Fin n → ℚ} (he : ∀ i, 0 ≤ e i) (t : ℚ) (f : R) :
+    f ∈ c.RF e t ↔ ∀ β : Fin n →₀ ℕ, (∀ i, e i = 0 → β i = 0) → lam e β < t →
+      c.D β f ∈ c.head e := by
+  obtain ⟨d, w, hd, hw⟩ := exists_scale he
+  have hlam : ∀ α : Fin n →₀ ℕ, (Finsupp.weight w α : ℚ) = d * lam e α := by
+    intro α
+    rw [Finsupp.weight_eq_sum, lam, Finset.mul_sum]
+    push_cast
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [smul_eq_mul, Nat.cast_mul, hw i]; ring
+  have hzero : ∀ i, w i = 0 ↔ e i = 0 := by
+    intro i
+    have h := hw i
+    constructor
+    · intro h0; rw [h0, Nat.cast_zero] at h
+      exact (mul_eq_zero.1 h.symm).resolve_left (by positivity)
+    · intro h0; rw [h0, mul_zero] at h; exact_mod_cast h
+  have hhead : {i | w i ≠ 0} = {i | e i ≠ 0} := Set.ext fun i => not_congr (hzero i)
+  rw [c.RF_eq_F hd hw, Constructive.mem_F_iff_P, Chart.head, hhead]
+  refine forall_congr' fun β => imp_congr (forall_congr' fun i => by rw [hzero i]) ?_
+  refine imp_congr_left ?_
+  rw [Nat.lt_ceil, hlam]
+  constructor
+  · intro h; exact lt_of_mul_lt_mul_left h (Nat.cast_nonneg _)
+  · intro h; exact mul_lt_mul_of_pos_left h (by exact_mod_cast hd)
+
+lemma RF_le_head {e : Fin n → ℚ} (he : ∀ i, 0 ≤ e i) {t : ℚ} (ht : 0 < t) :
+    c.RF e t ≤ c.head e := fun f hf => by
+  have := (c.mem_RF_iff_P he t f).1 hf 0 (fun _ _ => by simp) (by rw [lam_zero]; exact ht)
+  rwa [c.D_zero] at this
+
+/-- Elements of the head ideal are combinations of the head functions. -/
+lemma exists_sum_of_mem_head {e : Fin n → ℚ} {f : R} (hf : f ∈ c.head e) :
+    ∃ r : Fin n → R, (∀ i, e i = 0 → r i = 0) ∧ f = ∑ i, r i * c.x i := by
+  refine Submodule.span_induction (p := fun f _ => ∃ r : Fin n → R, (∀ i, e i = 0 → r i = 0) ∧
+    f = ∑ i, r i * c.x i) ?_ ?_ ?_ ?_ hf
+  · rintro _ ⟨j, hj, rfl⟩
+    refine ⟨Pi.single j 1, fun i hi => ?_, ?_⟩
+    · have : i ≠ j := fun h => hj (by rw [← h]; exact hi)
+      simp [this]
+    · rw [Finset.sum_eq_single j (fun i _ hi => by simp [hi]) (by simp)]; simp
+  · exact ⟨0, fun _ _ => rfl, by simp⟩
+  · rintro a b _ _ ⟨r, hr, rfl⟩ ⟨r', hr', rfl⟩
+    exact ⟨r + r', fun i hi => by simp [hr i hi, hr' i hi],
+      by simp [add_mul, Finset.sum_add_distrib]⟩
+  · rintro a b _ ⟨r, hr, rfl⟩
+    exact ⟨fun i => a * r i, fun i hi => by simp [hr i hi], by simp [Finset.mul_sum, mul_assoc]⟩
+
+/-- Derivations in tail directions preserve the head ideal. -/
+lemma d_mem_head {e : Fin n → ℚ} {m : Fin n} (hm : e m = 0) {f : R} (hf : f ∈ c.head e) :
+    c.d m f ∈ c.head e := by
+  refine Submodule.span_induction (p := fun f _ => c.d m f ∈ c.head e) ?_ ?_ ?_ ?_ hf
+  · rintro _ ⟨j, hj, rfl⟩
+    rw [c.d_x_ne (fun h => hj (by rw [← h]; exact hm))]; exact zero_mem _
+  · simp
+  · intro a b _ _ ha hb; rw [map_add]; exact add_mem ha hb
+  · intro a b hb hdb
+    rw [smul_eq_mul, Derivation.leibniz, smul_eq_mul, smul_eq_mul]
+    exact add_mem (Ideal.mul_mem_left _ _ hdb) (Ideal.mul_mem_right _ _ hb)
+
 end Chart
 
 end BezoutCounterexample.Principalization
@@ -135,8 +207,7 @@ lemma Finsupp.induction_single {P : (Fin n →₀ ℕ) → Prop} (h0 : P 0)
   | ind β ih =>
     by_cases hβ : β = 0
     · subst hβ; exact h0
-    · obtain ⟨i, hi⟩ : ∃ i, β i ≠ 0 := by
-        by_contra h; push Not at h; exact hβ (Finsupp.ext h)
+    · obtain ⟨i, hi⟩ := finsupp_exists_ne_zero hβ
       set β' := β - Finsupp.single i 1 with hβ'
       have hsum : β' + Finsupp.single i 1 = β := by
         ext l
@@ -163,48 +234,102 @@ lemma D_d (β : Fin n →₀ ℕ) (i : Fin n) (f : R) : c.D β (c.d i f) = c.d i
 lemma Dv_d (β : Fin n →₀ ℕ) (i : Fin n) (f : R) : c.Dv β (c.d i f) = c.d i (c.Dv β f) := by
   simp only [Dv, D_d, Derivation.map_smul]
 
+lemma D_add (β γ : Fin n →₀ ℕ) (f : R) : c.D (β + γ) f = c.D β (c.D γ f) := by
+  simp only [D, dpow_add]; rfl
+
+lemma D_eq_smul_Dv (β : Fin n →₀ ℕ) (f : R) :
+    c.D β f = ((∏ i, (β i).factorial : ℕ) : ℚ) • c.Dv β f := by
+  have h : ((∏ i, (β i).factorial : ℕ) : ℚ) ≠ 0 := by
+    exact_mod_cast (Finset.prod_pos fun i _ => Nat.factorial_pos (β i)).ne'
+  rw [Dv, smul_smul, mul_inv_cancel₀ h, one_smul]
+
+/-- The chart derivations lower the weighted order by their weight (by `𝔭`-adic duality: no
+locality, no Noetherian hypothesis). -/
+lemma d_mem_RF {e : Fin n → ℚ} (he : ∀ i, 0 ≤ e i) (m : Fin n) {t : ℚ} {f : R}
+    (hf : f ∈ c.RF e t) : c.d m f ∈ c.RF e (t - e m) := by
+  rw [c.mem_RF_iff_P he] at hf ⊢
+  intro β hβ hlt
+  rw [D_d]
+  by_cases hm : e m = 0
+  · exact c.d_mem_head hm (hf β hβ (by rw [hm, sub_zero] at hlt; exact hlt))
+  · rw [← D_add_single]
+    refine hf _ (fun i hi => ?_) (by rw [lam_add, lam_single]; push_cast; linarith)
+    have him : i ≠ m := fun h => hm (h ▸ hi)
+    simp [hβ i hi, Ne.symm him]
+
+lemma D_mem_RF {e : Fin n → ℚ} (he : ∀ i, 0 ≤ e i) (β : Fin n →₀ ℕ) :
+    ∀ (t : ℚ) (f : R), f ∈ c.RF e t → c.D β f ∈ c.RF e (t - lam e β) := by
+  refine Finsupp.induction_single (P := fun β => ∀ (t : ℚ) (f : R), f ∈ c.RF e t →
+    c.D β f ∈ c.RF e (t - lam e β)) ?_ (fun β i ih => ?_) β
+  · intro t f hf; rw [D_zero, lam_zero, sub_zero]; exact hf
+  · intro t f hf
+    rw [D_add_single, lam_add, lam_single, Nat.cast_one, one_mul, ← sub_sub]
+    exact c.d_mem_RF he i (ih t f hf)
+
 variable [IsLocalRing R] {c}
 
 lemma coeff_tau_d (β : Fin n →₀ ℕ) (i : Fin n) (f : R) :
     coeff β (c.tau (c.d i f)) = ((β i + 1 : ℕ) : ℚ) • coeff (β + Finsupp.single i 1) (c.tau f) := by
   rw [coeff_tau, coeff_tau, Dv_d, d_Dv, map_rat_smul]
 
-/-- **Rational weighted duality.** -/
+lemma IsCentred.head_le (hc : c.IsCentred) (e : Fin n → ℚ) : c.head e ≤ maximalIdeal R :=
+  Ideal.span_le.2 fun _ ⟨i, _, h⟩ => h ▸ hc.x_mem i
+
+lemma IsCentred.head_eq (hc : c.IsCentred) {e : Fin n → ℚ} (hne : ∀ i, e i ≠ 0) :
+    c.head e = maximalIdeal R := by
+  rw [hc, head]; congr 1; ext f; simp [hne]
+
+lemma D_mem_max_iff (β : Fin n →₀ ℕ) (f : R) :
+    c.D β f ∈ maximalIdeal R ↔ coeff β (c.tau f) = 0 := by
+  rw [coeff_tau_eq_zero_iff]
+  constructor
+  · intro h; rw [Dv]; exact Submodule.smul_of_tower_mem _ _ h
+  · intro h; rw [D_eq_smul_Dv]; exact Submodule.smul_of_tower_mem _ _ h
+
+/-- The easy direction of duality (no Noetherian hypothesis). -/
+lemma IsCentred.coeff_tau_eq_zero_of_mem_RF (hc : c.IsCentred) {e : Fin n → ℚ}
+    (he : ∀ i, 0 ≤ e i) {t : ℚ} {f : R} (hf : f ∈ c.RF e t) (β : Fin n →₀ ℕ)
+    (hβ : lam e β < t) : coeff β (c.tau f) = 0 :=
+  (D_mem_max_iff β f).1
+    (hc.head_le e (c.RF_le_head he (by linarith) (c.D_mem_RF he β t f hf)))
+
+/-- **Rational weighted duality for weights without zeros** (no Noetherian hypothesis): the head
+ideal is then `𝔪`, and `𝔭`-adic duality is the residue form. -/
+theorem IsCentred.mem_RF_iff_of_ne (hc : c.IsCentred) {e : Fin n → ℚ} (he : ∀ i, 0 ≤ e i)
+    (hne : ∀ i, e i ≠ 0) (t : ℚ) (f : R) :
+    f ∈ c.RF e t ↔ ∀ β : Fin n →₀ ℕ, lam e β < t → coeff β (c.tau f) = 0 := by
+  rw [c.mem_RF_iff_P he, hc.head_eq hne]
+  refine forall_congr' fun β => ?_
+  rw [D_mem_max_iff]
+  exact ⟨fun h => h fun i hi => absurd hi (hne i), fun h _ => h⟩
+
+/-- **Rational weighted duality** (residue form). This is `𝔭`-adic duality (`mem_RF_iff_P`) plus
+finite order along the centre, (F2) of `bezout-direct.tex`: an element of `R` whose tail
+derivatives all vanish at `𝔪` lies in the head ideal. (F2) is `IsCentred.mem_span_iff` (Krull for
+`R/𝔭`), the only use of the Noetherian hypothesis here. -/
 theorem IsCentred.mem_RF_iff [IsNoetherianRing R] (hc : c.IsCentred) {e : Fin n → ℚ}
     (he : ∀ i, 0 ≤ e i) (t : ℚ) (f : R) :
     f ∈ c.RF e t ↔ ∀ β : Fin n →₀ ℕ, lam e β < t → coeff β (c.tau f) = 0 := by
-  obtain ⟨d, w, hd, hw⟩ := exists_scale he
-  rw [c.RF_eq_F hd hw, hc.mem_F_iff]
-  have hlam : ∀ α : Fin n →₀ ℕ, (Finsupp.weight w α : ℚ) = d * lam e α := by
-    intro α
-    rw [Finsupp.weight_eq_sum, lam, Finset.mul_sum]
-    push_cast
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [smul_eq_mul, Nat.cast_mul, hw i]; ring
-  refine forall_congr' fun β => imp_congr_left ?_
-  rw [Nat.lt_ceil, hlam]
-  constructor
-  · intro h; exact lt_of_mul_lt_mul_left h (Nat.cast_nonneg _)
-  · intro h; exact mul_lt_mul_of_pos_left h (by exact_mod_cast hd)
+  refine ⟨fun hf β hβ => hc.coeff_tau_eq_zero_of_mem_RF he hf β hβ, fun h => ?_⟩
+  rw [c.mem_RF_iff_P he]
+  intro β _ hβ
+  -- (F2)
+  refine (hc.mem_span_iff {i | e i ≠ 0} _).2 fun δ hδ => ?_
+  have hlam : lam e δ = 0 := Finset.sum_eq_zero fun i _ => by
+    by_cases hi : e i = 0
+    · rw [hi, mul_zero]
+    · rw [hδ i hi, Nat.cast_zero, zero_mul]
+  rw [← D_mem_max_iff, ← D_add]
+  exact (D_mem_max_iff _ _).2 (h _ (by rw [lam_add, hlam, zero_add]; exact hβ))
 
 lemma IsCentred.RF_le_maximalIdeal (hc : c.IsCentred) {e : Fin n → ℚ} {t : ℚ} (ht : 0 < t) :
     c.RF e t ≤ maximalIdeal R := by
   rw [RF, Ideal.span_le]
   rintro _ ⟨α, -, hα, rfl⟩
   have hα0 : α ≠ 0 := by rintro rfl; rw [lam_zero] at hα; linarith
-  obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := by
-    by_contra h; push Not at h; exact hα0 (Finsupp.ext h)
+  obtain ⟨i, hi⟩ := finsupp_exists_ne_zero hα0
   rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i)]
   exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_of_mem _ (hc.x_mem i) _ (Nat.pos_of_ne_zero hi))
-
-/-- The chart derivations lower the weighted order by their weight. -/
-lemma IsCentred.d_mem_RF [IsNoetherianRing R] (hc : c.IsCentred) {e : Fin n → ℚ}
-    (he : ∀ i, 0 ≤ e i) (m : Fin n) {t : ℚ} {f : R} (hf : f ∈ c.RF e t) :
-    c.d m f ∈ c.RF e (t - e m) := by
-  rw [hc.mem_RF_iff he] at hf ⊢
-  intro β hβ
-  rw [coeff_tau_d, hf _ (by rw [lam_add, lam_single]; push_cast; linarith)]
-  simp
 
 end Chart
 
@@ -264,7 +389,8 @@ variable [IsLocalRing R] {c c' : Chart R n}
 
 /-- **Compatibility criterion.** If the derivations of a centred chart `c'` lower the weighted
 order of `c` by at most the weights, then the weighted ideals of `c` are contained in those of
-`c'`. -/
+`c'`. (Residue form, via (F2); the replacement lemma now uses the Krull-free
+`RF_le_of_lowersBy_P`.) -/
 theorem IsCentred.RF_le_of_lowersBy [IsNoetherianRing R] (hc : c.IsCentred)
     (hc' : c'.IsCentred) {e : Fin n → ℚ} (he : ∀ i, 0 ≤ e i)
     (hdeg : ∀ m, c.LowersBy e (c'.d m) (e m)) (t : ℚ) : c.RF e t ≤ c'.RF e t := by
@@ -365,6 +491,9 @@ namespace Chart
 
 variable (c : Chart R n)
 
+lemma D_single_one (l : Fin n) (f : R) : c.D (Finsupp.single l 1) f = c.d l f := by
+  simpa [D_zero] using c.D_add_single 0 l f
+
 lemma Dv_single_one (l : Fin n) (f : R) : c.Dv (Finsupp.single l 1) f = c.d l f := by
   have := c.d_Dv 0 l f
   rw [Dv_zero, zero_add, Finsupp.coe_zero, Pi.zero_apply] at this
@@ -392,7 +521,7 @@ lemma IsCentred.RF_one_two_le (hc : c.IsCentred) :
   exact Ideal.pow_le_pow_right hdeg hmem
 
 /-- Replacing a chart function by an element of `𝔪` with unit derivative keeps the chart centred. -/
-lemma IsCentred.replace [IsNoetherianRing R] (hc : c.IsCentred) (m : Fin n) (g : R) (u : Rˣ)
+lemma IsCentred.replace (hc : c.IsCentred) (m : Fin n) (g : R) (u : Rˣ)
     (hu : c.d m g = u) (hg : g ∈ maximalIdeal R) : (c.replace m g u hu).IsCentred := by
   set c' := c.replace m g u hu
   have hx' : ∀ i, c'.x i ∈ maximalIdeal R := by
@@ -403,18 +532,17 @@ lemma IsCentred.replace [IsNoetherianRing R] (hc : c.IsCentred) (m : Fin n) (g :
   -- `h = g - ∑ (∂ᵢ g) xᵢ ∈ 𝔪²`
   set h := g - ∑ i, c.d i g * c.x i with hh
   have h2 : h ∈ maximalIdeal R ^ 2 := by
-    refine hc.RF_one_two_le ((hc.mem_RF_iff (fun _ => zero_le_one) 2 h).2 fun β hβ => ?_)
+    refine hc.RF_one_two_le ((c.mem_RF_iff_P (fun _ => zero_le_one) 2 h).2 fun β _ hβ => ?_)
+    rw [hc.head_eq (fun _ => one_ne_zero)]
     have hdeg : β.degree < 2 := by
       have : lam (fun _ => (1 : ℚ)) β = β.degree := by simp [lam, Finsupp.degree_eq_sum]
       rw [this] at hβ; exact_mod_cast hβ
-    rw [coeff_tau_eq_zero_iff]
     by_cases h0 : β = 0
     · subst h0
-      rw [Dv_zero, hh]
+      rw [D_zero, hh]
       refine sub_mem hg (Ideal.sum_mem _ fun i _ => Ideal.mul_mem_left _ _ (hc.x_mem i))
     · obtain ⟨l, hl⟩ : ∃ l, β = Finsupp.single l 1 := by
-        obtain ⟨l, hl⟩ : ∃ l, β l ≠ 0 := by
-          by_contra hc'; push Not at hc'; exact h0 (Finsupp.ext hc')
+        obtain ⟨l, hl⟩ := finsupp_exists_ne_zero h0
         refine ⟨l, ?_⟩
         have hsum := hdeg
         rw [Finsupp.degree_eq_sum, ← Finset.add_sum_erase _ _ (Finset.mem_univ l)] at hsum
@@ -426,7 +554,7 @@ lemma IsCentred.replace [IsNoetherianRing R] (hc : c.IsCentred) (m : Fin n) (g :
         · rw [Finsupp.single_apply, ite_eq_right (Ne.symm hi)]
           exact hrest i (Finset.mem_erase.2 ⟨hi, Finset.mem_univ i⟩)
       subst hl
-      rw [Dv_single_one, hh, map_sub, map_sum]
+      rw [D_single_one, hh, map_sub, map_sum]
       have : ∀ i, c.d l (c.d i g * c.x i) =
           (if l = i then c.d i g else 0) + c.x i * c.d l (c.d i g) := by
         intro i
@@ -436,8 +564,7 @@ lemma IsCentred.replace [IsNoetherianRing R] (hc : c.IsCentred) (m : Fin n) (g :
       exact neg_mem (Ideal.sum_mem _ fun i _ => Ideal.mul_mem_right _ _ (hc.x_mem i))
   refine le_antisymm ?_ ((Ideal.span_le).2 (by rintro _ ⟨i, rfl⟩; exact hx' i))
   have hfg : (maximalIdeal R).FG := by
-    classical
-    rw [hc]; exact ⟨Finset.univ.image c.x, by simp⟩
+    rw [hc]; exact Submodule.fg_span (Set.finite_range _)
   refine Submodule.le_of_le_smul_of_le_jacobson_bot hfg (maximalIdeal_le_jacobson _) ?_
   conv_lhs => rw [hc]
   rw [Ideal.span_le]
@@ -550,16 +677,69 @@ lemma Dv_mem_RF_of_lowersBy (c c' : Chart R n) (e s : Fin n → ℚ)
   rw [Dv, Algebra.smul_def]
   exact Ideal.mul_mem_left _ _ (D_mem_RF_of_lowersBy c c' e s h β t f hf)
 
-variable [IsLocalRing R] [IsNoetherianRing R]
+/-- **Compatibility criterion, `𝔭`-adic form.** If the derivations of `c'` lower the weighted
+order of `c` by at most the weights, and the head ideal of `c` is contained in that of `c'`, then
+the weighted ideals of `c` are contained in those of `c'`. No locality, no Noetherian hypothesis. -/
+theorem RF_le_of_lowersBy_P (c c' : Chart R n) {e : Fin n → ℚ} (he : ∀ i, 0 ≤ e i)
+    (hdeg : ∀ m, c.LowersBy e (c'.d m) (e m)) (hhead : c.head e ≤ c'.head e) (t : ℚ) :
+    c.RF e t ≤ c'.RF e t := by
+  intro f hf
+  rw [c'.mem_RF_iff_P he]
+  intro β _ hβ
+  exact hhead (c.RF_le_head he (by linarith) (D_mem_RF_of_lowersBy c c' e e hdeg β t f hf))
+
+variable [IsLocalRing R]
+
+/-- Replacing `xₘ` by `g` with unit `∂ₘ g`, where `g ∈ 𝔭_e` if `xₘ` is a head function, does not
+shrink the head ideal (the coefficient of `xₘ` in `g` is a unit). -/
+lemma IsCentred.head_le_replace {c : Chart R n} (hc : c.IsCentred) {e : Fin n → ℚ} (m : Fin n)
+    (g : R) (u : Rˣ) (hu : c.d m g = u) (hg : e m ≠ 0 → g ∈ c.head e) :
+    c.head e ≤ (c.replace m g u hu).head e := by
+  have hx : ∀ i, i ≠ m → e i ≠ 0 → c.x i ∈ (c.replace m g u hu).head e := fun i him hi => by
+    rw [← c.replace_x_ne m g u hu him]; exact (c.replace m g u hu).x_mem_head hi
+  refine Ideal.span_le.2 ?_
+  rintro _ ⟨i, hi, rfl⟩
+  by_cases him : i = m
+  · subst him
+    obtain ⟨r, hr, hgr⟩ := c.exists_sum_of_mem_head (hg hi)
+    -- `∂ₘ g = rₘ + ∑ₖ xₖ ∂ₘ rₖ`, so `rₘ` is a unit
+    have hd : c.d i g = r i + ∑ k, c.x k * c.d i (r k) := by
+      rw [hgr, map_sum]
+      simp only [Derivation.leibniz, smul_eq_mul, c.d_x, mul_ite, mul_one, mul_zero,
+        Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+    have hsum : ∑ k, c.x k * c.d i (r k) ∈ maximalIdeal R :=
+      Ideal.sum_mem _ fun k _ => Ideal.mul_mem_right _ _ (hc.x_mem k)
+    have hunit : IsUnit (r i) := by
+      refine notMem_maximalIdeal.1 fun hri => notMem_maximalIdeal.2 u.isUnit ?_
+      rw [← hu, hd]; exact add_mem hri hsum
+    -- `xₘ rₘ = g - ∑_{k ≠ m} rₖ xₖ` lies in the new head ideal
+    have hxr : r i * c.x i ∈ (c.replace i g u hu).head e := by
+      have hg' : g ∈ (c.replace i g u hu).head e := by
+        have := (c.replace i g u hu).x_mem_head hi
+        rwa [c.replace_x_self] at this
+      have hrest : ∑ k ∈ Finset.univ.erase i, r k * c.x k ∈ (c.replace i g u hu).head e :=
+        Ideal.sum_mem _ fun k hk => by
+          by_cases hk0 : e k = 0
+          · rw [hr k hk0, zero_mul]; exact zero_mem _
+          · exact Ideal.mul_mem_left _ _ (hx k (Finset.ne_of_mem_erase hk) hk0)
+      have e1 : r i * c.x i = g - ∑ k ∈ Finset.univ.erase i, r k * c.x k := by
+        rw [hgr, ← Finset.add_sum_erase _ _ (Finset.mem_univ i)]; ring
+      rw [e1]; exact sub_mem hg' hrest
+    obtain ⟨v, hv⟩ := hunit
+    have e2 : c.x i = ↑v⁻¹ * (r i * c.x i) := by rw [← hv, ← mul_assoc, Units.inv_mul, one_mul]
+    rw [e2]; exact Ideal.mul_mem_left _ _ hxr
+  · exact hx i him hi
 
 /-- **Replacement lemma.** Replacing the `m`-th function of a centred chart by an element of the
-right weighted order with unit `∂ₘ`-derivative does not change the weighted ideals. -/
+right weighted order with unit `∂ₘ`-derivative does not change the weighted ideals. (No
+Noetherian hypothesis: `𝔭`-adic duality and `IsCentred.head_le_replace`.) -/
 theorem IsCentred.RF_replace {c : Chart R n} (hc : c.IsCentred) {e : Fin n → ℚ}
     (he : ∀ i, 0 ≤ e i) (m : Fin n) (g : R) (u : Rˣ) (hu : c.d m g = u)
-    (hg : g ∈ maximalIdeal R) (hgm : g ∈ c.RF e (e m)) (t : ℚ) :
+    (_hg : g ∈ maximalIdeal R) (hgm : g ∈ c.RF e (e m)) (t : ℚ) :
     (c.replace m g u hu).RF e t = c.RF e t := by
-  have hc' := hc.replace m g u hu hg
-  refine le_antisymm (RF_le_of_x_mem c _ (fun i _ => ?_) t) (hc.RF_le_of_lowersBy hc' he ?_ t)
+  refine le_antisymm (RF_le_of_x_mem c _ (fun i _ => ?_) t)
+    (RF_le_of_lowersBy_P c _ he ?_ (hc.head_le_replace m g u hu fun hm =>
+      c.RF_le_head he (lt_of_le_of_ne (he m) (Ne.symm hm)) hgm) t)
   · by_cases hi : i = m
     · subst hi; rw [c.replace_x_self]; exact hgm
     · rw [c.replace_x_ne _ _ _ _ hi]; exact c.x_mem_RF e i ‹_›
@@ -568,18 +748,18 @@ theorem IsCentred.RF_replace {c : Chart R n} (hc : c.IsCentred) {e : Fin n → �
     split_ifs with hi
     · subst hi
       rw [Derivation.smul_apply, smul_eq_mul]
-      exact Ideal.mul_mem_left _ _ (hc.d_mem_RF he i hf)
+      exact Ideal.mul_mem_left _ _ (c.d_mem_RF he i hf)
     · rw [Derivation.coe_sub, Pi.sub_apply, Derivation.smul_apply, smul_eq_mul]
-      refine sub_mem (hc.d_mem_RF he i hf) ?_
+      refine sub_mem (c.d_mem_RF he i hf) ?_
       rw [mul_assoc]
       refine Ideal.mul_mem_left _ _ ?_
-      have h1 := hc.d_mem_RF he i hgm
-      have h2 := hc.d_mem_RF he m hf
+      have h1 := c.d_mem_RF he i hgm
+      have h2 := c.d_mem_RF he m hf
       have := c.RF_mul_le e _ _ (Ideal.mul_mem_mul h1 h2)
       rwa [show e m - e i + (t' - e m) = t' - e i by ring] at this
 
 /-- Chain rule bound for lowering: `∂ᵢ = ∑ₘ (∂ᵢ x''ₘ) ∂''ₘ`. -/
-theorem IsCentred.lowersBy_of_coeff {c'' : Chart R n} (hc'' : c''.IsCentred) {e : Fin n → ℚ}
+theorem IsCentred.lowersBy_of_coeff {c'' : Chart R n} (_hc'' : c''.IsCentred) {e : Fin n → ℚ}
     (he : ∀ i, 0 ≤ e i) (δ : Derivation ℚ R R) {s : ℚ}
     (hs : ∀ m, δ (c''.x m) ≠ 0 → e m ≤ s) : c''.LowersBy e δ s := by
   intro t f hf
@@ -589,7 +769,19 @@ theorem IsCentred.lowersBy_of_coeff {c'' : Chart R n} (hc'' : c''.IsCentred) {e 
   by_cases hm : δ (c''.x m) = 0
   · rw [hm, zero_mul]; exact zero_mem _
   · exact Ideal.mul_mem_left _ _ (c''.RF_antitone e (by linarith [hs m hm])
-      (hc''.d_mem_RF he m hf))
+      (c''.d_mem_RF he m hf))
+
+/-- Chain rule bound for lowering, with the coefficients decided against the weights. -/
+theorem IsCentred.lowersBy_of_coeff_or {c'' : Chart R n} (_hc'' : c''.IsCentred) {e : Fin n → ℚ}
+    (he : ∀ i, 0 ≤ e i) (δ : Derivation ℚ R R) {s : ℚ}
+    (hs : ∀ m, δ (c''.x m) = 0 ∨ e m ≤ s) : c''.LowersBy e δ s := by
+  intro t f hf
+  rw [c''.eq_sum δ, Derivation.sum_apply']
+  refine Ideal.sum_mem _ fun m _ => ?_
+  rw [Derivation.smul_apply, smul_eq_mul]
+  rcases hs m with hm | hm
+  · rw [hm, zero_mul]; exact zero_mem _
+  · exact Ideal.mul_mem_left _ _ (c''.RF_antitone e (by linarith) (c''.d_mem_RF he m hf))
 
 /-- **Fundamental chain rule lemma**, part 1: for `i < j`, `∂ᵢ` of a chart sharing the first `j`
 functions with `c''` lowers the weighted order of `c''` by at most `eᵢ`. -/
@@ -597,13 +789,13 @@ theorem IsCentred.lowersBy_lt {c c'' : Chart R n} (hc'' : c''.IsCentred) {e : Fi
     (he : ∀ i, 0 ≤ e i) (hanti : Antitone e) {j : ℕ}
     (hagree : ∀ i : Fin n, (i : ℕ) < j → c.x i = c''.x i) (i : Fin n) (hi : (i : ℕ) < j) :
     c''.LowersBy e (c.d i) (e i) := by
-  refine hc''.lowersBy_of_coeff he _ fun m hm => ?_
+  refine hc''.lowersBy_of_coeff_or he _ fun m => ?_
   by_cases hmj : (m : ℕ) < j
-  · rw [← hagree m hmj, c.d_x] at hm
-    split_ifs at hm with him
-    · rw [him]
-    · exact absurd rfl hm
-  · exact hanti (show i ≤ m from by rw [Fin.le_def]; omega)
+  · rw [← hagree m hmj, c.d_x]
+    by_cases him : i = m
+    · rw [him]; exact Or.inr le_rfl
+    · rw [if_neg him]; exact Or.inl rfl
+  · exact Or.inr (hanti (show i ≤ m from by rw [Fin.le_def]; omega))
 
 /-- **Fundamental chain rule lemma**, part 2: for `i ≥ j`, `∂ᵢ` lowers the weighted order of `c''`
 by at most `b` if all weights beyond `j` are `≤ b`. -/
@@ -611,11 +803,11 @@ theorem IsCentred.lowersBy_ge {c c'' : Chart R n} (hc'' : c''.IsCentred) {e : Fi
     (he : ∀ i, 0 ≤ e i) {j : ℕ} (hagree : ∀ i : Fin n, (i : ℕ) < j → c.x i = c''.x i)
     (i : Fin n) (hi : j ≤ (i : ℕ)) {b : ℚ} (hb : ∀ m : Fin n, j ≤ (m : ℕ) → e m ≤ b) :
     c''.LowersBy e (c.d i) b := by
-  refine hc''.lowersBy_of_coeff he _ fun m hm => ?_
+  refine hc''.lowersBy_of_coeff_or he _ fun m => ?_
   by_cases hmj : (m : ℕ) < j
-  · rw [← hagree m hmj, c.d_x, ite_eq_right (by rintro rfl; omega)] at hm
-    exact absurd rfl hm
-  · exact hb m (by omega)
+  · rw [← hagree m hmj, c.d_x, ite_eq_right (by rintro rfl; omega)]
+    exact Or.inl rfl
+  · exact Or.inr (hb m (by omega))
 
 end Chart
 
@@ -921,6 +1113,7 @@ lemma SA.step_data (hSA : SA I j J) (hna : ¬ J.Adm I) :
   obtain ⟨hj, hb₀⟩ := hSA.next_pos hna J₀ hJ₀ hag₀
   have hzero : ∀ i : Fin n, j ≤ (i : ℕ) → J.e i = 0 := fun i hi => hSA.e_eq_zero hi
   set S : Set (Fin n →₀ ℕ) := {β | (∃ g ∈ I, coeff β (J.c.tau g) ≠ 0) ∧ lam J.e β < 1} with hSdef
+  -- (F2) enters here, through the residue form `IsCentred.mem_RF_iff` for weights with zeros
   have hS : S.Nonempty := by
     by_contra hS
     apply hna
@@ -940,7 +1133,7 @@ lemma SA.step_data (hSA : SA I j J) (hna : ¬ J.Adm I) :
       · exact J.nonneg i
       · exact hb'.le
     obtain ⟨⟨g, hg, hne⟩, -⟩ := hβ
-    have := (J.centred.mem_RF_iff hnn 1 g).1 (hc hg) β
+    have := fun hlt => J.centred.coeff_tau_eq_zero_of_mem_RF hnn (hc hg) β hlt
     rw [← lam_compl hzero]
     by_contra hlt; push Not at hlt
     exact hne (this hlt)
@@ -1008,6 +1201,10 @@ theorem SA.step (hSA : SA I j J) (hna : ¬ J.Adm I) : ∃ Jp : MC R n, SA I (j +
     simp only [compl]; split_ifs
     · exact J.nonneg i
     · exact hbp.le
+  have hc_ne : ∀ i, compl J.e j bp i ≠ 0 := fun i => by
+    simp only [compl]; split_ifs with h
+    · exact (hSA.e_pos h).ne'
+    · exact hbp.ne'
   have hc_anti : Antitone (compl J.e j bp) := by
     intro i i' hii'
     simp only [compl]
@@ -1020,7 +1217,7 @@ theorem SA.step (hSA : SA I j J) (hna : ¬ J.Adm I) : ∃ Jp : MC R n, SA I (j +
       · rw [ite_eq_right h2]
   have hc_adm : I ≤ J.c.RF (compl J.e j bp) 1 := by
     intro g hg
-    rw [J.centred.mem_RF_iff hc_nonneg]
+    rw [J.centred.mem_RF_iff_of_ne hc_nonneg hc_ne]
     intro β hβ
     by_contra hne
     rw [lam_compl hzero] at hβ
@@ -1166,7 +1363,7 @@ theorem SA.step (hSA : SA I j J) (hna : ¬ J.Adm I) : ∃ Jp : MC R n, SA I (j +
       · rw [← hJ'j]; exact J'.anti (Fin.le_def.2 (by simp only [hjj, Fin.val_mk]; omega))
       · by_contra hlt'
         push Not at hlt'
-        have := (hc''.mem_RF_iff J'.nonneg bp xb).1 hxb_RF (Finsupp.single m 1) (by
+        have := hc''.coeff_tau_eq_zero_of_mem_RF J'.nonneg hxb_RF (Finsupp.single m 1) (by
           rw [lam_single]; simpa using hlt')
         rw [Chart.coeff_tau_eq_zero_iff, Chart.Dv_single_one] at this
         exact hmnm this
@@ -1223,7 +1420,8 @@ lemma IsCentred.tau_injective (hc : c.IsCentred) : Function.Injective c.tau := b
   rw [injective_iff_map_eq_zero]
   intro f hf
   have hmem : ∀ N : ℕ, f ∈ maximalIdeal R ^ N := fun N =>
-    hc.RF_one_le_pow N ((hc.mem_RF_iff (fun _ => zero_le_one) N f).2 fun β _ => by rw [hf, map_zero])
+    hc.RF_one_le_pow N ((hc.mem_RF_iff_of_ne (fun _ => zero_le_one) (fun _ => one_ne_zero) N f).2
+      fun β _ => by rw [hf, map_zero])
   have := Ideal.iInf_pow_eq_bot_of_isLocalRing (maximalIdeal R) (maximalIdeal.isMaximal R).ne_top
   rw [← Ideal.mem_bot, ← this, Ideal.mem_iInf]
   exact hmem
@@ -1259,7 +1457,7 @@ lemma exists_adm (hI : I ≠ ⊥) (hIm : I ≤ maximalIdeal R) (c : Chart R n) (
     exact hIm hgI
   have hNq : (0 : ℚ) < N := by exact_mod_cast hN1
   refine ⟨⟨c, fun _ => 1 / N, hc, fun _ => by positivity, fun _ _ _ => le_rfl⟩, fun h hh => ?_⟩
-  rw [RF, hc.mem_RF_iff (fun _ => by positivity)]
+  rw [RF, hc.mem_RF_iff_of_ne (fun _ => by positivity) (fun _ => (div_pos one_pos hNq).ne')]
   intro β' hβ'
   by_contra hne
   have hlam : lam (fun _ => (1 : ℚ) / N) β' = β'.degree / N := by

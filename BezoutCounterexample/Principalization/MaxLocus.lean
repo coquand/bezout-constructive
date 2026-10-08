@@ -233,7 +233,7 @@ theorem maxLocus_local {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
   · intro hx
     have := residueField_isIntegral 𝔪'
     set c₁ := Loc.transport (hctrl 𝔪' hg') ck
-    obtain ⟨c'', hc'', hxx⟩ := Chart.exists_centred c₁
+    obtain ⟨c'', hc'', hxx⟩ := Chart.exists_centred (IsNoetherian.noetherian _) c₁
     have hRF : ∀ t, c''.RF ek t = c₁.RF ek t := fun t =>
       Chart.RF_congr (fun i hi => hxx i (hx i ((hsupp i).1 hi))) t
     have hadm' : Iloc I 𝔪' ≤ c''.RF ek 1 := by
@@ -446,7 +446,7 @@ namespace LocData
 
 variable {I : Ideal A} {v₀ : ℕ → ℚ} {𝔪 : Ideal A} [𝔪.IsMaximal] (D : LocData I v₀ 𝔪)
 
-omit [IsDomain A] in
+omit [IsDomain A] [IsNoetherianRing A] in
 /-- The ideal of the maximal locus is contained in `𝔭` (Nullstellensatz). -/
 theorem locusIdeal_le_p : locusIdeal I v₀ ≤ D.p := by
   intro f hf
@@ -465,7 +465,7 @@ theorem locusIdeal_le_p : locusIdeal I v₀ ≤ D.p := by
   · exact D.hg (D.p_le h)
   · exact hfp h
 
-omit [IsDomain A] in
+omit [IsDomain A] [IsNoetherianRing A] in
 /-- `𝔭` is the only minimal prime of the ideal of the maximal locus contained in `𝔪`. -/
 theorem eq_p_of_minimal {𝔮 : Ideal A} (h𝔮 : 𝔮 ∈ (locusIdeal I v₀).minimalPrimes)
     (h𝔮𝔪 : 𝔮 ≤ 𝔪) : 𝔮 = D.p := by
@@ -516,20 +516,20 @@ def cRF (I : Ideal A) (𝔪 : Ideal A) [𝔪.IsPrime] (t : ℚ) : Ideal (Localiz
   ⨅ (n : ℕ) (J : MC (Localization.AtPrime 𝔪) n) (_ : J.Adm (Iloc I 𝔪))
     (_ : IsInv (Iloc I 𝔪) n J.e), J.RF t
 
-omit [Algebra.Smooth ℚ A] in
+omit [IsNoetherianRing A] in
 lemma cRF_eq {I : Ideal A} (hI : I ≠ ⊥) {𝔪 : Ideal A} [𝔪.IsMaximal] (hI𝔪 : I ≤ 𝔪) {n : ℕ}
     {J : MC (Localization.AtPrime 𝔪) n} (hJ : J.Adm (Iloc I 𝔪)) (hJi : IsInv (Iloc I 𝔪) n J.e)
     (t : ℚ) : cRF I 𝔪 t = J.RF t := by
   refine le_antisymm (iInf_le_of_le n (iInf_le_of_le J (iInf_le_of_le hJ (iInf_le _ hJi)))) ?_
   refine le_iInf fun n' => le_iInf fun J' => le_iInf fun hJ' => le_iInf fun hJi' => ?_
   obtain rfl := hJi.card_eq J'.c
-  obtain ⟨J₀, hJ₀, hmax⟩ := MC.exists_max (Iloc_ne_bot hI 𝔪) (Iloc_le hI𝔪) J.c J.centred
+  obtain ⟨J₀, hJ₀, hmax⟩ := MC.exists_max_FT 𝔪 (Iloc_ne_bot hI 𝔪) (Iloc_le hI𝔪) J.c J.centred
   have hJ₀i : IsInv (Iloc I 𝔪) n J₀.e := ⟨⟨J₀, hJ₀, rfl⟩, fun J'' hJ'' => (hmax J'' hJ'').1⟩
   have h1 : J.e = J₀.e := hJi.unique hJ₀i
   have h2 : J'.e = J₀.e := hJi'.unique hJ₀i
   rw [(hmax J hJ).2 h1 t, (hmax J' hJ').2 h2 t]
 
-omit [Algebra.Smooth ℚ A] in
+omit [IsNoetherianRing A] in
 lemma cRF_mul_le {I : Ideal A} (hI : I ≠ ⊥) {𝔪 : Ideal A} [𝔪.IsMaximal] (hI𝔪 : I ≤ 𝔪)
     {v : ℕ → ℚ} (hv : InvAt I 𝔪 v) (s t : ℚ) : cRF I 𝔪 s * cRF I 𝔪 t ≤ cRF I 𝔪 (s + t) := by
   obtain ⟨n, e, ⟨⟨J, hJ, rfl⟩, hmin⟩, -⟩ := hv
@@ -537,7 +537,7 @@ lemma cRF_mul_le {I : Ideal A} (hI : I ≠ ⊥) {𝔪 : Ideal A} [𝔪.IsMaximal
   rw [cRF_eq hI hI𝔪 hJ hJi, cRF_eq hI hI𝔪 hJ hJi, cRF_eq hI hI𝔪 hJ hJi]
   exact J.c.RF_mul_le J.e s t
 
-omit [Algebra.Smooth ℚ A] in
+omit [IsNoetherianRing A] in
 lemma cRF_of_nonpos {I : Ideal A} (hI : I ≠ ⊥) {𝔪 : Ideal A} [𝔪.IsMaximal] (hI𝔪 : I ≤ 𝔪)
     {v : ℕ → ℚ} (hv : InvAt I 𝔪 v) {t : ℚ} (ht : t ≤ 0) : cRF I 𝔪 t = ⊤ := by
   obtain ⟨n, e, ⟨⟨J, hJ, rfl⟩, hmin⟩, -⟩ := hv
@@ -558,19 +558,16 @@ namespace Loc
 
 omit [IsDomain A] [Algebra ℚ A] [Algebra.Smooth ℚ A] [IsNoetherianRing A] in
 lemma Ctrl.dvd_pow {M : Submonoid A} {g : A} (h : Ctrl M g) (m : A) (hm : m ∈ M) :
-    ∃ b : ℕ, m ∣ g ^ b := by
-  have hrad : g ∈ (Ideal.span {m}).radical := by
-    rw [Ideal.radical_eq_sInf, Ideal.mem_sInf]
-    rintro P ⟨hmP, hP⟩
-    by_contra hg
-    exact (h P hg hm) (hmP (Ideal.mem_span_singleton_self m))
-  obtain ⟨b, hb⟩ := hrad
-  exact ⟨b, Ideal.mem_span_singleton.1 hb⟩
+    ∃ b : ℕ, m ∣ g ^ b :=
+  h.dvd m hm
 
 omit [IsDomain A] [Algebra ℚ A] [Algebra.Smooth ℚ A] [IsNoetherianRing A] in
-lemma Ctrl.sup {M : Submonoid A} {g : A} (h : Ctrl M g) : Ctrl (M ⊔ Submonoid.powers g) g := by
-  intro P _ hg
-  exact sup_le (h P hg) ((Submonoid.powers_le).2 hg)
+lemma Ctrl.sup {M : Submonoid A} {g : A} (h : Ctrl M g) : Ctrl (M ⊔ Submonoid.powers g) g where
+  le P _ hg := sup_le (h P hg) ((Submonoid.powers_le).2 hg)
+  dvd m hm := by
+    obtain ⟨y, hy, z, ⟨j, rfl⟩, rfl⟩ := Submonoid.mem_sup.1 hm
+    obtain ⟨b, hb⟩ := h.dvd y hy
+    exact ⟨b + j, by rw [pow_add]; exact mul_dvd_mul hb dvd_rfl⟩
 
 omit [IsDomain A] [Algebra ℚ A] [Algebra.Smooth ℚ A] [IsNoetherianRing A] in
 /-- A controlled localization is the localization away from the controlling element. -/
@@ -617,7 +614,7 @@ def RFB (t : ℚ) : Ideal D.B := D.cB.RF D.ek t
 variable (hI : I ≠ ⊥)
 include hI
 
-omit [Algebra.Smooth ℚ A] in
+omit [IsNoetherianRing A] in
 /-- At points of the maximal locus in `D(g)`, the chart ideals are the maximal centre. -/
 lemma RFB_map_of_mem {𝔪' : Ideal A} [𝔪'.IsMaximal] (hg' : D.g ∉ 𝔪') (hI' : I ≤ 𝔪')
     (hv' : InvAt I 𝔪' v₀) (t : ℚ) :
@@ -697,7 +694,7 @@ lemma exists_of_mem_map {𝔪' : Ideal A} [𝔪'.IsMaximal] (hg' : D.g ∉ 𝔪'
 variable (hI : I ≠ ⊥)
 include hI
 
-omit [Algebra.Smooth ℚ A] in
+omit [IsNoetherianRing A] in
 /-- The two charts give the same ideals at common points. -/
 lemma RFB_map_eq {𝔪₁ : Ideal A} [𝔪₁.IsMaximal] (D₁ : LocData I v₀ 𝔪₁) {𝔪' : Ideal A}
     [𝔪'.IsMaximal] (hg : D.g ∉ 𝔪') (hg₁ : D₁.g ∉ 𝔪') (t : ℚ) :
@@ -706,6 +703,7 @@ lemma RFB_map_eq {𝔪₁ : Ideal A} [𝔪₁.IsMaximal] (D₁ : LocData I v₀ 
   · rw [D.RFB_map_of_mem hI hg hZ.1 hZ.2, D₁.RFB_map_of_mem hI hg₁ hZ.1 hZ.2]
   · rw [D.RFB_map_of_not_mem hg hZ, D₁.RFB_map_of_not_mem hg₁ hZ]
 
+omit [IsNoetherianRing A] in
 /-- **Spreading a membership** from one chart to another, up to a power of `g`. -/
 lemma exists_pow_mul_mem {𝔪₁ : Ideal A} [𝔪₁.IsMaximal] (D₁ : LocData I v₀ 𝔪₁) (b : A) (t : ℚ)
     (hb : algebraMap A D.B b ∈ D.RFB t) :
@@ -862,13 +860,10 @@ variable {A : Type} [CommRing A] [IsDomain A] [Algebra ℚ A] [Algebra.Smooth �
 
 lemma Chart.RF_le_span {R : Type*} [CommRing R] [Algebra ℚ R] {n : ℕ} (c : Chart R n)
     (e : Fin n → ℚ) {t : ℚ} (ht : 0 < t) : c.RF e t ≤ Ideal.span (c.x '' {i | e i ≠ 0}) := by
-  classical
   rw [Chart.RF, Ideal.span_le]
   rintro _ ⟨α, h0, hα, rfl⟩
-  have : ∃ i, α i ≠ 0 := by
-    by_contra h; push Not at h
-    have : α = 0 := Finsupp.ext h
-    rw [this, lam_zero] at hα; linarith
+  have : ∃ i, α i ≠ 0 := finsupp_exists_ne_zero fun h => by
+    rw [h, lam_zero] at hα; linarith
   obtain ⟨i, hi⟩ := this
   have hei : e i ≠ 0 := fun h => hi (h0 i h)
   rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i)]
@@ -876,7 +871,7 @@ lemma Chart.RF_le_span {R : Type*} [CommRing R] [Algebra ℚ R] {n : ℕ} (c : C
   exact Ideal.pow_mem_of_mem _ (Ideal.subset_span (Set.mem_image_of_mem c.x hei)) _
     (Nat.pos_of_ne_zero hi)
 
-omit [Algebra.Smooth ℚ A] in
+omit [IsNoetherianRing A] in
 lemma compF_antitone {I 𝔭 : Ideal A} {s t : ℚ} (hst : s ≤ t) (hI : I ≠ ⊥)
     (hZ : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], 𝔭 ≤ 𝔪 → I ≤ 𝔪 ∧ ∃ v, InvAt I 𝔪 v) :
     compF I 𝔭 t ≤ compF I 𝔭 s := by
@@ -918,14 +913,14 @@ lemma LocData.le {𝔪 : Ideal A} [𝔪.IsMaximal] (D : LocData I v₀ 𝔪) : I
   obtain ⟨⟨J, hJ, -⟩, -⟩ := D.inv
   exact le_of_Iloc_le (hJ.trans (J.centred.RF_le_maximalIdeal one_pos))
 
-omit hmax h𝔭 hd hw [Algebra.Smooth ℚ A] in
+omit hmax h𝔭 hd hw [IsNoetherianRing A] in
 lemma LocData.cRF_eq_transport {𝔪 : Ideal A} [𝔪.IsMaximal] (D : LocData I v₀ 𝔪) (t : ℚ) :
     cRF I 𝔪 t = (Loc.transport (D.ctrl 𝔪 D.hg) D.ck).RF D.ek t := by
   obtain ⟨⟨J, hJ, hJe⟩, hmin⟩ := D.inv
   have hJi : IsInv (Iloc I 𝔪) D.n J.e := ⟨⟨J, hJ, rfl⟩, by rw [hJe]; exact hmin⟩
   rw [cRF_eq hI D.le hJ hJi, D.rf 𝔪 D.hg J hJ hJe]
 
-omit hmax h𝔭 [Algebra.Smooth ℚ A] in
+omit hmax h𝔭 [IsNoetherianRing A] in
 lemma LocData.P_le_cRF {𝔪 : Ideal A} [𝔪.IsMaximal] (D : LocData I v₀ 𝔪) :
     D.P ≤ cRF I 𝔪 (1 / d) := by
   rw [D.cRF_eq_transport hI, LocData.P, Ideal.span_le]
@@ -934,7 +929,7 @@ lemma LocData.P_le_cRF {𝔪 : Ideal A} [𝔪.IsMaximal] (D : LocData I v₀ �
   exact (Loc.transport _ D.ck).RF_antitone D.ek (D.le_ek hd hw hne)
     ((Loc.transport _ D.ck).x_mem_RF D.ek i hne)
 
-omit hmax h𝔭 [Algebra.Smooth ℚ A] in
+omit hmax h𝔭 [IsNoetherianRing A] in
 lemma LocData.P_pow_le {𝔪 : Ideal A} [𝔪.IsMaximal] (D : LocData I v₀ 𝔪) (N : ℕ) :
     D.P ^ N ≤ cRF I 𝔪 (N / d) := by
   have hv : InvAt I 𝔪 v₀ := ⟨D.n, D.ek, D.inv, D.hv⟩

@@ -1,4 +1,4 @@
-import BezoutCounterexample.Principalization.CompactLift
+import BezoutCounterexample.Principalization.ChartAtPrime
 
 /-!
 # Section 3.3: marked centers (Definition 3.2)
@@ -111,7 +111,7 @@ theorem exists_centred_chart :
     ∃ (n : ℕ) (c : Chart (Localization.AtPrime 𝔪) n), c.IsCentred := by
   obtain ⟨n, ⟨c⟩⟩ := exists_chart_atPrime 𝔪
   have := residueField_isIntegral 𝔪
-  obtain ⟨c', hc', -⟩ := c.exists_centred
+  obtain ⟨c', hc', -⟩ := c.exists_centred (IsNoetherian.noetherian _)
   exact ⟨n, c', hc'⟩
 
 /-- All charts of a smooth finitely generated `ℚ`-domain, at all primes, have size `dim A`. -/

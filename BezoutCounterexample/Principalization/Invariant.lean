@@ -45,7 +45,7 @@ lemma IsInv.anti {I : Ideal S} {e : Fin n → ℚ} (h : IsInv I n e) : Antitone 
   obtain ⟨⟨J, -, rfl⟩, -⟩ := h
   exact J.anti
 
-variable [IsNoetherianRing S]
+variable [Fact (QuotSeqCond S)]
 
 /-- A run from a centred chart ending in an admissible centred chart computes the invariant. -/
 lemma IsInv.of_run {I : Ideal S} {c : Chart S n} {k : ℕ} {ck : Chart S n} {ek : Fin n → ℚ}
@@ -59,7 +59,7 @@ lemma IsInv.of_run {I : Ideal S} {c : Chart S n} {k : ℕ} {ck : Chart S n} {ek 
 
 lemma exists_isInv {I : Ideal S} (hI : I ≠ ⊥) (hIm : I ≤ maximalIdeal S) (c : Chart S n)
     (hc : c.IsCentred) : ∃ e, IsInv I n e := by
-  obtain ⟨J, hJ, hmax⟩ := MC.exists_max hI hIm c hc
+  obtain ⟨J, hJ, hmax⟩ := MC.exists_max_Q Fact.out hI hIm c hc
   exact ⟨J.e, ⟨J, hJ, rfl⟩, fun J' hJ' => (hmax J' hJ').1⟩
 
 /-- Every centred chart starts a run computing the invariant. -/
@@ -375,8 +375,8 @@ lemma pad_antitone_gen {n n' : ℕ} {e : Fin n → ℚ} (he : ∀ i, 0 ≤ e i) 
 
 section SI
 
-variable {S S' : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S]
-  [CommRing S'] [Algebra ℚ S'] [IsLocalRing S'] [IsNoetherianRing S']
+variable {S S' : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [Fact (QuotSeqCond S)]
+  [CommRing S'] [Algebra ℚ S'] [IsLocalRing S']
   [Algebra.FormallySmooth ℚ S'] [Algebra.FormallySmooth ℚ (ResidueField S')]
   [Algebra.IsIntegral ℚ (ResidueField S')] {n n' : ℕ}
 
@@ -385,12 +385,13 @@ invariant of `I S'` is the padded invariant of `I`. -/
 theorem IsInv.transfer {hnn : n ≤ n'} {ψ : S →+* S'}
     (hψ : ∀ a ∈ maximalIdeal S, ψ a ∈ maximalIdeal S')
     {c : Chart S n} (hc : c.IsCentred) {c' : Chart S' n'} (hcc : Compat hnn ψ c c')
-    {I : Ideal S} (hI : I ≠ ⊥) (hIm : I ≤ maximalIdeal S) {e : Fin n → ℚ} (he : IsInv I n e) :
+    {I : Ideal S} (hI : I ≠ ⊥) (hIm : I ≤ maximalIdeal S) {e : Fin n → ℚ} (he : IsInv I n e)
+    (hfg : (maximalIdeal S').FG) :
     IsInv (I.map ψ) n' (pad n' e) := by
   obtain ⟨k, ck, hrun, hadm, hck, hsupp⟩ := he.exists_run hI hIm c hc
   obtain ⟨ck', hck', hbound⟩ := hrun.transfer_bound hcc
   refine ⟨?_, fun J' hJ' => (hbound J' hJ').1⟩
-  obtain ⟨c'', hc'', hx⟩ := Chart.exists_centred ck'
+  obtain ⟨c'', hc'', hx⟩ := Chart.exists_centred hfg ck'
   have hRF : ∀ t, c''.RF (pad n' e) t = ck'.RF (pad n' e) t := by
     intro t
     refine Chart.RF_congr (fun i hi => ?_) t
@@ -474,10 +475,10 @@ lemma nextW_good {n j : ℕ} {e : Fin n → ℚ} (hnn : ∀ i, 0 ≤ e i)
         obtain ⟨z, hz'⟩ := dvd_den_mul_int hdvd
         exact ⟨β i * z, by push_cast; rw [← hz']; ring⟩
       · exact ⟨0, by rw [hz i (by omega)]; simp⟩
-    choose z hz' using this
-    refine ⟨∑ i, z i, ?_⟩
-    rw [lam, Finset.mul_sum]; push_cast
-    exact Finset.sum_congr rfl fun i _ => hz' i
+    rw [lam, Finset.mul_sum]
+    exact Finset.sum_induction _ (fun x : ℚ => ∃ z : ℤ, x = z)
+      (fun _ _ ⟨za, ha⟩ ⟨zb, hb⟩ => ⟨za + zb, by rw [ha, hb]; push_cast; ring⟩)
+      ⟨0, by simp⟩ fun i _ => this i
   obtain ⟨z, hz'⟩ := hint
   have hlam0 : 0 ≤ lam e β := lam_nonneg hnn β
   have hzlt : z < D := by
@@ -565,7 +566,7 @@ lemma IsRun.goodV {S : Type*} [CommRing S] [Algebra ℚ S] {n : ℕ} {I : Ideal 
         simp only [ext0, dite_eq_left hj, nextE, lt_irrefl, ite_false, ite_true]
         exact hab
 
-lemma IsInv.goodV {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNoetherianRing S]
+lemma IsInv.goodV {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [Fact (QuotSeqCond S)]
     {n : ℕ} {I : Ideal S} (hI : I ≠ ⊥) (hIm : I ≤ maximalIdeal S) {e : Fin n → ℚ}
     (he : IsInv I n e) (c : Chart S n) (hc : c.IsCentred) : GoodV (ext0 e) := by
   obtain ⟨k, ck, hrun, -, -, -⟩ := he.exists_run hI hIm c hc
@@ -573,7 +574,7 @@ lemma IsInv.goodV {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S] [IsNo
 
 /-- **Length bound** for the invariant. -/
 lemma IsInv.eq_zero_of_derivations {S : Type*} [CommRing S] [Algebra ℚ S] [IsLocalRing S]
-    [IsNoetherianRing S] {n : ℕ} {I : Ideal S} (hI : I ≠ ⊥) (hIm : I ≤ maximalIdeal S)
+    [Fact (QuotSeqCond S)] {n : ℕ} {I : Ideal S} (hI : I ≠ ⊥) (hIm : I ≤ maximalIdeal S)
     {e : Fin n → ℚ} (he : IsInv I n e) (c : Chart S n) (hc : c.IsCentred) {m : ℕ}
     (δ : Fin m → Derivation ℚ S S) (hδ : ∀ j, ∀ f ∈ I, δ j f ∈ I) (y : Fin m → S)
     (hy : IsUnit (Matrix.of fun j l => δ j (y l)).det) (i : Fin n) (hi : n ≤ (i : ℕ) + m) :
@@ -692,8 +693,9 @@ lemma face_mul (k : ℕ) (f g : MvPowerSeries (Fin n) K) : face k (f * g) = face
     refine Finset.sum_eq_zero fun p hp => ?_
     rw [Finset.HasAntidiagonal.mem_antidiagonal] at hp
     rw [coeff_face, coeff_face]
-    push Not at h
-    obtain ⟨i, hi, hne⟩ := h
+    obtain ⟨i, hi, hne⟩ : ∃ i : Fin n, (i : ℕ) < k ∧ β i ≠ 0 :=
+      (Decidable.em _).resolve_right fun hex =>
+        h fun i hi => Decidable.not_not.1 fun hne => hex ⟨i, hi, hne⟩
     by_cases h1 : ∀ i : Fin n, (i : ℕ) < k → p.1 i = 0
     · have h2 : ¬ ∀ i : Fin n, (i : ℕ) < k → p.2 i = 0 := fun h2 => hne (by
         rw [← hp, Finsupp.add_apply, h1 i hi, h2 i hi])
@@ -731,19 +733,19 @@ end Face
 
 section Prime
 
-variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] [IsNoetherianRing R] {n : ℕ}
+variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] [Fact (QuotSeqCond R)] {n : ℕ}
 
-omit [IsLocalRing R] [IsNoetherianRing R] in
+omit [IsLocalRing R] [Fact (QuotSeqCond R)] in
 lemma Chart.RF_indW (c : Chart R n) (k : ℕ) :
     c.RF (indW k) 1 = Ideal.span (c.x '' {i | (i : ℕ) < k}) := by
-  classical
   apply le_antisymm
   · rw [Chart.RF, Ideal.span_le]
     rintro _ ⟨α, h0, hα, rfl⟩
-    have : ∃ i : Fin n, (i : ℕ) < k ∧ α i ≠ 0 := by
-      by_contra h; push Not at h
-      have : lam (indW k) α < 1 := lam_indW_lt_one.2 fun i hi => h i hi
-      linarith
+    have : ∃ i : Fin n, (i : ℕ) < k ∧ α i ≠ 0 :=
+      (Decidable.em _).resolve_right fun h => by
+        have : lam (indW k) α < 1 := lam_indW_lt_one.2 fun i hi =>
+          Decidable.not_not.1 fun hne => h ⟨i, hi, hne⟩
+        linarith
     obtain ⟨i, hi, hne⟩ := this
     rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i)]
     refine Ideal.mul_mem_right _ _ ?_
@@ -768,7 +770,7 @@ lemma Chart.RF_indW (c : Chart R n) (k : ℕ) :
 
 lemma Chart.IsCentred.mem_span_x_iff (c : Chart R n) (hc : c.IsCentred) (k : ℕ) (f : R) :
     f ∈ Ideal.span (c.x '' {i | (i : ℕ) < k}) ↔ faceHom k (c.tau f) = 0 := by
-  rw [← c.RF_indW k, hc.mem_RF_iff (indW_nonneg k)]
+  rw [← c.RF_indW k, hc.mem_RF_iff_Q Fact.out (indW_nonneg k)]
   constructor
   · intro h
     ext β

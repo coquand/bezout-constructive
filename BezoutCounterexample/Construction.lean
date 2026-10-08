@@ -12,7 +12,7 @@ This file formalizes **Construction 5.1** (`construction:ring`), **Proposition 5
 
 * `pairing : ℕ × ℕ ≃ ℕ` is the fixed bijection `⟨·,·⟩` with `i ≤ ⟨i, j⟩` (`left_le_pairing`);
   we use Szudzik's pairing function `Nat.pair`.
-* `Construction.A n` is the ring `A_n` (a `SmoothFactorialDomain`: a smooth finitely generated
+* `Construction.A n` is the ring `A_n` (a `SmoothGCDDomain`: a smooth finitely generated
   factorial `ℚ`-domain), `Construction.K n ⊆ Spec(A_n)(ℝ)` is the compact set `K_n`, and
   `Construction.incl n : A_n ↪ A_{n+1}` is the injection of `ℚ`-algebras. We have `A_0 = ℚ[x, y]`
   and `K_0 = K₀` (`A_zero`, `K_zero`), every `K_n` is compact (`isCompact_K`), every
@@ -60,8 +60,7 @@ open Set Topology
 
 /-! ## Preliminaries -/
 
-/-- `A₀ = ℚ[x, y]`, as a smooth finitely generated factorial `ℚ`-domain. -/
-def A₀SFD : SmoothFactorialDomain := ⟨A₀⟩
+-- `A₀SGD`: `A₀ = ℚ[x, y]` as a smooth finitely generated GCD domain (`GCDDomain.lean`).
 
 /-- The fixed bijection `⟨·,·⟩ : ℕ × ℕ → ℕ` of Construction 5.1. We use Szudzik's pairing
 function `Nat.pair`; any bijection with `i ≤ ⟨i, j⟩` (for instance the Cantor pairing) would do
@@ -73,14 +72,17 @@ theorem left_le_pairing (i j : ℕ) : i ≤ pairing (i, j) := Nat.left_le_pair i
 
 section CoprimeFactors
 
-variable {A : Type*} [CommRing A] [UniqueFactorizationMonoid A]
+variable {A : SmoothGCDDomain}
 
-/-- In a UFD, `a` and `b ≠ 0` can be written `a = c a'`, `b = c b'` with `a'` and `b'` coprime
-(written as a triple `(c, a', b')`). -/
+/-- In a GCD domain, `a` and `b ≠ 0` can be written `a = c a'`, `b = c b'` with `a'` and `b'`
+coprime (written as a triple `(c, a', b')`); `c` is a gcd of `a` and `b`. -/
 theorem exists_coprime_factors (a b : A) (hb : b ≠ 0) :
     ∃ t : A × A × A, a = t.1 * t.2.1 ∧ b = t.1 * t.2.2 ∧ IsRelPrime t.2.1 t.2.2 := by
-  obtain ⟨a', b', c, hcop, ha, hb⟩ := UniqueFactorizationMonoid.exists_reduced_factors' a b hb
-  exact ⟨(c, a', b'), ha.symm, hb.symm, hcop⟩
+  obtain ⟨g, hg⟩ := A.hasGcd a b
+  obtain ⟨a', ha'⟩ := hg.1
+  obtain ⟨b', hb'⟩ := hg.2.1
+  have hg0 : g ≠ 0 := by rintro rfl; rw [zero_mul] at hb'; exact hb hb'
+  exact ⟨(g, a', b'), ha', hb', Constructive.isRelPrime_of_isGcd hg hg0 ha' hb'⟩
 
 /-- The factorization `a = c a'`, `b = c b'` with `a'`, `b'` coprime chosen in Construction 5.1,
 as the triple `(c, a', b')`. -/
@@ -118,9 +120,9 @@ theorem map_span_pair_eq_mul {A A' F : Type*} [CommRing A] [CommRing A'] [FunLik
 /-- The output of Proposition 4.6 for `A`, `I` and `K`: a smooth finitely generated factorial
 `ℚ`-domain `A'`, an injection `f : A ↪ A'` such that `I A'` is principal, and a compact set
 `K' ⊆ Spec(A')(ℝ)` such that the induced map `K' → K` is a monotone surjection. -/
-structure PrincipalizationResult (A : SmoothFactorialDomain) (I : Ideal A) (K : Set (RealPt A)) where
+structure PrincipalizationResult (A : SmoothGCDDomain) (I : Ideal A) (K : Set (RealPt A)) where
   /-- The ring `A'`. -/
-  A' : SmoothFactorialDomain
+  A' : SmoothGCDDomain
   /-- The injection `A ↪ A'`. -/
   f : A →ₐ[ℚ] A'
   /-- The compact set `K' ⊆ Spec(A')(ℝ)`. -/
@@ -131,7 +133,7 @@ structure PrincipalizationResult (A : SmoothFactorialDomain) (I : Ideal A) (K : 
   monotone : IsMonotoneSurjOn (RealPt.comap (f : A →+* A')) K' K
 
 /-- A choice of the data provided by Proposition 4.6 (`principalization_extension`). -/
-def principalizationResult (A : SmoothFactorialDomain) (I : Ideal A) (hI : I ≠ ⊥)
+def principalizationResult (A : SmoothGCDDomain) (I : Ideal A) (hI : I ≠ ⊥)
     (K : Set (RealPt A)) (hK : IsCompact K) : PrincipalizationResult A I K :=
   Classical.choice <| by
     obtain ⟨A', f, K', h₁, h₂, h₃, h₄⟩ := principalization_extension_ideal A I hI K hK
@@ -143,10 +145,10 @@ namespace Construction
 
 /-- Every finitely generated `ℚ`-algebra is countable, so once a stage `A` has been constructed we
 may choose a surjection `ℕ → A × A`. -/
-def chooseSurj (A : SmoothFactorialDomain) : ℕ → A × A :=
+def chooseSurj (A : SmoothGCDDomain) : ℕ → A × A :=
   Classical.choose (exists_surjective_nat (A × A))
 
-theorem chooseSurj_surjective (A : SmoothFactorialDomain) :
+theorem chooseSurj_surjective (A : SmoothGCDDomain) :
     Function.Surjective (chooseSurj A) :=
   Classical.choose_spec (exists_surjective_nat (A × A))
 
@@ -155,7 +157,7 @@ theorem chooseSurj_surjective (A : SmoothFactorialDomain) :
 (`e_eq`). -/
 structure Stage where
   /-- The ring `A_n`. -/
-  A : SmoothFactorialDomain
+  A : SmoothGCDDomain
   /-- The compact set `K_n`. -/
   K : Set (RealPt A)
   isCompact_K : IsCompact K
@@ -237,10 +239,10 @@ theorem step_of_ne_zero (S : Stage) (a b : S.A) (ha : a ≠ 0) (hb : b ≠ 0) :
 
 /-- The stage `A_0 = ℚ[x, y]`, `K_0 = K₀`, with the surjection `η_0 : ℕ → A_0 × A_0`. -/
 def initialStage : Stage where
-  A := A₀SFD
+  A := A₀SGD
   K := K₀
   isCompact_K := isCompact_K₀
-  e _ := chooseSurj A₀SFD
+  e _ := chooseSurj A₀SGD
 
 /-- Passing from stage `n` to stage `n + 1`: the pair `S.pair n` is processed by `step`, the
 earlier pairs `e i j` (`i ≤ n`) are mapped to the new ring, and the surjection `η_{n+1}` is chosen
@@ -271,7 +273,7 @@ theorem stage_zero : stage 0 = initialStage := rfl
 theorem stage_succ (n : ℕ) : stage (n + 1) = nextStage n (stage n) := rfl
 
 /-- The ring `A_n`. -/
-abbrev A (n : ℕ) : SmoothFactorialDomain := (stage n).A
+abbrev A (n : ℕ) : SmoothGCDDomain := (stage n).A
 
 /-- The compact set `K_n ⊆ Spec(A_n)(ℝ)`. -/
 abbrev K (n : ℕ) : Set (RealPt (A n)) := (stage n).K
@@ -290,7 +292,7 @@ abbrev stepAt (n : ℕ) : PrincipalizationResult (A n) (Ideal.span {(pairAt n).1
 /-- The injection `A_n ↪ A_{n+1}`. -/
 def incl (n : ℕ) : A n →ₐ[ℚ] A (n + 1) := (stepAt n).f
 
-theorem A_zero : A 0 = A₀SFD := rfl
+theorem A_zero : A 0 = A₀SGD := rfl
 
 theorem K_zero : K 0 = K₀ := rfl
 
@@ -410,7 +412,7 @@ lemma ι_succ (n : ℕ) (a : A₀) : ι (n + 1) a = incl n (ι n a) :=
 /-- `η_i : ℕ → A_i × A_i` is surjective. -/
 theorem η_surjective (i : ℕ) : Function.Surjective (η i) := by
   cases i with
-  | zero => exact chooseSurj_surjective A₀SFD
+  | zero => exact chooseSurj_surjective A₀SGD
   | succ n =>
     have : η (n + 1) = chooseSurj (A (n + 1)) := funext fun j => nextStage_e_succ n (stage n) j
     rw [this]

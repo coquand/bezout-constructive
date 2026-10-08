@@ -1,4 +1,8 @@
 import BezoutCounterexample.SphereBundle
+import BezoutCounterexample.Constructive.GensTransform
+import BezoutCounterexample.Principalization.StageMp
+import BezoutCounterexample.Principalization.StarCPt
+import BezoutCounterexample.Principalization.ChartAtBot
 
 /-!
 # The proof of Proposition 4.6
@@ -43,9 +47,7 @@ theorem complexityLT_wf (N : ℕ) : WellFounded (ComplexityLT N) := by
   have hΓ : WellFounded (fun a b : ΓN N => a.1 ≺ b.1) := Γ_wellFoundedOn N
   have hwf : WellFounded (Prod.Lex (fun a b : ΓN N => a.1 ≺ b.1) (· < · : ℕ → ℕ → Prop)) :=
     WellFounded.prod_lex hΓ wellFounded_lt
-  refine ⟨fun p => ?_⟩
-  by_cases hp : p.1 ∈ ΓN N
-  · suffices H : ∀ q : ΓN N × ℕ, Acc (ComplexityLT N) (q.1.1, q.2) from H (⟨p.1, hp⟩, p.2)
+  have H : ∀ q : ΓN N × ℕ, Acc (ComplexityLT N) (q.1.1, q.2) := by
     intro q
     induction q using hwf.induction with
     | h q ih =>
@@ -58,7 +60,8 @@ theorem complexityLT_wf (N : ℕ) : WellFounded (ComplexityLT N) := by
           rw [hq]
           exact Prod.Lex.right _ h')
       exact this
-  · exact ⟨_, fun r hr => absurd hr.2.1 hp⟩
+  -- no case split on `p.1 ∈ ΓN N`: every predecessor `r` carries `r.1 ∈ ΓN N` (Task A, C8)
+  exact ⟨fun p => ⟨_, fun r hr => H (⟨r.1, hr.1⟩, r.2)⟩⟩
 
 /-- An element of `Γ` with at most `N` nonzero entries vanishes from index `N` on. -/
 theorem eq_zero_of_mem_ΓN {N : ℕ} {e : ℕ → ℚ} (he : e ∈ ΓN N) {i : ℕ} (hi : N ≤ i) : e i = 0 := by
@@ -89,19 +92,19 @@ theorem exists_common_denominator {e : ℕ → ℚ} {N : ℕ} (he : ∀ i, N ≤
 /-! ## The stronger assertion -/
 
 /-- The conclusion of Proposition 4.6 for `(B, 𝔟, K)`. -/
-def PrincipalizationConclusion (B : SmoothFactorialDomain) (𝔟 : Ideal B) (K : Set (RealPt B)) :
+def PrincipalizationConclusion (B : SmoothGCDDomain) (𝔟 : Ideal B) (K : Set (RealPt B)) :
     Prop :=
-  ∃ (B' : SmoothFactorialDomain) (f : B →ₐ[ℚ] B') (K' : Set (RealPt B')),
+  ∃ (B' : SmoothGCDDomain) (f : B →ₐ[ℚ] B') (K' : Set (RealPt B')),
     Function.Injective f ∧ (𝔟.map f).IsPrincipal ∧ IsCompact K' ∧
       IsMonotoneSurjOn (RealPt.comap (f : B →+* B')) K' K
 
-theorem conclusion_top (B : SmoothFactorialDomain) (K : Set (RealPt B)) (hK : IsCompact K) :
+theorem conclusion_top (B : SmoothGCDDomain) (K : Set (RealPt B)) (hK : IsCompact K) :
     PrincipalizationConclusion B ⊤ K :=
   ⟨B, AlgHom.id ℚ B, K, Function.injective_id, ⟨⟨1, by simp⟩⟩, hK, IsMonotoneSurjOn.id K⟩
 
 /-- One step and the rest: if `𝔟 B₁ = α 𝔟₁` for an injection `f : B ↪ B₁` and a monotone surjection
 `K₁ → K`, then the conclusion for `(B₁, 𝔟₁, K₁)` gives the conclusion for `(B, 𝔟, K)`. -/
-theorem conclusion_of_step {B B₁ : SmoothFactorialDomain} {𝔟 : Ideal B} {K : Set (RealPt B)}
+theorem conclusion_of_step {B B₁ : SmoothGCDDomain} {𝔟 : Ideal B} {K : Set (RealPt B)}
     (f : B →ₐ[ℚ] B₁) (K₁ : Set (RealPt B₁)) (𝔟₁ : Ideal B₁) (α : B₁)
     (hinj : Function.Injective f) (hmap : 𝔟.map f = Ideal.span {α} * 𝔟₁)
     (hmono : IsMonotoneSurjOn (RealPt.comap (f : B →+* B₁)) K₁ K)
@@ -116,7 +119,7 @@ theorem conclusion_of_step {B B₁ : SmoothFactorialDomain} {𝔟 : Ideal B} {K 
 
 /-- The complexity of an ideal in a triple satisfying `(⋆_N)` lies in `Γ_N`. -/
 theorem maxinv_mem_ΓN {N m : ℕ} {B : Type} [CommRing B] [IsDomain B] [Algebra ℚ B]
-    [Algebra.Smooth ℚ B] {𝔟 : Ideal B} (h𝔟 : 𝔟 ≠ ⊥) (htop : 𝔟 ≠ ⊤) (hstar : Star N 𝔟 m) :
+    [Algebra.Smooth ℚ B] {𝔟 : Ideal B} (h𝔟 : 𝔟 ≠ ⊥) (htop : 𝔟 ≠ ⊤) (hstar : StarC N 𝔟 m) :
     maxinv 𝔟 ∈ ΓN N := by
   obtain ⟨⟨𝔪, h𝔪, h𝔟𝔪, hinv⟩, -⟩ := maxinv_spec h𝔟 htop
   rw [← hinv]
@@ -125,50 +128,92 @@ theorem maxinv_mem_ΓN {N m : ℕ} {B : Type} [CommRing B] [IsDomain B] [Algebra
   rw [← (finite_support_inv h𝔟 h𝔟𝔪).cast_ncard_eq]
   exact_mod_cast h1
 
+/-- **The complexity at points lies in `Γ_N`** under `(⋆_N)` (`IsMaxInv.mem_Γ`, `StarC.eq_zero_pt` at
+the attaining point; replaces `maxinv_mem_ΓN` in the recursion). -/
+theorem IsComplexity.mem_ΓN {N m : ℕ} {B : Type} [CommRing B] [IsDomain B] [Algebra ℚ B]
+    [Algebra.Smooth ℚ B] {𝔟 : Ideal B} (h𝔟 : 𝔟 ≠ ⊥) (hstar : StarC N 𝔟 m)
+    (gens : List B) (hgens : 𝔟 = Constructive.lspan gens) {μ : (ℕ → ℚ) × ℕ}
+    (hμ : IsComplexity 𝔟 μ) : μ.1 ∈ ΓN N := by
+  obtain ⟨-, ⟨q, hq, hv⟩, -⟩ := hμ
+  refine ⟨InvAt.mem_Γ_pt h𝔟 gens hgens q hq hv, ?_⟩
+  have hnn := hstar.numNonzero_le_pt h𝔟 gens hgens q hq hv
+  obtain ⟨k, hk, -⟩ := hstar.dim_le
+  have hfin : {i | μ.1 i ≠ 0}.Finite := (Finset.range k).finite_toSet.subset fun i hi =>
+    Finset.mem_coe.2 (Finset.mem_range.2
+      ((Nat.lt_or_ge i k).resolve_right fun h => hi (invAt_bounded hk hv i h)))
+  rw [← hfin.cast_ncard_eq]
+  exact_mod_cast hnn
+
 /-- **The stronger assertion** in the proof of Proposition 4.6: for every triple `(B, 𝔟, m)`
-satisfying `(⋆_N)` with `B` a smooth finitely generated factorial `ℚ`-domain, and every compact set
+satisfying `(⋆_N)` with `B` a smooth finitely generated `ℚ`-domain with gcds, and every compact set
 `K ⊂ Spec(B)(ℝ)`, there are an injection `B ↪ B'` and a compact `K' ⊂ Spec(B')(ℝ)` such that `𝔟 B'`
 is principal and `K' → K` is a monotone surjection. -/
-theorem principalization_star (N : ℕ) (B : SmoothFactorialDomain) (𝔟 : Ideal B) (m : ℕ)
-    (h𝔟 : 𝔟 ≠ ⊥) (hstar : Star N 𝔟 m) (K : Set (RealPt B)) (hK : IsCompact K) :
+theorem principalization_star (N : ℕ) (B : SmoothGCDDomain) (𝔟 : Ideal B) (m : ℕ)
+    (h𝔟 : 𝔟 ≠ ⊥) (hstar : StarC N 𝔟 m) (gens : List B) (hgens : 𝔟 = Constructive.lspan gens)
+    (K : Set (RealPt B)) (hK : IsCompact K) :
     PrincipalizationConclusion B 𝔟 K := by
-  suffices H : ∀ μ : (ℕ → ℚ) × ℕ, ∀ (B : SmoothFactorialDomain) (𝔟 : Ideal B) (m : ℕ),
-      𝔟 ≠ ⊥ → Star N 𝔟 m → (maxinv 𝔟, numComponents 𝔟) = μ → ∀ K : Set (RealPt B),
-      IsCompact K → PrincipalizationConclusion B 𝔟 K from
-    H _ B 𝔟 m h𝔟 hstar rfl K hK
+  suffices H : ∀ μ : (ℕ → ℚ) × ℕ, ∀ (B : SmoothGCDDomain) (𝔟 : Ideal B) (m : ℕ),
+      𝔟 ≠ ⊥ → StarC N 𝔟 m → (∃ gens : List B, 𝔟 = Constructive.lspan gens) →
+      IsComplexity 𝔟 μ → ∀ K : Set (RealPt B),
+      IsCompact K → PrincipalizationConclusion B 𝔟 K by
+    by_cases htop : 𝔟 = ⊤
+    · subst htop; exact conclusion_top B K hK
+    obtain ⟨k, hk, -⟩ := hstar.dim_le
+    obtain ⟨μ, hμ⟩ := exists_isComplexity B.pres h𝔟 htop hk gens hgens
+    exact H μ B 𝔟 m h𝔟 hstar ⟨gens, hgens⟩ hμ K hK
   intro μ
   induction μ using (complexityLT_wf N).induction with
   | h μ ih =>
-    intro B 𝔟 m h𝔟 hstar hμ K hK
+    intro B 𝔟 m h𝔟 hstar hgs hμ K hK
+    haveI : Fact (Constructive.HasPres B) := ⟨B.pres⟩
+    obtain ⟨_E⟩ := Constructive.HasPres.nonempty_enum B.pres
+    letI := _E
+    obtain ⟨gs, hgs⟩ := hgs
     -- the unit ideal is principal
     by_cases htop : 𝔟 = ⊤
     · subst htop; exact conclusion_top B K hK
-    have hΓ := maxinv_mem_ΓN h𝔟 htop hstar
-    -- the recursive call
-    have hrec : ∀ (B₁ : SmoothFactorialDomain) (𝔟₁ : Ideal B₁) (m₁ : ℕ), 𝔟₁ ≠ ⊥ →
-        Star N 𝔟₁ m₁ → (maxinv 𝔟₁ ≺ maxinv 𝔟 ∨ 𝔟₁ = ⊤ ∨
-          (maxinv 𝔟₁ = maxinv 𝔟 ∧ numComponents 𝔟₁ < numComponents 𝔟)) →
+    have hΓ := hμ.mem_ΓN h𝔟 hstar gs hgs
+    -- the recursive call, on the complexity at points of `𝔟₁`
+    have hrec : ∀ (B₁ : SmoothGCDDomain) (𝔟₁ : Ideal B₁) (m₁ : ℕ), 𝔟₁ ≠ ⊥ →
+        StarC N 𝔟₁ m₁ → (∃ gens : List B₁, 𝔟₁ = Constructive.lspan gens) →
+        (∀ μ₁, IsComplexity 𝔟₁ μ₁ → μ₁.1 ≺ μ.1 ∨ (μ₁.1 = μ.1 ∧ μ₁.2 < μ.2)) →
         ∀ K₁ : Set (RealPt B₁), IsCompact K₁ → PrincipalizationConclusion B₁ 𝔟₁ K₁ := by
-      intro B₁ 𝔟₁ m₁ h𝔟₁ hstar₁ hdec K₁ hK₁
+      intro B₁ 𝔟₁ m₁ h𝔟₁ hstar₁ hg₁ hdec K₁ hK₁
       by_cases htop₁ : 𝔟₁ = ⊤
       · subst htop₁; exact conclusion_top B₁ K₁ hK₁
-      refine ih _ ?_ B₁ 𝔟₁ m₁ h𝔟₁ hstar₁ rfl K₁ hK₁
-      refine ⟨maxinv_mem_ΓN h𝔟₁ htop₁ hstar₁, hμ ▸ hΓ, ?_⟩
-      rw [← hμ]
-      rcases hdec with h | h | h
-      · exact Or.inl h
-      · exact absurd h htop₁
-      · exact Or.inr h
-    -- a component of the maximal locus, a common denominator and a prime element
-    obtain ⟨⟨𝔪, h𝔪, h𝔟𝔪, hinv⟩, -⟩ := maxinv_spec h𝔟 htop
-    obtain ⟨𝔭, h𝔭, -⟩ := ((theorem_3_3_3 h𝔟 htop).2.2.2.1 𝔪 h𝔟𝔪).1 hinv
+      obtain ⟨g₁, hg₁⟩ := hg₁
+      obtain ⟨k₁, hk₁, -⟩ := hstar₁.dim_le
+      obtain ⟨μ₁, hμ₁⟩ := exists_isComplexity B₁.pres h𝔟₁ htop₁ hk₁ g₁ hg₁
+      exact ih μ₁ ⟨hμ₁.mem_ΓN h𝔟₁ hstar₁ g₁ hg₁, hΓ, hdec μ₁ hμ₁⟩ B₁ 𝔟₁ m₁ h𝔟₁ hstar₁
+        ⟨g₁, hg₁⟩ hμ₁ K₁ hK₁
+    obtain ⟨hμe, hμq, Pg, hPg, hc⟩ := hμ
+    -- a component of the locus at points (`exists_comp_data`), a common denominator and a prime
+    -- element
+    have : IsNoetherianRing B := Algebra.FiniteType.isNoetherianRing ℚ B
+    obtain ⟨k₀, hk₀, -⟩ := hstar.dim_le
+    obtain ⟨e', he', hq', -, Pg', -, P, hP⟩ := exists_comp_data B.pres h𝔟 htop hk₀ gs hgs
+    obtain rfl : e' = μ.1 := he'.unique hq' hμe hμq
     obtain ⟨d, hd1, hd⟩ := exists_common_denominator (fun i hi => eq_zero_of_mem_ΓN hΓ hi)
-    let R : ReesData B := ⟨𝔟, h𝔟, htop, 𝔭, h𝔭, d, hd1, hd⟩
-    obtain ⟨π, hπ, hπ𝔭⟩ := R.exists_prime_mem
-    let S : PrincipalizationData B := ⟨R, π, hπ, hπ𝔭⟩
-    by_cases hk : S.k = 1
-    · -- the divisorial step (Lemma 4.1)
-      obtain ⟨a, ha0, he⟩ := S.divisorial_e hk
+    let R : ReesData B := ⟨𝔟, h𝔟, htop, Constructive.lspan P.gens, μ.1, hμe, hP, d, hd1, hd, gs, hgs,
+      hstar.dim_le.imp fun _ h => h.1, hμq⟩
+    have h𝔭p : R.𝔭.IsPrime ∧ R.I ≤ R.𝔭 := ⟨R.𝔭_isPrime, R.I_le_𝔭⟩
+    have h𝔭ne : R.𝔭 ≠ ⊥ := fun h => R.ne_bot (eq_bot_iff.2 (h ▸ h𝔭p.2))
+    by_cases hk : R.k = 1
+    · -- the divisorial step (Lemma 4.1); `π` is the gcd of generators of `𝔭` (`div_eq_span_G_ptL`)
+      obtain ⟨r, a, ha⟩ := Submodule.fg_iff_exists_fin_generating_family.1
+        (IsNoetherian.noetherian (R.𝔭 : Submodule B B))
+      obtain ⟨δ, hδ⟩ := Constructive.exists_isGcdFam B.hasGcd a
+      have he0 : R.e 0 ≠ 0 := (R.e_ne_zero_iff 0).2 (by omega)
+      have he1 : R.e 1 = 0 := by
+        by_contra h; have := (R.e_ne_zero_iff 1).1 h; omega
+      have h𝔭δ : R.𝔭 = Ideal.span {δ} :=
+        div_eq_span_G_ptL R.ne_bot gs hgs (PrincipalizationData.hchart_of_chartDim hk₀) R.hmax R.h𝔭c
+          B.hasGcd B.zeroTest he0 he1 a ha hδ
+      have hδ0 : δ ≠ 0 := by rintro rfl; exact h𝔭ne (by rw [h𝔭δ, Ideal.span_singleton_eq_bot])
+      have hδp : Prime δ := (Ideal.span_singleton_prime hδ0).1 (h𝔭δ ▸ h𝔭p.1)
+      let S : PrincipalizationData B := ⟨R, δ, hδ0, fun _ => hδp,
+        h𝔭δ ▸ Ideal.mem_span_singleton_self δ⟩
+      obtain ⟨a, ha0, he⟩ := S.divisorial_e_pt hk
       have ha : S.e 0 = 1 / (a : ℚ) := by rw [he]; simp
       refine conclusion_of_step (AlgHom.id ℚ B) K (S.divI₁ a) (S.π ^ a) Function.injective_id
         ?_ (IsMonotoneSurjOn.id K) ?_
@@ -179,15 +224,29 @@ theorem principalization_star (N : ℕ) (B : SmoothFactorialDomain) (𝔟 : Idea
           rw [h, Ideal.mul_bot] at this
           exact this.le))
         exact hrec B (S.divI₁ a) m h𝔟₁ (S.length_control_divisorial hstar hk ha)
-          ((S.divisorial_decrease hk ha).imp_right (Or.imp id fun h => ⟨h.1, h.2.2⟩)) K hK
-    · -- the torsor step (Lemmas 4.2, 4.3, 4.5)
-      have hk2 : 2 ≤ S.k := by have := R.one_le_k; change 1 ≤ S.k at this; omega
-      obtain ⟨-, -, -, hinj, -, hmap⟩ := S.torsor_spec hk2
-      obtain ⟨hI₁, -, -, hdec⟩ := S.torsor_invariant hk2
+          (Constructive.exists_gens_of_map_eq_mul (RingHom.id B) hgs (pow_ne_zero a hδ0)
+            (by rw [Ideal.map_id]; exact S.divisorial_I_eq hk ha))
+          (fun μ₁ hμ₁ => by
+            obtain ⟨-, hq₁, Pg₁, hPg₁, hc₁⟩ := hμ₁
+            exact S.divisorial_decrease_mp hk ha hq₁ hPg hPg₁ hc hc₁) K hK
+    · -- the torsor step (Lemmas 4.2, 4.3, 4.5); any nonzero `π ∈ 𝔭` will do
+      obtain ⟨π, hπ𝔭, hπ0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h𝔭ne
+      have hk2' : 2 ≤ R.k := by have := R.one_le_k; omega
+      let S : PrincipalizationData B := ⟨R, π, hπ0, fun h => absurd h hk, hπ𝔭⟩
+      have hk2 : 2 ≤ S.k := hk2'
+      obtain ⟨-, -, hinj, hsp, hmap⟩ := S.torsor_spec hk2
+      have hI₁ : S.I₁ ≠ ⊥ :=
+        torsorI_ne_bot S.ne_bot S.hmax S.h𝔭c S.d_pos S.π_mem_fil S.π_ne_zero
+      haveI : IsDomain S.U := PrincipalizationData.isDomain_U S
+      obtain ⟨l₁, hl₁⟩ := Constructive.exists_gens_of_map_eq_mul (algebraMap B S.U) hgs
+        (pow_ne_zero _ hsp.ne_zero) hmap
       obtain ⟨hK₁, hmono, -, -⟩ := S.sphere_bundle hk2 hK
-      exact conclusion_of_step (B₁ := S.torsorSFD hk2) (IsScalarTower.toAlgHom ℚ B S.U)
-        (S.sphereBundle K) S.I₁ (S.sU ^ S.d) hinj hmap hmono
-        (hrec (S.torsorSFD hk2) S.I₁ (m + S.ℓ + 1) hI₁ (S.length_control_torsor hstar hk2)
-          (hdec.imp_right (Or.imp id fun h => ⟨h.1, h.2.2⟩)) _ hK₁)
+      exact conclusion_of_step (B₁ := S.torsorSGD B.hasGcd B.zeroTest B.dvdDec B.pres hk2)
+        (IsScalarTower.toAlgHom ℚ B S.U) (S.sphereBundle K) S.I₁ (S.sU ^ S.d) hinj hmap hmono
+        (hrec (S.torsorSGD B.hasGcd B.zeroTest B.dvdDec B.pres hk2) S.I₁ (m + S.ℓ + 1) hI₁
+          (S.length_control_torsor hstar hk2) ⟨l₁, hl₁⟩
+          (fun μ₁ hμ₁ => by
+            obtain ⟨-, hq₁, Pg₁, hPg₁, hc₁⟩ := hμ₁
+            exact S.torsor_decrease_mp hk2 hq₁ l₁ hl₁ hPg hPg₁ hc hc₁) _ hK₁)
 
 end BezoutCounterexample

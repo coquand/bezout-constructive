@@ -81,7 +81,7 @@ theorem initialForm_mul {a b : ℕ} {f g : A}
 
 /-- The associated graded ring is a domain, including arbitrary finite sums
 of homogeneous elements (Lemma 3.5(5)). -/
-theorem associatedGraded_isDomain : IsDomain S.AssociatedGraded := by
+theorem associatedGraded_isDomain [Fact (Constructive.HasPres A)] : IsDomain S.AssociatedGraded := by
   let : IsDomain (S.𝓡 ⧸ Ideal.span {S.s}) := S.isDomain_quotient_s
   exact S.quotientSRingEquiv.injective.isDomain S.quotientSRingEquiv.toRingHom
 

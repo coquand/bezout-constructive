@@ -136,12 +136,12 @@ end Facts
 section TorsorSFD
 
 variable {A : SmoothFactorialDomain} {I : Ideal A} (hI : I ≠ ⊥) {v₀ : ℕ → ℚ}
-  (hmax : ∀ (𝔪 : Ideal A) [𝔪.IsMaximal], I ≤ 𝔪 → ∀ v, InvAt I 𝔪 v → toLex v₀ ≤ toLex v)
-  {𝔭 : Ideal A} (h𝔭 : 𝔭 ∈ (locusIdeal I v₀).minimalPrimes) {d : ℕ} (hd : 0 < d)
+  (hmax : IsMaxInvPt I v₀)
+  {𝔭 : Ideal A} (h𝔭 : LocusComp I v₀ 𝔭) {d : ℕ} (hd : 0 < d)
   (hw : ∀ i, ∃ w : ℕ, (w : ℚ) = d * v₀ i) {π : A} (hπ : π ∈ (compFil hI hmax h𝔭 d).F 1)
 
 /-- The torsor as a smooth factorial domain. -/
-abbrev torsorSFD (hk2 : v₀ 1 ≠ 0) (hπp : Prime π) (hπ𝔭 : π ∈ 𝔭) : SmoothFactorialDomain where
+abbrev torsorSFD [Constructive.Enum A] [Fact (Constructive.HasPres A)] [Fact (∃ k, ChartDim A k)] (hk2 : v₀ 1 ≠ 0) (hπp : Prime π) (hπ𝔭 : π ∈ 𝔭) : SmoothFactorialDomain where
   carrier := Torsor hI hmax h𝔭 d hπ
   isDomain := torsor_isDomain hI hmax h𝔭 hπ hπp.ne_zero
   smooth := torsor_smooth hI hmax h𝔭 hd hw hπ

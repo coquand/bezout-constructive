@@ -240,6 +240,12 @@ lemma E_taylorFun (i : Fin n) (f : R) : c.E i (c.taylorFun f) = 0 := by
   congr 1
   simp
 
+/-- A nonzero multi-index has a nonzero entry (a decided search over `Fin n`). -/
+theorem _root_.BezoutCounterexample.Principalization.finsupp_exists_ne_zero {n : ℕ}
+    {β : Fin n →₀ ℕ} (hβ : β ≠ 0) : ∃ i, β i ≠ 0 :=
+  (Decidable.em (∃ i, β i ≠ 0)).resolve_right fun h =>
+    hβ (Finsupp.ext fun i => Decidable.not_not.1 fun hi => h ⟨i, hi⟩)
+
 /-- A flat power series with vanishing constant coefficient vanishes. -/
 lemma eq_zero_of_flat {Φ : MvPowerSeries (Fin n) R} (hΦ : ∀ i, c.E i Φ = 0)
     (h0 : constantCoeff Φ = 0) : Φ = 0 := by
@@ -249,8 +255,7 @@ lemma eq_zero_of_flat {Φ : MvPowerSeries (Fin n) R} (hΦ : ∀ i, c.E i Φ = 0)
   | ind β ih =>
     by_cases hβ : β = 0
     · subst hβ; rw [coeff_zero_eq_constantCoeff_apply, h0]
-    · obtain ⟨i, hi⟩ : ∃ i, β i ≠ 0 := by
-        by_contra h; push Not at h; exact hβ (Finsupp.ext h)
+    · obtain ⟨i, hi⟩ := finsupp_exists_ne_zero hβ
       set β' := β - Finsupp.single i 1 with hβ'
       have hsum : β' + Finsupp.single i 1 = β := by
         ext j

@@ -4,7 +4,7 @@ import BezoutCounterexample.Principalization.Transfer
 # Charts at points of smooth algebras
 
 * `Chart.basis`: the differentials of a chart form a basis of `Ω[R⁄ℚ]`.
-* `Chart.isCentred_of_mem`: a chart whose functions lie in `𝔪` of a formally smooth Noetherian
+* `Chart.isCentred_of_mem`: a chart whose functions lie in `𝔪` (f.g.) of a formally smooth
   local `ℚ`-algebra is centred.
 * `Chart.exists_centred`: centred charts exist when the residue field is separable.
 
@@ -80,11 +80,11 @@ namespace Chart
 variable {c : Chart R n}
 
 /-- A chart whose functions lie in `𝔪` is centred. -/
-theorem isCentred_of_mem [IsNoetherianRing R] [Algebra.FormallySmooth ℚ R]
-    [Algebra.FormallySmooth ℚ (ResidueField R)] (hx : ∀ i, c.x i ∈ maximalIdeal R) :
-    c.IsCentred := by
+theorem isCentred_of_mem [Algebra.FormallySmooth ℚ R]
+    [Algebra.FormallySmooth ℚ (ResidueField R)] (hfg : (maximalIdeal R).FG)
+    (hx : ∀ i, c.x i ∈ maximalIdeal R) : c.IsCentred := by
   refine le_antisymm ?_ ((Ideal.span_le).2 (by rintro _ ⟨i, rfl⟩; exact hx i))
-  refine Submodule.le_of_le_smul_of_le_jacobson_bot (IsNoetherian.noetherian _)
+  refine Submodule.le_of_le_smul_of_le_jacobson_bot hfg
     (maximalIdeal_le_jacobson _) ?_
   intro r hr
   set r' := r - ∑ i, c.d i r * c.x i with hr'
@@ -129,9 +129,9 @@ namespace Chart
 
 /-- **Recentring.** Replacing each chart function by its image under the minimal polynomial of its
 residue gives a centred chart; functions already in `𝔪` are unchanged. -/
-theorem exists_centred [IsNoetherianRing R] [Algebra.FormallySmooth ℚ R]
+theorem exists_centred [Algebra.FormallySmooth ℚ R]
     [Algebra.FormallySmooth ℚ (ResidueField R)] [Algebra.IsIntegral ℚ (ResidueField R)]
-    (c : Chart R n) :
+    (hfg : (maximalIdeal R).FG) (c : Chart R n) :
     ∃ c' : Chart R n, c'.IsCentred ∧ ∀ i, c.x i ∈ maximalIdeal R → c'.x i = c.x i := by
   classical
   set P : Fin n → ℚ[X] := fun i => minpoly ℚ (residue R (c.x i)) with hP
@@ -153,7 +153,7 @@ theorem exists_centred [IsNoetherianRing R] [Algebra.FormallySmooth ℚ R]
     rw [hjac, Matrix.det_diagonal, IsUnit.prod_univ_iff]
     intro j
     rw [← notMem_maximalIdeal, ← residue_eq_zero_iff]; exact hres j
-  refine ⟨c.change y hdet, isCentred_of_mem fun i => ?_, fun i hi => ?_⟩
+  refine ⟨c.change y hdet, isCentred_of_mem hfg fun i => ?_, fun i hi => ?_⟩
   · rw [change_x, ← residue_eq_zero_iff, hy]
     simp only
     rw [hmap]

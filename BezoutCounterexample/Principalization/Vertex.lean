@@ -70,7 +70,8 @@ end Trunc
 
 section SALex
 
-variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R] [IsNoetherianRing R] {n : ℕ}
+variable {R : Type*} [CommRing R] [Algebra ℚ R] [IsLocalRing R]
+  [Fact (Constructive.PolyIndNoeth R)] {n : ℕ}
 
 end SALex
 
@@ -189,7 +190,7 @@ end Weak
 
 section Compat
 
-variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [IsNoetherianRing B] {n : ℕ}
+variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] {n : ℕ}
   {e : Fin n → ℚ} {d : ℕ} {Φ : WFil B}
 
 /-- Compatibility with the filtration is preserved by Method-1 steps within a block of equal
@@ -218,7 +219,8 @@ open LaurentPolynomial Polynomial IsLocalRing MvPowerSeries
 
 section DE
 
-variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [IsNoetherianRing B] {n : ℕ}
+variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B]
+  [Fact (Constructive.PolyIndNoeth B)] {n : ℕ}
   {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ} {Φ : WFil B}
   (he : ∀ i, 0 ≤ e i) (hanti : Antitone e) (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i)
   (hpos : ∀ j : ℤ, 0 < j → Φ.F j ≤ maximalIdeal B)
@@ -227,16 +229,26 @@ variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [IsNoetherianR
 abbrev VLoc (hpos : ∀ j : ℤ, 0 < j → Φ.F j ≤ maximalIdeal B) :=
   Localization.AtPrime (vertex hpos)
 
-theorem VLoc_noeth (c : Chart B n) (hF : ∀ j, Φ.F j = chartFil c e d j) (he : ∀ i, 0 ≤ e i)
-    (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i) : IsNoetherianRing (VLoc hpos) := by
+omit [Fact (Constructive.PolyIndNoeth B)] in
+theorem VLoc_noeth [IsNoetherianRing B] (c : Chart B n) (hF : ∀ j, Φ.F j = chartFil c e d j)
+    (he : ∀ i, 0 ≤ e i) (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i) :
+    IsNoetherianRing (VLoc hpos) := by
   have := rees_noetherian c hF he hd hw
   exact IsLocalization.isNoetherianRing (vertex hpos).primeCompl _ inferInstance
+
+/-- The vertex localisation inherits `PolyIndNoeth` (Rees algebra of finite type, then
+localisation). -/
+theorem VLoc_polyIndNoeth (c : Chart B n) (hF : ∀ j, Φ.F j = chartFil c e d j)
+    (he : ∀ i, 0 ≤ e i) (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i) :
+    Fact (Constructive.PolyIndNoeth (VLoc hpos)) := by
+  have := fact_polyIndNoeth_rees c hF he hd hw
+  exact fact_polyIndNoeth_localization (vertex hpos).primeCompl
 
 /-- The Rees chart of a compatible chart, localized at the vertex. -/
 def vChart (c' : Chart B n) (hF' : ∀ j, Φ.F j = chartFil c' e d j) : Chart (VLoc hpos) (n + 1) :=
   (reesChart c' hF' he hd hw).localization (vertex hpos).primeCompl
 
-omit [IsNoetherianRing B] in
+omit [Fact (Constructive.PolyIndNoeth B)] in
 lemma vChart_isCentred (c' : Chart B n) (hF' : ∀ j, Φ.F j = chartFil c' e d j)
     (hc' : c'.IsCentred) : (vChart he hd hw hpos c' hF').IsCentred :=
   reesLoc_isCentred c' hF' he hd hw hc'
@@ -264,7 +276,8 @@ open LaurentPolynomial Polynomial IsLocalRing MvPowerSeries
 
 section DEA
 
-variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [IsNoetherianRing B] {n : ℕ}
+variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B]
+  [Fact (Constructive.PolyIndNoeth B)] {n : ℕ}
   {e : Fin n → ℚ} {d : ℕ} {Φ : WFil B}
 
 /-- The A-side of a vertex step: Method 1 in a compatible chart has next weight `e_j`, and the
@@ -293,7 +306,7 @@ theorem DE_stepA (he : ∀ i, 0 ≤ e i) (hanti : Antitone e) (hd : 0 < d) {k : 
     have h2 := lex_le_at h1 hjn (fun i hi => by simp [truncW, hi])
     simp only [truncW, lt_irrefl, ite_false] at h2
     exact absurd h2 (not_le.2 hej)
-  obtain ⟨hj, β₀, f₀, hf₀, hf₀ne, hlt₀, hN₀, hmin₀, hnext₀, hbJ₀⟩ := hA.step_data hna
+  obtain ⟨hj, β₀, f₀, hf₀, hf₀ne, hlt₀, hN₀, hmin₀, hnext₀, hbJ₀⟩ := hA.step_data_Q Fact.out hna
   set b := (1 - lam (truncW e j) β₀) / tailSum j β₀ with hbdef
   have hNq : (0 : ℚ) < tailSum j β₀ := by exact_mod_cast hN₀
   have hkey : lam (truncW e j) β₀ + b * tailSum j β₀ = 1 := by rw [hbdef]; field_simp; ring
@@ -314,7 +327,7 @@ theorem DE_stepA (he : ∀ i, 0 ≤ e i) (hanti : Antitone e) (hd : 0 < d) {k : 
   -- `λ_e(β₀) ≥ 1` by duality
   have hlam1 : 1 ≤ lam e β₀ := by
     by_contra h; push Not at h
-    exact hf₀ne ((hc'.mem_RF_iff he 1 f₀).1 (hadm' hf₀) β₀ h)
+    exact hf₀ne (hc'.coeff_tau_eq_zero_of_mem_RF he (hadm' hf₀) β₀ h)
   -- splitting `λ_e(β₀)` at `j`
   have hsum : lam e β₀ = lam (truncW e j) β₀ +
       ∑ i ∈ Finset.univ.filter (fun i : Fin n => j ≤ (i : ℕ)), (β₀ i : ℚ) * e i := by
@@ -406,7 +419,8 @@ open LaurentPolynomial Polynomial IsLocalRing MvPowerSeries
 
 section DEStep
 
-variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [IsNoetherianRing B] {n : ℕ}
+variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B]
+  [Fact (Constructive.PolyIndNoeth B)] {n : ℕ}
   {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ} {Φ : WFil B}
   (he : ∀ i, 0 ≤ e i) (hanti : Antitone e) (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i)
   (hpos : ∀ j : ℤ, 0 < j → Φ.F j ≤ maximalIdeal B)
@@ -485,7 +499,8 @@ open LaurentPolynomial Polynomial IsLocalRing MvPowerSeries
 
 section DEStepR
 
-variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [IsNoetherianRing B] {n : ℕ}
+variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B]
+  [Fact (Constructive.PolyIndNoeth B)] {n : ℕ}
   {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ} {Φ : WFil B}
   (he : ∀ i, 0 ≤ e i) (hanti : Antitone e) (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i)
   (hpos : ∀ j : ℤ, 0 < j → Φ.F j ≤ maximalIdeal B)
@@ -503,7 +518,7 @@ lemma pad_zero_ge_truncW {j : ℕ} (e : Fin n → ℚ) :
   · rfl
   · rfl
 
-omit [IsLocalRing B] [IsNoetherianRing B] in
+omit [IsLocalRing B] [Fact (Constructive.PolyIndNoeth B)] in
 lemma nextChart_x_apply {S : Type*} [CommRing S] [Algebra ℚ S] {m : ℕ} (c : Chart S m)
     (jj l : Fin m) (g : S) (u : Sˣ) (hu : c.d l g = u) (i : Fin m) :
     (nextChart c jj l g u hu).x i = if Equiv.swap jj l i = l then g else c.x (Equiv.swap jj l i) := by
@@ -529,7 +544,7 @@ theorem DE_stepR (c₀ : Chart B n) (hF₀ : ∀ m, Φ.F m = chartFil c₀ e d m
           pad_nonneg' _ (truncW_nonneg he _),
           pad_antitone' (truncW_nonneg he _) (truncW_antitone he hanti _)⟩ := by
   classical
-  have := VLoc_noeth hpos c₀ hF₀ he hd hw
+  have := VLoc_polyIndNoeth hpos c₀ hF₀ he hd hw
   have hjn : j < n := by omega
   obtain ⟨β₀, f₀, hf₀, l, hl, hβl, u, hu, hc'', hunit, hf₀ne, hlt₀, hN₀, hel, hlam, hW, hF'',
     hSA''⟩ := DE_stepA' he hanti hd hsupp I hId hmax hjk hkn c' hc' hF' hA
@@ -573,8 +588,8 @@ theorem DE_stepR (c₀ : Chart B n) (hF₀ : ∀ m, Φ.F m = chartFil c₀ e d m
       pad_nonneg' _ (truncW_nonneg he j),
       pad_antitone' (truncW_nonneg he j) (truncW_antitone he hanti j)⟩ := by
     intro hadm
-    exact hfneR ((hRc.mem_RF_iff (pad_nonneg' _ (truncW_nonneg he j)) 1 F₀).1 (hadm hF₀mem)
-      _ hltR)
+    exact hfneR (hRc.coeff_tau_eq_zero_of_mem_RF (pad_nonneg' _ (truncW_nonneg he j))
+      (hadm hF₀mem) _ hltR)
   have hJV : weakV hpos I hId ≤ Rc.RF (pad (n + 1) e) 1 := by
     rw [hRcdef, vChart, Chart.localization_RF]
     exact Ideal.map_mono (weak_le_reesRF he hd hw c' hF' I hId)
@@ -604,7 +619,7 @@ theorem DE_stepR (c₀ : Chart B n) (hF₀ : ∀ m, Φ.F m = chartFil c₀ e d m
       · rw [hejR]; exact hej.le
     have h2 : 1 ≤ lam (compl (pad (n + 1) (truncW e j)) j (pad (n + 1) e ⟨j, hjR⟩)) β' := by
       by_contra h; push Not at h
-      exact hgne ((hRc.mem_RF_iff hcnn 1 g).1 h1 β' h)
+      exact hgne (hRc.coeff_tau_eq_zero_of_mem_RF hcnn h1 β' h)
     rw [lam_compl (pad_zero_ge_truncW e), hejR] at h2
     simp only [Xi]
     rw [tailSum_push, lam_pad]
@@ -708,12 +723,13 @@ open LaurentPolynomial Polynomial IsLocalRing MvPowerSeries
 
 section DEMain
 
-variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [IsNoetherianRing B] [IsDomain B]
+variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B]
+  [Fact (Constructive.PolyIndNoeth B)] [IsDomain B]
   {n : ℕ} {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ} {Φ : WFil B}
   (he : ∀ i, 0 ≤ e i) (hanti : Antitone e) (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i)
   (hpos : ∀ j : ℤ, 0 < j → Φ.F j ≤ maximalIdeal B)
 
-omit [IsNoetherianRing B] in
+omit [Fact (Constructive.PolyIndNoeth B)] in
 lemma weakV_ne_bot (c₀ : Chart B n) (_hF₀ : ∀ m, Φ.F m = chartFil c₀ e d m) (_he : ∀ i, 0 ≤ e i)
     (_hw : ∀ i, (w i : ℚ) = d * e i) (I : Ideal B) (hI0 : I ≠ ⊥) (hId : I ≤ Φ.F d) :
     weakV hpos I hId ≠ ⊥ := by
@@ -729,7 +745,7 @@ lemma weakV_ne_bot (c₀ : Chart B n) (_hF₀ : ∀ m, Φ.F m = chartFil c₀ e 
   simp only [coeff_C_mul_T] at h3
   exact hf0 (by simpa using h3)
 
-omit [IsNoetherianRing B] [IsDomain B] [Algebra ℚ B] in
+omit [Fact (Constructive.PolyIndNoeth B)] [IsDomain B] [Algebra ℚ B] in
 lemma weakV_le_max (I : Ideal B) (hId : I ≤ Φ.F d) (hd : 0 < d) :
     weakV hpos I hId ≤ maximalIdeal (VLoc hpos) := by
   rw [weakV, Ideal.map_le_iff_le_comap, weakIdeal, Ideal.span_le]
@@ -751,7 +767,8 @@ open LaurentPolynomial Polynomial IsLocalRing MvPowerSeries
 
 section DEMain2
 
-variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B] [IsNoetherianRing B] [IsDomain B]
+variable {B : Type*} [CommRing B] [Algebra ℚ B] [IsLocalRing B]
+  [Fact (Constructive.PolyIndNoeth B)] [IsDomain B]
   {n : ℕ} {e : Fin n → ℚ} {d : ℕ} {w : Fin n → ℕ} {Φ : WFil B}
   (he : ∀ i, 0 ≤ e i) (hanti : Antitone e) (hd : 0 < d) (hw : ∀ i, (w i : ℚ) = d * e i)
   (hpos : ∀ j : ℤ, 0 < j → Φ.F j ≤ maximalIdeal B)
@@ -766,7 +783,7 @@ theorem vertex_invariant (c₀ : Chart B n) (hc₀ : c₀.IsCentred)
     ∃ (c' : Chart B n) (hc' : c'.IsCentred) (hF' : ∀ m, Φ.F m = chartFil c' e d m),
       MC.SA (weakV hpos I hId) k ⟨vChart he hd hw hpos c' hF', pad (n + 1) e,
         vChart_isCentred he hd hw hpos c' hF' hc', pad_nonneg' e he, pad_antitone' he hanti⟩ := by
-  have := VLoc_noeth hpos c₀ hF₀ he hd hw
+  have := VLoc_polyIndNoeth hpos c₀ hF₀ he hd hw
   have hIm : I ≤ maximalIdeal B := hId.trans (hpos d (by exact_mod_cast hd))
   have key : ∀ j, j ≤ k → ∃ (c' : Chart B n) (hc' : c'.IsCentred)
       (hF' : ∀ m, Φ.F m = chartFil c' e d m),
@@ -779,12 +796,12 @@ theorem vertex_invariant (c₀ : Chart B n) (hc₀ : c₀.IsCentred)
     | zero =>
       intro _
       refine ⟨c₀, hc₀, hF₀, ?_, ?_⟩
-      · have h := MC.sa_zero hI0 hIm c₀ hc₀
+      · have h := MC.sa_zero_Q Fact.out hI0 hIm c₀ hc₀
         have hMC : (⟨c₀, 0, hc₀, fun _ => le_rfl, fun _ _ _ => le_rfl⟩ : MC B n) =
             ⟨c₀, truncW e 0, hc₀, truncW_nonneg he 0, truncW_antitone he hanti 0⟩ :=
           MC.ext' rfl (truncW_zero e).symm
         rwa [hMC] at h
-      · have h := MC.sa_zero (weakV_ne_bot hpos c₀ hF₀ he hw I hI0 hId)
+      · have h := MC.sa_zero_Q Fact.out (weakV_ne_bot hpos c₀ hF₀ he hw I hI0 hId)
           (weakV_le_max hpos I hId hd) (vChart he hd hw hpos c₀ hF₀)
           (vChart_isCentred he hd hw hpos c₀ hF₀ hc₀)
         have hMC : (⟨vChart he hd hw hpos c₀ hF₀, 0, vChart_isCentred he hd hw hpos c₀ hF₀ hc₀,

@@ -1,0 +1,867 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\p}{\mathfrak{p}}
+\newcommand{\m}{\mathfrak{m}}
+\newcommand{\cR}{\mathcal{R}}
+\newcommand{\cF}{\mathcal{F}}
+\newcommand{\inv}{\operatorname{inv}}
+\newcommand{\maxinv}{\operatorname{maxinv}}
+\newcommand{\gr}{\operatorname{gr}}
+\numberwithin{equation}{section}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem*{comment}{Comment}
+\newtheorem*{remark}{Remark}
+\title{A constructive proof that a Bézout domain\\ need not be an elementary divisor domain}
+\author{Claude (Anthropic)}
+\date{7 October 2026}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We give a constructive proof of the theorem of Hägg and Mörtberg, with GPT-6 Astra: there is a
+Bézout domain containing $\Q[x,y]$ over which the matrix
+$\bigl(\begin{smallmatrix}1+x&y\\y&1-x\end{smallmatrix}\bigr)$ has no Smith normal form. The proof
+is written in the style of~\cite{LQ}. The only principles used beyond intuitionistic logic are
+unique choice and Noetherianity in the sense of Richman and Seidenberg. Krull
+dimension, maximal ideals and compactness are not used.
+
+This note is a constructive version, written by Claude, of the proof in~\cite{HM}
+(\url{https://arxiv.org/abs/2609.35229}). It has not been reviewed by Hägg and Mörtberg. The
+accompanying Lean formalization, a fork of theirs, is at
+\url{https://github.com/coquand/bezout-constructive}.
+\end{abstract}
+
+\tableofcontents
+
+\section{Statement and plan}
+
+\begin{theorem}[Hägg--Mörtberg with GPT-6 Astra~\cite{HM}]\label{t:main}
+There is a Bézout domain $R\supseteq\Q[x,y]$ over which the matrix
+\[
+M=\begin{pmatrix}1+x&y\\y&1-x\end{pmatrix}
+\]
+is not equivalent to a diagonal matrix. In particular $M$ has no Smith normal form.
+\end{theorem}
+
+The ring is constructed as an increasing union $R=\bigcup_n A_n$ of finitely presented
+$\Q$-algebras with $A_0=\Q[x,y]$. Every pair of elements of $R$ is enumerated. At stage $n$ one
+pair $(a,b)$ of $A_n$ is written $(a,b)=c\,(a',b')$ with $\gcd(a',b')=1$, and $A_{n+1}$ is a ring in
+which $(a',b')$ becomes principal. This step is a \emph{principalisation}, done by repeating two
+moves (divisorial and torsor) until an invariant can no longer decrease.
+
+The obstruction is real and topological. Put $\Delta=x^2+y^2-1$. Then
+\[
+\det M=-\Delta,\qquad M^2-2M=\Delta I,
+\]
+and on the circle $\Delta=0$, written $(x,y)=(a^2-b^2,2ab)$ with $a^2+b^2=1$, one has
+$M=2\,{}^t(a,b)\,(a,b)$. So $\frac12 M$ projects onto the line of the half-angle, a Möbius
+band. The final argument (Section~\ref{s:end}) shows that a diagonal form over some $A_N$ would give
+a nowhere-vanishing section of this band along a closed path of real points.
+
+\paragraph{What has to be made constructive.} The plan above is that of~\cite{HM}. Every step
+uses classical notions: maximal ideals, the maximum of an invariant over them, minimal primes,
+Krull dimension, compactness of real points, and factoriality. We replace them as follows.
+\begin{itemize}
+\item Factoriality becomes \emph{discrete gcd domain} (Section~\ref{s:gcd}).
+\item Smoothness and dimension are \emph{certificates}: explicit Jacobian covers
+  (Section~\ref{s:cert}).
+\item Maximal ideals become \emph{points} with values in number fields (Section~\ref{s:points}).
+\item Noetherianity in the sense of Richman--Seidenberg (Section~\ref{s:noeth}) gives
+  termination of searches without a priori bounds.
+\item Compactness becomes a \emph{chain lifting property} for finite chains of real points
+  (Section~\ref{s:chains}).
+\end{itemize}
+
+\section{Conventions}\label{s:conv}
+
+We work in Bishop-style constructive mathematics, as in~\cite{LQ}.
+\begin{itemize}
+\item A ring is \emph{discrete} if equality is decidable. An ideal is \emph{detachable} if
+  membership is decidable. A ring is \emph{strongly discrete} if every finitely generated ideal is
+  detachable. Finitely presented $\Q$-algebras are strongly discrete and coherent (Gröbner bases,
+  \cite[Chapter~VII]{LQ}).
+\item A \emph{discrete field} is a discrete ring in which every element is $0$ or invertible.
+  A \emph{number field} is a finite-dimensional $\Q$-algebra that is a discrete field.
+\item Real numbers are Cauchy sequences with modulus. We use: if $a<b$ then $x<b$ or $a<x$
+  (cotransitivity); inverses of positive reals; $n$-th roots of positive reals; and the fixed point of
+  a contraction with rate $\frac12$. We never test a real number for zero.
+\end{itemize}
+
+\paragraph{Unique choice.} If for every $x$ there is a unique $y$ with $P(x,y)$, then there is a
+function $f$ with $P(x,f(x))$. In Bishop's mathematics this is part of the notion of function. The
+construction of the tower is a recursion in which each stage is the unique object satisfying a
+decidable specification (canonical choices, Section~\ref{s:locus}). So it is a function by unique
+choice, and no countable or dependent choice is used.
+
+\section{Noetherianity and Krull's intersection theorem}\label{s:noeth}
+
+We use Noetherianity in the sense of Richman and Seidenberg~\cite[II-3.2]{LQ}: every ascending
+sequence of finitely generated ideals has two equal consecutive terms. Equivalently, for every
+sequence $(a_k)$ there is $j$ with $a_j\in\langle a_0,\dots,a_{j-1}\rangle$.
+
+\begin{proposition}\label{p:hilbert}
+Finitely generated $\Q$-algebras, their quotients and localisations, and the Rees algebras of
+their finitely generated ideals (Definition~\ref{d:rees}) are Noetherian.
+\end{proposition}
+
+\begin{proof}
+Hilbert's basis theorem in the constructive form of~\cite{CP}. To pass to quotients and
+localisations without countable choice, one uses an inductive formulation of Noetherianity; see
+Appendix~\ref{a:bar}.
+\end{proof}
+
+The proofs below all follow one pattern. A process produces a sequence step by step. Noetherianity
+gives an index where the new term lies in the ideal of the earlier ones, and this contradicts the
+hypothesis that keeps the process running. So the process stops, although no bound is known in
+advance.
+
+\begin{lemma}[order along a non-unit]\label{l:sorder}
+Let $D$ be a Noetherian domain with decidable divisibility by $s$, where $s\in D$ is neither $0$ nor
+a unit. Every $a\ne0$
+can be written $a=s^ka'$ with $s\nmid a'$, and $k$ is computed.
+\end{lemma}
+
+\begin{proof}
+Put $a_0=a$. Put $a_{i+1}=a_i/s$ if $s\mid a_i$ (decidable), and $a_{i+1}=a_i$ otherwise. By
+Noetherianity there is $j\ge1$ with $a_j\in\langle a_0,\dots,a_{j-1}\rangle$. If $s$ divided
+$a_0,\dots,a_{j-1}$, this ideal would be $\langle a_{j-1}\rangle$ and $a_{j-1}=sa_j$. Then
+$a_j=c\,s\,a_j$, so $(1-cs)a_j=0$. Since $s$ is not a unit, $1-cs\ne0$, so $a_j=0$ and hence
+$a=0$, a contradiction. So the division stops at some $i<j$, which is found by a finite check.
+\end{proof}
+
+\begin{definition}[{\cite[XII-2, before Fact~2.5]{LQ}}]\label{d:rees}
+Let $\mathfrak{a}$ be an ideal of a ring $B$ and $t$ an indeterminate. The \emph{Rees algebra} of
+$\mathfrak{a}$ is the subalgebra
+\[
+B[\mathfrak{a}t]=B\oplus\mathfrak{a}t\oplus\mathfrak{a}^2t^2\oplus\cdots\ \subseteq B[t].
+\]
+So a polynomial $\sum g_jt^j$ lies in $B[\mathfrak{a}t]$ iff $g_j\in\mathfrak{a}^j$ for every $j$.
+If $\mathfrak{a}=\langle a_1,\dots,a_k\rangle$, then $B[\mathfrak{a}t]$ is generated by $a_1t,\dots,a_kt$,
+so it is a quotient of $B[T_1,\dots,T_k]$.
+\end{definition}
+
+\begin{lemma}[Krull step, after Perdry~\cite{Pm}]\label{l:krull}
+Let $\mathfrak{a}$ be an ideal of a ring $B$. Suppose that in the Rees ring $B[\mathfrak{a}t]$ a
+relation
+\[
+b\,t^{m+1}=\sum_{i\le m}g_i\,b\,t^i,\qquad g_i\in B[\mathfrak{a}t],
+\]
+holds. Then $b\in b\,\mathfrak{a}$. If moreover $1+\mathfrak{a}\subseteq B^\times$, then $b=0$.
+\end{lemma}
+
+\begin{proof}
+Compare the coefficients of $t^{m+1}$. The coefficient of $t^{m+1-i}$ in $g_i$ lies in
+$\mathfrak{a}^{m+1-i}\subseteq\mathfrak{a}$, so $b=cb$ with $c\in\mathfrak{a}$, and then $(1-c)b=0$.
+\end{proof}
+
+\begin{corollary}[Krull's intersection theorem]\label{c:krull}
+Let $B$ be a local ring with maximal ideal $\m$, whose Rees algebra $B[\m t]$ is Noetherian, and
+in which membership in each $\m^k$ is decidable. For $b\in B$ one computes either $k$ with
+$b\notin\m^k$, or a proof that $b=0$.
+\end{corollary}
+
+\begin{proof}
+Test $b\in\m^k$ for $k=0,1,\dots$. As long as the tests succeed, $bt^k\in B[\m t]$. Noetherianity
+applied to the sequence $(bt^k)$ gives the relation of Lemma~\ref{l:krull}, and then $b=0$, because
+$1+\m\subseteq B^\times$.
+\end{proof}
+
+\section{Discrete gcd domains}\label{s:gcd}
+
+\begin{definition}
+A \emph{discrete gcd domain} is a discrete domain with decidable divisibility in which every two
+elements have a gcd.
+\end{definition}
+
+This replaces factoriality. It is all we need to write any pair as $(a,b)=c(a',b')$ with $a',b'$
+without common non-unit factor.
+
+\begin{lemma}\label{l:poly}
+$\Q[x,y]$ is a discrete gcd domain. If $D$ is a discrete gcd domain, so are $D[X]$ and every
+localisation of $D$ at a multiplicative set with decidable membership.
+\end{lemma}
+
+\begin{proof}
+Gauss's lemma, and gcds over the discrete field of fractions~\cite[III]{LQ}. For $\Q[x,y]$ one can
+also use Kronecker factorisation.
+\end{proof}
+
+\begin{lemma}[Nagata at a prime element]\label{l:nagata}
+Let $D$ be a strongly discrete Noetherian domain and $s\in D$ a prime element, that is,
+$D/sD$ is a domain. If $D[1/s]$ is a discrete gcd domain, so is $D$.
+\end{lemma}
+
+\begin{proof}
+Let $a,b\ne0$. By Lemma~\ref{l:sorder} write $a=s^ka'$ and $b=s^lb'$ with $s\nmid a',b'$. Let
+$g\in D$ represent a gcd of $a',b'$ in $D[1/s]$; dividing out powers of $s$ (Lemma~\ref{l:sorder}
+again), we may assume $s\nmid g$.
+\begin{itemize}
+\item $g\mid a'$ in $D$. Indeed $s^Na'=gx$ for some $N$ and $x\in D$. Since $s$ is prime and
+  $s\nmid g$, $s^N\mid x$, so $a'=g\,(x/s^N)$.
+\item A common divisor $c\in D$ of $a',b'$ divides $g$ in $D$. It divides $g$ in $D[1/s]$, and
+  $s\nmid c$ (because $s\nmid a'$), so the same argument applies.
+\end{itemize}
+Hence $s^{\min(k,l)}g$ is a gcd of $a,b$ in $D$. The factor $s^{\min(k,l)}$ is correct because $s$
+is prime and $s\nmid a'$, $s\nmid b'$.
+\end{proof}
+
+\begin{lemma}[generic linear form]\label{l:generic}
+Let $B$ be a discrete gcd domain and $c_0,\dots,c_\ell\in B$ with $\gcd(c)=1$. Over
+$B'=B[\lambda_0,\dots,\lambda_\ell]$ the element $\pi'=\sum\lambda_ic_i$ is prime.
+\end{lemma}
+
+\begin{proof}
+$B'$ is a discrete gcd domain. $\pi'$ has degree $1$ in the $\lambda$'s and content $\gcd(c)=1$. In a
+factorisation one factor has degree $0$ and divides every coefficient, so it is a unit, and $\pi'$
+is irreducible. In a discrete gcd domain an irreducible element $\pi$ is prime. If $\pi\mid ab$ and
+$\pi\nmid a$, then $\gcd(\pi,a)=1$, hence $\pi\mid b$.
+\end{proof}
+
+For a ring $B$ and $c=(c_0,\dots,c_\ell)$ put
+\[
+J_B(c)=B[\sigma_0,\dots,\sigma_\ell]\Big/\Big(\sum c_i\sigma_i-1\Big),
+\]
+the \emph{forcing algebra} of $c$.
+
+\begin{lemma}\label{l:jdomain}
+If $D$ is a domain and some $c_i\ne0$, then $J_D(c)$ is a domain.
+\end{lemma}
+
+\begin{proof}
+The polynomial $f=\sum c_i\sigma_i-1$ has content $(1)$. By the Dedekind--Mertens lemma, $J_D(c)$ is
+torsion-free over $D$, so it embeds in $K[\sigma]/(f)$ with $K=\operatorname{Frac}D$. There $c_i$
+is invertible, $\sigma_i$ can be solved, and what remains is a polynomial ring over $K$.
+\end{proof}
+
+\begin{proposition}\label{p:jgcd}
+Let $B$ be a finitely presented $\Q$-algebra that is a discrete gcd domain, and let
+$c_0,\dots,c_\ell\in B$ have no common non-unit divisor, with $c_0\ne0$. Then $J_B(c)$ is a discrete
+gcd domain.
+\end{proposition}
+
+\begin{proof}
+Let $B'=B[\lambda_0,\dots,\lambda_\ell]$ and $\pi'=\sum\lambda_ic_i$, which is prime by
+Lemma~\ref{l:generic}. The substitution $\tau_i=\sigma_i+\lambda_i\sigma'$ gives
+\[
+J_B(c)[\lambda,\sigma']\;\cong\;E=B'[\tau,\sigma']\Big/\Big(\sum c_i\tau_i-\pi'\sigma'-1\Big).
+\]
+\begin{itemize}
+\item $\pi'$ is prime in $E$: $E/\pi'E\cong J_{B'/\pi'}(\bar c)[\sigma']$, which is a domain by
+  Lemma~\ref{l:jdomain}, because $B'/\pi'$ is a domain and $\bar c_0\ne0$ ($\pi'\nmid c_0$ for
+  degree reasons).
+\item Inverting $\pi'$ solves $\sigma'$, so $E[1/\pi']$ is a polynomial ring over $B'[1/\pi']$, hence
+  a discrete gcd domain (Lemma~\ref{l:poly}).
+\item $E$ is finitely presented, hence Noetherian with decidable divisibility (Gröbner bases).
+\end{itemize}
+So $E$ is a discrete gcd domain by Lemma~\ref{l:nagata}. Gcds of elements of $J_B(c)$ computed in the
+polynomial ring $E\cong J_B(c)[\lambda,\sigma']$ have degree $0$, so they are gcds in $J_B(c)$.
+\end{proof}
+In the torsor step (Section~\ref{s:steps}), Lemma~\ref{l:nagata} is applied once more, at the
+element $s$.
+
+\section{Smoothness certificates}\label{s:cert}
+
+Let $A=\Q[Y_1,\dots,Y_N]/(G)$ be finitely presented.
+
+\begin{definition}\label{d:cert}
+A \emph{certificate of dimension $n$} for $A$ consists of the following data.
+\begin{itemize}
+\item Polynomials $h_1,\dots,h_r$ and $u_1,\dots,u_r$, and an integer $C>0$, with
+  $C-\sum u_kh_k\in(G)$. So the $h_k$ are comaximal in $A$.
+\item For each $k$, polynomials $F=(F_1,\dots,F_N)$ with $F_1,\dots,F_{N-n}\in(G)$, together with
+  $U$ and exponents $e,f$, such that modulo $(G)$
+  \[
+  \det\Bigl(\frac{\partial F}{\partial Y}\Bigr)U\equiv h_k^{\,e}
+  \qquad\text{and}\qquad
+  h_k^{\,f}\,G\subseteq(F_1,\dots,F_{N-n}).
+  \]
+\end{itemize}
+The last $n$ components $F_{N-n+1},\dots,F_N$ are the \emph{coordinates} of the piece.
+\end{definition}
+
+So on $D(h_k)$ the ideal $(G)$ is generated by $N-n$ equations, and their Jacobian, completed by
+the coordinates, is invertible.
+
+\begin{lemma}[standard form of a piece]\label{l:etale}
+Write $h=h_k$. Then
+\[
+A[1/h]\;\cong\;\Q[Y,Z_1,\dots,Z_n,t]\big/\bigl(F_1,\dots,F_{N-n},\ F_{N-n+j}-Z_j,\ ht-1\bigr),
+\]
+and the Jacobian of this presentation with respect to $(Y,t)$ is a unit. Hence $A[1/h]$ is étale
+over $\Q[Z_1,\dots,Z_n]$, and $\Omega_{A[1/h]/\Q}$ is free with basis $dZ_1,\dots,dZ_n$.
+\end{lemma}
+
+\begin{proof}
+The isomorphism is given by two explicit inverse maps. No kernel has to be computed. The Jacobian
+is $\det(\partial F/\partial Y)\cdot h$, which is a unit modulo the relations.
+\end{proof}
+
+From Lemma~\ref{l:etale} we get explicit local coordinates, explicit dual derivations
+$\partial/\partial Z_j$, and Newton lifting of solutions at points. These are all the smoothness
+properties we use; no general smoothness criterion is needed.
+
+\begin{remark}[smooth versus smooth of constant dimension]
+A certificate says more than ``$A$ is smooth over $\Q$'': it fixes the rank $n$ of
+$\Omega_{A/\Q}$ on every piece. For one equation $F$, the condition that $\{F=0\}$ is a smooth
+hypersurface,
+\[
+1\in\Bigl(F,\frac{\partial F}{\partial Y_1},\dots,\frac{\partial F}{\partial Y_N}\Bigr),
+\]
+is a certificate of dimension $N-1$, with $h_k=\partial F/\partial Y_k$. Smoothness alone allows
+the rank to vary (for instance $X^2=I$ in $M_n$, which has isolated points). In our tower all rings
+are discrete domains, whose only idempotents are $0$ and $1$, so the rank is automatically
+constant. The certificate records it.
+\end{remark}
+
+\begin{proposition}[propagation]\label{p:prop}
+\begin{enumerate}
+\item If $B$ has a certificate of dimension $n$ and $c_0,\dots,c_r\in B$, then $J_B(c)$ has a certificate of dimension $n+r$.
+\item If $A$ has a certificate of dimension $n$, the extended Rees algebra of a weighted centre
+  (defined in Section~\ref{s:steps}) has a certificate of dimension $n+1$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+1. The $c_i$ are comaximal in $J=J_B(c)$, since $\sum c_i\sigma_i=1$ there. On $D(c_i)$ one solves
+$\sigma_i$: $J[1/c_i]\cong B[1/c_i][\sigma_j:j\ne i]$. The pieces are the products $c_ih_k$, and the
+coordinates are those of $B$ together with the $\sigma_j$, $j\ne i$. In the language of the remark,
+$\sum c_i\sigma_i-1$ is a smooth hypersurface relative to $B$, because the derivatives
+$\partial/\partial\sigma_i=c_i$ generate $(1)$ in $J$.
+2. On a chart where the centre is $(x_1,\dots,x_k)$ with integer weights $w_i$,
+\[
+\cR\;\cong\;A[s,u_1,\dots,u_k]\big/(x_i-s^{w_i}u_i),
+\]
+and the equations $x_i-s^{w_i}u_i$ are solved for $x_i$, which are coordinates of $A$. The new
+coordinates are those of $A$ with $x_i$ replaced by $u_i$, plus $s$.
+\end{proof}
+
+The certificate gives a dimension without Krull dimension. All rings of the tower have
+dimension $n\ge2$. The dimension $n$ bounds the length of the invariants: $k\le n$
+(Section~\ref{s:inv}).
+
+\section{Points}\label{s:points}
+
+\begin{definition}
+A \emph{point} of a finitely presented $\Q$-algebra $A$ is a $\Q$-algebra map $q:A\to L$, where
+$L$ is a number field (Section~\ref{s:conv}). Its kernel $\ker q$ is a detachable prime, and
+its residue field $\kappa(q)\subseteq L$ is a discrete field.
+\end{definition}
+
+A point of $\Q[Y]/(G)$ is a solution of $G=0$ in $L^N$. In the classical proof, every statement
+``for every maximal ideal $\m\supseteq I$'' becomes ``for every point $q$ with $I\subseteq\ker q$''.
+Classically the two are equivalent by the Nullstellensatz. Constructively we use the following.
+
+\begin{proposition}[Nullstellensatz]\label{p:null}
+Let $\p$ be a finitely generated prime of $A$ and $a\notin\p$. There is a point $q$ with
+$\p\subseteq\ker q$ and $q(a)\ne0$. More generally, if $I$ is a finitely generated ideal with
+$1\notin I$, there is a point with $I\subseteq\ker q$.
+\end{proposition}
+
+\begin{proof}
+$A/I$ is a nonzero finitely presented $\Q$-algebra (decided by Gröbner bases). Noether
+normalisation and the primitive element theorem produce a quotient that is a finite field
+extension~\cite[VII]{LQ}. For the first claim, apply this to $(A/\p)[1/a]$.
+\end{proof}
+
+\begin{lemma}[transfer]\label{l:transfer}
+\begin{enumerate}
+\item Membership in $\ker q$ is decidable. Hence a negative statement of the form $x\notin\ker q$
+  may be proved by contradiction.
+\item If $\varphi:A\to U$ is a $\Q$-algebra map and $Q$ a point of $U$, then $Q\circ\varphi$ is a
+  point of $A$. This replaces the classical fact that the contraction of a maximal ideal of a
+  finitely generated algebra is maximal.
+\item (Local--global) If $g_1,\dots,g_m$ are comaximal and a property of finitely presented modules
+  or ideals holds on each $D(g_i)$, it holds on $A$~\cite[II]{LQ}.
+\end{enumerate}
+\end{lemma}
+
+\begin{proposition}[covering the zero set]\label{p:cover}
+Let $I$ be a finitely generated ideal of $A$. Suppose that for every point $q$ with
+$I\subseteq\ker q$ we can compute $g_q\notin\ker q$. Then finitely many points $q_1,\dots,q_m$
+satisfy $1\in I+(g_{q_1},\dots,g_{q_m})$.
+\end{proposition}
+
+\begin{proof}
+Build the list $g_{q_1},g_{q_2},\dots$. If $1\in I+(g_{q_1},\dots,g_{q_j})$ (decidable) stop.
+Otherwise Proposition~\ref{p:null} gives a point $q_{j+1}$ of $V(I+(g_{q_1},\dots,g_{q_j}))$. Then
+$g_{q_{j+1}}\notin I+(g_{q_1},\dots,g_{q_j})$, because $q_{j+1}$ kills the latter. Continue the sequence by $1$
+after a stop, and apply the Noetherianity of $A/I$ (Proposition~\ref{p:hilbert}). It gives $j$ with
+$g_{q_{j+1}}\in I+(g_{q_1},\dots,g_{q_j})$. By the last observation, the process has stopped by
+step~$j$.
+\end{proof}
+
+This is our substitute for quasi-compactness of $\operatorname{Spec}A$.
+
+\section{The invariant at a point}\label{s:inv}
+
+\subsection{Centred charts and Taylor expansion}
+
+Let $q$ be a point of $A$, lying in a piece $D(h)$ of the certificate, and let $Z_1,\dots,Z_n$ be the
+coordinates of the piece. After a translation by the values $q(Z_j)$ (and, when $\kappa(q)\ne\Q$,
+after adjoining the residue field), the coordinates vanish at $q$; such a chart is \emph{centred}
+at $q$. Let $A_q$ be the localisation at $\ker q$, and $\m_q$ its maximal ideal. Lemma~\ref{l:etale}
+gives the \emph{Taylor map}
+\[
+\tau:A_q\to\kappa(q)[[Z_1,\dots,Z_n]],
+\]
+obtained by Newton lifting. Its coefficients are computed. By Corollary~\ref{c:krull} it is
+injective. Moreover $\m_q^k$ consists exactly of the elements whose expansion has no terms of degree
+$<k$.
+
+\begin{lemma}[order at a point]\label{l:ord}
+For $f\in A_q$ we can decide whether $f=0$, and if $f\ne0$ compute $\mathrm{ord}_q(f)$, the largest
+$k$ with $f\in\m_q^k$. The same holds for a finitely generated ideal $I$, as the minimum over its
+generators.
+\end{lemma}
+
+\begin{proof}
+Test the homogeneous parts of $\tau(f)$ of degree $0,1,2,\dots$; each test is a finite computation
+over $\kappa(q)$. Corollary~\ref{c:krull} says that this search ends, either at a nonzero part or
+with a proof that $f=0$. No bound is known in advance, and no Markov principle is used.
+\end{proof}
+
+Weighted orders work in the same way. For rational weights $e_1,\dots,e_k\ge0$ on some coordinates,
+$f$ lies in the filtration level $\cF_a$ if and only if $\tau(f)$ has no monomial $Z^\beta$ with
+$\sum e_i\beta_i<a$. In particular, the associated graded ring $\bigoplus\cF_a/\cF_{>a}$ embeds in
+weighted-homogeneous series over $\kappa(q)$, so it is a domain.
+
+\subsection{The invariant}
+
+At a point $q\supseteq I$ we use the invariant of Abramovich--Temkin--Włodarczyk~\cite{ATW}, in the
+differential presentation of Brais~\cite{Brais} (``Method~1''). It is a finite sequence
+\[
+\inv_q(I)=(a_1,\dots,a_k),\qquad k\le n,
+\]
+of positive rationals, computed as follows.
+\begin{itemize}
+\item $a_1=\mathrm{ord}_q(I)$ (Lemma~\ref{l:ord}).
+\item A \emph{maximal contact} element is a derivative of order $a_1-1$ of a generator of order
+  $a_1$. It has order $1$ at $q$, and it is found by a finite search.
+\item The next entries come from the coefficient ideal on the maximal contact hypersurface. Each
+  is a minimum over a finite, explicitly bounded box of multi-indices. It has the form $b/D!$ with
+  $b\in\N_{>0}$, where $D$ is the product of the denominators of the previous entries.
+\end{itemize}
+Equivalently one may record the weights $w_i=1/a_i$. Then $\maxinv$ corresponds to the
+lexicographically \emph{least} weight vector.
+Every step is a finite computation over the discrete field $\kappa(q)$. The same data give a
+\emph{marked centre} at $q$: coordinates $x_1,\dots,x_k$ and weights $w_1,\dots,w_k$. Its
+admissibility ($I\subseteq\cF_{d}$ for the appropriate $d$) is decided coefficientwise.
+
+\begin{lemma}[well-ordering]\label{l:wo}
+Order invariants lexicographically, with the convention of~\cite{ATW} for sequences of different
+lengths. Restricted to sequences of length $\le n$ that arise as invariants, this order is well
+founded: well-founded induction and recursion are valid on it
+(Appendix~\ref{a:bar}).
+\end{lemma}
+
+\begin{proof}
+Induction on the length. Once $a_1,\dots,a_{i-1}$ are fixed, the next entry is $b/D!$ with $D$
+fixed by the previous entries. So it ranges over $\frac1{D!}\N$, which is well founded by induction
+on $\N$. The lexicographic product of well-founded orders
+is well founded, by nested induction.
+\end{proof}
+
+\begin{proposition}[upper semicontinuity]\label{p:usc}
+For every point $q\supseteq I$ there is $g\notin\ker q$ such that $\inv_{q'}(I)\preceq\inv_q(I)$
+for every point $q'\supseteq I$ of $D(g)$; the computation runs at every point of $D(g)$.
+Moreover, on $D(g)$ the points with
+$\inv_{q'}(I)=\inv_q(I)$ are those of $V(x_1,\dots,x_k)$, for the marked centre at $q$.
+\end{proposition}
+
+\begin{proof}[Sketch]
+All the data of the computation at $q$ (a nonzero coefficient, a unit derivative, an admissible
+marked centre) are elements that do not vanish at $q$. Let $g$ be their product. At a point $q'$ of
+$D(g)$ the same data are still available, so the computation at $q'$ cannot produce a larger
+invariant. It produces the same invariant exactly when the marked centre vanishes at $q'$. Each
+inequality is a statement about non-membership in $\ker q'$, which is decidable
+(Lemma~\ref{l:transfer}).
+\end{proof}
+
+\section{The maximal locus and its components}\label{s:locus}
+
+\begin{proposition}\label{p:maxinv}
+For a finitely generated ideal $I$ with $0\ne I\ne(1)$, one can compute $\maxinv(I)$, a point $q_0$ where it is attained,
+and the property
+\[
+\inv_q(I)\preceq\maxinv(I)\quad\text{for every point }q\supseteq I .
+\]
+\end{proposition}
+
+\begin{proof}
+Combine Proposition~\ref{p:usc} with Proposition~\ref{p:cover}. This gives finitely many points
+$q_1,\dots,q_m$ whose neighbourhoods $D(g_{q_j})$ cover $V(I)$. Take the maximum of the
+$\inv_{q_j}(I)$. Every point $q\supseteq I$ lies in some $D(g_{q_j})$, decidably, so
+$\inv_q(I)\preceq\inv_{q_j}(I)$.
+\end{proof}
+
+The \emph{locus ideal} $L$ is obtained by gluing: on the $D(g_{q_j})$ with $\inv_{q_j}=\maxinv$ it is
+the marked centre ideal, and elsewhere it is $(1)$. Its points are exactly the points where the
+maximum is attained. Since the centre is given by part of a coordinate system, $V(L)$ is smooth.
+
+\paragraph{Components.} The \emph{components} are the minimal primes of $\sqrt L$. They are
+computed with Perdry's strongly Noetherian theory~\cite{P}: a primality test by induction on the
+number of variables, and a tree of prime-or-split decisions whose finiteness again comes from Noetherianity. Different components $\p\ne\p'$ are comaximal. Indeed, $1\in\p+\p'$ is decidable. If it fails,
+Proposition~\ref{p:null} gives a point $q$ of $V(\p+\p')$. Near $q$ the locus is $V(x_1,\dots,x_k)$
+for a centred chart, and these coordinates generate a prime. Both $\p$ and $\p'$ are minimal over the
+locus, so both are equal to this prime, and $\p=\p'$.
+
+\paragraph{Canonical choice.} Each finitely presented ring of the tower comes with an explicit
+enumeration. Order the finite lists of generators by first occurrence in that enumeration. The
+component treated next is the one whose canonical list of generators is least. Together with the
+canonical point $q_0$ (least in the same sense), all choices are canonical, so the step is a
+function by unique choice.
+
+\begin{remark}
+One could try a dynamical treatment: keep a radical centre and split it only when needed. This does
+not work for the tower. With $r\ge2$ components, the forcing algebra has class group
+$\Z^r/\Z(1,\dots,1)\ne0$. A split discovered later would therefore invalidate a stage that has
+already been used.
+\end{remark}
+
+\section{The principalisation step}\label{s:steps}
+
+Let $I=(a',b')$ in a stage $A$ with a certificate of dimension $n$, let $\maxinv(I)$ have first
+entry $a_1$, and let $\p$ be the chosen component, with weighted centre $x_1^{1/w_1},\dots,
+x_k^{1/w_k}$ along $\p$.
+
+\subsection{Divisorial step ($k=1$)}
+
+Then $\p$ is principal. Let $\pi$ be a gcd of a generating family of $\p$. At one point of $V(\p)$,
+$\p$ is locally principal, and gcds of families are preserved by localisation, so $\p=(\pi)$ and
+$\pi$ is prime.
+The weight is $1/a$, and $I=\pi^aI_1$. The new ideal is $I_1$, in the same ring.
+
+\begin{lemma}
+No point of $V(\pi)$ contains $I_1$. So the component $\p$ disappears from the locus of $I_1$, and the
+invariant does not increase elsewhere.
+\end{lemma}
+
+\begin{proof}
+Let $q\supseteq I_1$ with $\pi\in\ker q$. Then $I=\pi^aI_1\subseteq\m_q^{a+1}$, so the first weight
+at $q$ would be at most $1/(a+1)$, contradicting the maximality of $\maxinv(I)$, whose first entry is $a$. Membership in $\ker q$ is
+decidable, so this negative argument is valid (Lemma~\ref{l:transfer}).
+\end{proof}
+
+\subsection{Torsor step ($k\ge2$)}
+
+We need two variants of Definition~\ref{d:rees}: the filtration is weighted, and negative degrees
+are allowed. Let $\cF_j$ ($j\in\Z$) be the \emph{weighted filtration} of the centre. On a chart
+where the centre has coordinates $x_1,\dots,x_k$ and integer weights $w_1,\dots,w_k$, $\cF_j$ is the
+ideal generated by the monomials $x^\beta$ with $\sum w_i\beta_i\ge j$; in particular $\cF_j=A$
+for $j\le0$, and $\cF_i\cF_j\subseteq\cF_{i+j}$. These local ideals glue. The \emph{extended Rees
+algebra} is the subalgebra
+\[
+\cR=\bigoplus_{j\in\Z}\cF_jT^j\ \subseteq A[T,T^{-1}],\qquad s=T^{-1}\in\cR .
+\]
+On the chart, $\cR=A[s,\,x_1T^{w_1},\dots,x_kT^{w_k}]$. Putting $u_i=x_iT^{w_i}$ gives
+$x_i=s^{w_i}u_i$, which is the presentation used in Proposition~\ref{p:prop}. Moreover
+$\cR/s\cR\cong\bigoplus_{j\ge0}\cF_j/\cF_{j+1}=\gr\cF$, the associated graded ring, and
+$\cR[1/s]=A[T,T^{-1}]$. Choose $\pi\in\cF_1\setminus\cF_2$, and let $y=(y_0,\dots,y_\ell)=(\pi T,h_1,\dots,h_\ell)$, where the $h_i$
+generate $\cR_+$ (in practice $x_iT^{w_i}$). Put
+\[
+U=J_{\cR}(y)=\cR[\sigma_0,\dots,\sigma_\ell]\Big/\Big(\sum y_i\sigma_i-1\Big).
+\]
+The weights of the centre are $v_i=w_i/d$ for a common denominator $d$, and admissibility gives
+$I\subseteq\cF_d$. Every $f\in I$ satisfies $f=s^d(fT^d)$, so
+\[
+IU=s^d\,I_1U,\qquad I_1=(fT^d : f\in I)\subseteq\cR,
+\]
+where $I_1$ is the \emph{weak transform} of $I$.
+By Proposition~\ref{p:prop}, $U$ has a certificate of dimension $n+1+\ell$.
+
+\begin{proposition}\label{p:sprime}
+$s$ is a prime element of $U$, and $U$ is a discrete gcd domain.
+\end{proposition}
+
+\begin{proof}
+$U/sU$ is the forcing algebra of the images of the $y_i$ over $\cR/s\cR=\gr\cF$, and the image of
+$\pi T$ is nonzero. By Lemma~\ref{l:jdomain} it is enough that $\gr\cF$ is a domain. That is checked at \emph{one} point $q_0$ of $V(\p)$: by Section~\ref{s:inv},
+$\gr\cF$ embeds into weighted-homogeneous series over $\kappa(q_0)$. A statement $z\notin\cF_{j+1}$ is
+transferred from $q_0$ to the whole component by decidability. Then $U[1/s]=J_{B}(y)$ with $B=A[T,T^{-1}]$. Here $y_0=\pi T\ne0$, and the $y_i$ have no
+common non-unit divisor in $B$: up to units they are generators of $\cF_1\supseteq\p$, and $k\ge2$.
+So $U[1/s]$ is a discrete gcd domain (Proposition~\ref{p:jgcd}). Lemma~\ref{l:nagata}
+concludes.
+\end{proof}
+
+\begin{proposition}[the invariant drops]\label{p:drop}
+For every point $Q$ of $U$ with $I_1\subseteq\ker Q$, $\inv_Q(I_1)\prec\maxinv(I)$, or $Q$ lies over
+a component $\p'\ne\p$, where the invariant is unchanged.
+\end{proposition}
+
+\begin{proof}[Sketch]
+Let $q=Q|_A$ (Lemma~\ref{l:transfer}). There are two cases.
+\begin{itemize}
+\item \emph{Away from the centre.} If $q\notin V(\p)$, then $U$ is locally a polynomial ring over
+  $A$, and nothing changes. The other components lift to the primes $\p'U$, which are comaximal
+  with $\p U$. So the locus ideal of $I_1$ is $\bigcap_{\p'\ne\p}\p'U$, which has one component
+  less.
+\item \emph{Over the centre}, with $s\in\ker Q$; then $\cR_+\not\subseteq\ker Q$, since the $y_i$
+  generate $(1)$ in $U$. Let $Q_0$ be the \emph{vertex point} of $\cR$: the point
+  $\sum f_jT^j\mapsto q_0(f_0)$, which lies in $V(\cR_+)$. At $Q_0$ the weak transform $I_1$ has
+  invariant $\maxinv(I)$, attained along the Rees centre, which lies in $V(\cR_+)$. On a
+  neighbourhood $D(G)$ of $Q_0$, Proposition~\ref{p:usc} bounds the invariant by $\maxinv(I)$, with
+  equality only on the Rees centre. Hence $\inv_Q(I_1)\prec\maxinv(I)$ as soon as $Q$ restricts to a
+  point of $D(G)$. To arrange this we use the $\Q^\times$-action $T\mapsto\mu T$, which preserves
+  $I_1$ up to a unit. $Q(\sigma_\mu G)$ is a polynomial in $\mu$ with coefficients in the number
+  field of $Q$, of some degree $e$, and its constant term $Q(G_0)$ is nonzero. So one of
+  $\mu=1,\dots,e+1$ is not a root, and it is found by the zero test.\qedhere
+\end{itemize}
+\end{proof}
+
+\begin{theorem}[principalisation]\label{t:princ}
+Let $A$ be a stage with a certificate, $(a',b')$ without common non-unit factor. A finite sequence of
+divisorial and torsor steps produces a stage $A'\supseteq A$ with a certificate, a discrete gcd
+domain, and $g\in A'$ with $(a',b')A'=gA'$. The construction is a function of $(A,a',b')$.
+\end{theorem}
+
+\begin{proof}
+The pair $(\maxinv(I),\ \text{number of components})$ decreases lexicographically at each step: the
+divisorial step and the torsor step remove the chosen component, without increasing the invariant
+elsewhere. By Lemma~\ref{l:wo} the order is well founded, so the steps are defined by well-founded
+recursion. The recursion stops when $I=(1)$. The accumulated factor
+$\pi^a$ or $s^d$ of each step generates the original ideal. Every choice is canonical
+(Section~\ref{s:locus}), so unique choice turns the recursion into data.
+\end{proof}
+
+\subsection{The tower}
+
+Let $A_0=\Q[x,y]$, with the trivial certificate of dimension $2$. Enumerate pairs so that every pair
+of elements of every $A_n$ is treated at some later stage. At stage $n$, write the pair as
+$c\,(a',b')$ using the gcd of $A_n$, and apply Theorem~\ref{t:princ}. Then $R=\bigcup_nA_n$ is a
+domain. Every pair $(a,b)$ becomes principal at some stage, and stays principal, so $R$ is a
+Bézout domain. The maps $A_n\to A_{n+1}$ are injective, since the forcing algebra is faithful when
+$\mathrm{Ann}(c)=0$~\cite[II.2.14]{LQ} and the Rees algebra contains $A$.
+
+\section{Chain lifting}\label{s:chains}
+
+A \emph{real point} of $A_n=\Q[Y]/(G)$ is a solution of $G=0$ in $\R^N$; let $X_n\subseteq\R^N$ be the
+set of real points. A \emph{closed $\varepsilon$-chain} is a finite sequence $P_0,\dots,P_m$ with
+$|P_{i+1}-P_i|<\varepsilon$ and $P_m=P_0$.
+
+\begin{definition}\label{d:chain}
+A map $\varphi:X'\to X$ has the \emph{chain lifting property} if for every bound $C$ there is a
+bound $C'$ such that for every $\varepsilon>0$ there is $\delta>0$ with the following property.
+Every closed $\delta$-chain $P_0,\dots,P_m$ in $X\cap[-C,C]^N$ has a closed $\varepsilon$-chain
+$P'_0,\dots,P'_{m'}$ in $X'\cap[-C',C']^{N'}$ and a map $\rho:\{0,\dots,m'\}\to\{0,\dots,m\}$ with
+\[
+\rho(0)=0,\quad\rho(m')=m,\quad\rho(j+1)-\rho(j)\in\{0,1\},\quad
+|\varphi(P'_j)-P_{\rho(j)}|<\varepsilon .
+\]
+\end{definition}
+
+This is a finitary form of ``$\varphi$ is a proper surjection with connected fibres''. It mentions
+only finitely many points at a time.
+
+\begin{lemma}\label{l:compose}
+If $\varphi$ and $\psi$ have the chain lifting property and $\varphi$ is Lipschitz on bounded sets,
+then $\varphi\circ\psi$ has the chain lifting property.
+\end{lemma}
+
+\begin{proof}
+Lift first along $\varphi$ with a small $\varepsilon_1$, then along $\psi$, and compose the
+reindexings. A Lipschitz constant $K$ of $\varphi$ on the relevant bounded set turns $\varepsilon$
+errors upstairs into $K\varepsilon$ errors downstairs. The parameters are chosen in the order $C$,
+$C'$, $C''$, and then $\varepsilon$, $\delta$.
+\end{proof}
+
+The projections of the tower are polynomial maps, so they are Lipschitz on bounded sets. It
+remains to treat one step. The divisorial step does not change the ring, and a principalisation is
+a finite composite of steps.
+
+\begin{proposition}\label{p:onestep}
+For a torsor step $A\to U$, the induced map $X_U\to X_A$ has the chain lifting property.
+\end{proposition}
+
+\begin{proof}[Sketch]
+Let $\nu=\sum_i g_i^{E_i}$ be the weighted distance to the centre, with exponents making the terms
+weighted-homogeneous of a common degree $D$. Then two-sided bounds $c\,r^D\le\nu\le c'r^D$ hold in
+chart coordinates.
+\begin{itemize}
+\item \emph{Away from the centre}, where $\nu>\eta$, the lift is unique and explicit:
+  $s=\nu^{1/2D}$ (a positive root), and $\sigma$ is determined by a fixed formula. Lifting point
+  by point gives the chain.
+\item \emph{Near the centre}, the fibre over a point is a weighted sphere $\{\varphi(u)=1\}$ of
+  dimension $k-1\ge1$, which is connected. Consecutive lifted points are joined inside the fibre by
+  relay paths made of three linear segments in chart coordinates. Charts are changed through
+  $\nu$.
+\item The analytic input is a polynomial inverse function theorem, whose radius is uniform in the
+  base point on bounded sets. It is proved by a Kantorovich--Newton step, i.e.\ the fixed point of
+  a contraction with rate $\frac12$. It uses only inverses and roots of positive reals; there is no
+  real division by a number not known to be positive, and no Markov principle.\qedhere
+\end{itemize}
+\end{proof}
+
+\begin{corollary}\label{c:tower}
+For every $N$, the map $X_{A_N}\to X_{A_0}=\R^2$ has the chain lifting property.
+\end{corollary}
+
+\section{Proof of Theorem~\ref{t:main}}\label{s:end}
+
+Suppose $PMQ=\operatorname{diag}(e_1,e_2)$ with $P,Q$ invertible over $R$. Over a Bézout domain,
+$\operatorname{diag}(e_1,e_2)$ is equivalent to $\operatorname{diag}(g,e_1e_2/g)$ with
+$g=\gcd(e_1,e_2)$, so we may assume $e_1\mid e_2$. All entries lie in some $A_N$. Then $e_1$ divides
+the entries of $M$, which generate $(1)$ because $(1+x)+(1-x)=2$. So $e_1$ is a unit. With $(p,q)$ the first row of $P$, $(u,v)$ the first column of
+$Q$ and $\mu=e_1^{-1}$,
+\begin{equation}\label{e:id}
+\mu\,(p,q)\,M\binom uv=1\quad\text{in }A_N .
+\end{equation}
+
+\paragraph{Half-angles.} For $-1\le t\le1$ put
+\[
+(a(t),b(t))=\Bigl(\frac{1-t^2}{1+t^2},\ \frac{2t}{1+t^2}\Bigr),\qquad
+\gamma(t)=(a^2-b^2,\ 2ab)\in\{\Delta=0\}.
+\]
+As $t$ runs from $-1$ to $1$, $\gamma$ runs once around the circle, from $(-1,0)$ back to $(-1,0)$,
+while $(a,b)$ goes from $(0,-1)$ to $(0,1)$. On the circle $M=2\,{}^t(a,b)(a,b)$, so
+\[
+M\binom uv=2\,l\binom ab,\qquad l=ua+vb .
+\]
+
+\paragraph{A lower bound.} On a bounded region the functions $p,q,u,v,\mu$ (polynomials in the
+coordinates of $A_N$) are bounded, and $u,v$ are Lipschitz. By~\eqref{e:id}, at a real point of
+$A_N$ lying over a point of the circle, $2\,\mu\,l\,(pa+qb)=1$, so $|l|\ge 2c$ for some $c>0$. At a
+real point $P'$ lying $\varepsilon$-close to $\gamma(t)$, the same bound holds up to an error that
+tends to $0$ with $\varepsilon$. So $|l(P',t)|\ge c$ once $\varepsilon$ is small enough.
+
+\paragraph{The chain.} Choose $-1=t_0<\dots<t_m=1$ so fine that $P_i=\gamma(t_i)$ is a closed
+$\delta$-chain. Lift it by Corollary~\ref{c:tower} to a closed $\varepsilon$-chain $P'_j$ with
+reindexing $\rho$. Put $l_j=u(P'_j)a(t_{\rho(j)})+v(P'_j)b(t_{\rho(j)})$. For small $\varepsilon$
+and $\delta$:
+\begin{itemize}
+\item $|l_j|\ge c$ for all $j$;
+\item $|l_{j+1}-l_j|<c$, because $u,v$ are Lipschitz, $t\mapsto(a,b)(t)$ is $4$-Lipschitz, and
+  $\rho(j+1)-\rho(j)\in\{0,1\}$.
+\end{itemize}
+By cotransitivity, applied to $-c/2<c/2$, each $l_j$ satisfies $l_j>c/2$ or $l_j<-c/2$, hence
+$l_j\ge c$ or $l_j\le-c$. A sign change between consecutive values would give
+$|l_{j+1}-l_j|\ge2c$, so two consecutive values have the same sign. So $l_{m'}$ and $l_0$ have the same sign. But $P'_{m'}=P'_0$, and
+$(a,b)(t_m)=-(a,b)(t_0)$, so $l_{m'}=-l_0$. This is a contradiction. Hence $M$ has no diagonal form
+over $R$.\qed
+
+\begin{comment}
+This last step is the constructive content of the intermediate value theorem used classically.
+It is where the ordered field $\R$ enters. Over a field in which $-1$ is a square, the circle ring
+is a principal ideal domain and there is no obstruction.
+\end{comment}
+
+\section{What is used}
+
+\begin{itemize}
+\item Intuitionistic logic, unique choice, and inductive definitions (Appendix~\ref{a:bar}).
+\item Constructive algebra from~\cite{LQ}: Gröbner bases, the Nullstellensatz, local--global
+  principles, gcds over a discrete field, Kronecker factorisation, primitive elements.
+\item The Hilbert basis theorem in inductive form~\cite{CP}, and Perdry's theory of minimal
+  primes~\cite{P}.
+\item On $\R$: cotransitivity, inverses and roots of positive numbers, and the fixed point of a
+  contraction with rate $\frac12$.
+\end{itemize}
+No maximal ideals, Krull dimension, compactness, Markov principle or countable choice are used.
+
+
+\appendix
+\section{Inductive definitions and bar induction}\label{a:bar}
+
+This appendix explains the inductive notions behind Proposition~\ref{p:hilbert} and
+Lemma~\ref{l:wo}. They are not needed to follow the main text.
+
+\paragraph{Inductive definitions.} An inductive definition introduces a property by rules: the
+property is the smallest one closed under the rules. The natural numbers are generated by $0$ and
+$n\mapsto n+1$, and induction on $\N$ says exactly that every property closed under these rules
+holds for all $n$. The same is true for any inductive definition. This is \emph{induction on the
+definition}. In type theory inductive definitions are primitive. In Bishop's style they are
+accepted as generalised inductive definitions, as~\cite{LQ} does for the Krull dimension
+($\mathrm{Hdim}$).
+
+\begin{definition}[accessibility]
+Let $\prec$ be a relation on a set $E$. The property $\mathrm{Acc}(x)$ is defined inductively by one
+rule: if $\mathrm{Acc}(y)$ for all $y\prec x$, then $\mathrm{Acc}(x)$. The relation is \emph{well
+founded} if $\mathrm{Acc}(x)$ holds for every $x$.
+\end{definition}
+
+Induction on $\mathrm{Acc}$ is well-founded induction, and it justifies well-founded recursion: a
+function may be defined at $x$ from its values at all $y\prec x$. This is how the principalisation
+is defined (Theorem~\ref{t:princ}). The lexicographic product of two well-founded relations is
+well founded, by nested induction; this gives Lemma~\ref{l:wo}.
+
+\paragraph{Bars.} Let $A$ be a commutative ring. Lists are written with the newest entry first.
+
+\begin{definition}[inductive Noetherianity]\label{d:bar}
+The property $\mathrm{Bar}(l)$ of a list $l$ of elements of $A$ is defined inductively by two rules.
+\begin{enumerate}
+\item If $a\in\langle l\rangle$, then $\mathrm{Bar}(a::l)$.
+\item If $\mathrm{Bar}(a::l)$ for every $a\in A$, then $\mathrm{Bar}(l)$.
+\end{enumerate}
+$A$ is \emph{inductively Noetherian} if $\mathrm{Bar}$ holds for the empty list.
+\end{definition}
+
+Read $\mathrm{Bar}(l)$ as ``however $l$ is continued, it eventually gets an entry in the ideal of
+the older ones''. This form is due to Richman, Seidenberg, Jacobsson--Löfwall and
+Coquand--Persson~\cite{CP}.
+
+\begin{lemma}\label{l:seq}
+An inductively Noetherian ring is Noetherian in the sense of Richman--Seidenberg.
+\end{lemma}
+
+\begin{proof}
+By induction on $\mathrm{Bar}(l)$, prove: ``every sequence beginning with $l$ has a term in the
+ideal of the earlier terms''. Under rule~1, the newest entry of $l$ is such a term. Under rule~2,
+apply the induction hypothesis to $l$ extended by the next term of the sequence.
+\end{proof}
+
+\begin{proposition}\label{p:barhilbert}
+\begin{enumerate}
+\item A discrete field is inductively Noetherian.
+\item If $A$ is inductively Noetherian, so are $A/\mathfrak{a}$ and $S^{-1}A$.
+\item $\Q[Y_1,\dots,Y_N]$ is inductively Noetherian~\cite{CP}.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}[Sketch]
+1. For a list $l$ in a discrete field, decide whether $\langle l\rangle$ is $0$ or $(1)$. In the
+second case every extension is good. In the first case an extension $a$ is $0$ (good) or a unit,
+after which every extension is good.
+2. Induction on $\mathrm{Bar}$. At each use of rule~2, lift \emph{one} element.
+3. Dickson's lemma is proved as an inductive bar on monomials, and Gröbner reduction transports it
+to ideals.
+\end{proof}
+
+\begin{comment}
+This is why the inductive form is used. A sequence in $A/\mathfrak{a}$ or $S^{-1}A$ cannot be lifted
+to a sequence in $A$ without countable choice. In the inductive form only one element is lifted at a
+time. Proposition~\ref{p:hilbert} follows from Proposition~\ref{p:barhilbert}, Lemma~\ref{l:seq}, and
+the fact that a Rees algebra is a quotient of a polynomial ring.
+\end{comment}
+
+\begin{thebibliography}{9}
+\bibitem{ATW} D.~Abramovich, M.~Temkin and J.~Włodarczyk, \emph{Functorial embedded resolution via
+  weighted blowings up}, Algebra Number Theory 18 (2024), 1557--1587.
+\bibitem{Brais} M.~J.-L.~Brais, \emph{Streamlining resolution of singularities with weighted
+  blow-ups}, arXiv:2512.01859 (2025).
+\bibitem{CP} T.~Coquand and H.~Persson, \emph{Gröbner bases in type theory}, in Types for Proofs and
+  Programs, LNCS 1657 (1999), 33--46.
+\bibitem{HM} C.~Hägg and A.~Mörtberg, \emph{A Bézout domain that is not an elementary divisor domain},
+  arXiv:2609.35229, 2026, \url{https://arxiv.org/abs/2609.35229}. The proof was found with GPT-6 Astra.
+  Lean formalization: \url{https://github.com/Zelaron/bezout-counterexample-lean}.
+\bibitem{LQ} H.~Lombardi and C.~Quitté, \emph{Commutative Algebra: Constructive Methods},
+  Springer, 2015.
+\bibitem{Pm} H.~Perdry, \emph{An elementary proof of Krull's intersection theorem}, Amer.\ Math.\
+  Monthly 111 (2004), 356--357.
+\bibitem{P} H.~Perdry, \emph{Strongly Noetherian rings and constructive ideal theory},
+  J.~Symbolic Comput.\ 37 (2004).
+\end{thebibliography}
+
+\end{document}

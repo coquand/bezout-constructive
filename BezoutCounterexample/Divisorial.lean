@@ -1,9 +1,14 @@
 import BezoutCounterexample.Rees
+import BezoutCounterexample.Principalization.InvariantPt
+import BezoutCounterexample.Principalization.DivSpanPt
+import BezoutCounterexample.Principalization.ChartDimPt
+import BezoutCounterexample.Principalization.GoodVPt
 
 /-!
 # Section 4: the setting, and the divisorial step (Lemma 4.1)
 
-Throughout Section 4, `A` is a smooth finitely generated factorial `ℚ`-domain and `I ⊊ A` is a
+Throughout Section 4, `A` is a smooth finitely generated `ℚ`-domain (factorial in HM; here a GCD
+domain suffices) and `I ⊊ A` is a
 nonzero ideal. We fix a component `V(𝔭)` of the maximal locus of `I` and use Notation 3.4; `k ≥ 1`
 is the number of nonzero entries of `e = maxinv(I)`. Since `A` is a UFD and `𝔭 ≠ 0`, `𝔭` contains a
 prime element `π`. This data is bundled as `PrincipalizationData A`; `numComponents I = c(I)`.
@@ -21,13 +26,19 @@ namespace BezoutCounterexample
 
 open IsLocalRing Principalization
 
-/-- The setting of Section 4: Notation 3.4 for a smooth finitely generated factorial `ℚ`-domain
-`A`, together with a prime element `π ∈ 𝔭`. -/
+/-- The setting of Section 4: Notation 3.4 for a smooth finitely generated `ℚ`-domain `A`,
+together with a nonzero element `π ∈ 𝔭`, prime in the divisorial case `k = 1`.
+
+(HM take `π` prime in all cases, using factoriality. Over GCD domains the divisorial `π` is the gcd
+of generators of `𝔭` (`div_eq_span_G`), and in the torsor case any nonzero `π ∈ 𝔭` will do
+(`torsor_gcd`).) -/
 structure PrincipalizationData (A : Type) [CommRing A] [IsDomain A] [Algebra ℚ A]
-    [Algebra.Smooth ℚ A] [UniqueFactorizationMonoid A] extends ReesData A where
-  /-- A prime element `π ∈ 𝔭`. -/
+    [Algebra.Smooth ℚ A] extends ReesData A where
+  /-- A nonzero element `π ∈ 𝔭`. -/
   π : A
-  prime_π : Prime π
+  π_ne : π ≠ 0
+  /-- In the divisorial case `π` is prime. -/
+  prime_π : numNonzero e = 1 → Prime π
   π_mem : π ∈ 𝔭
 
 /-! ## Components are determined by the maximal locus -/
@@ -95,32 +106,57 @@ theorem exists_maxinv_zero_eq {I : Ideal A} (hI : I ≠ ⊥) (hItop : I ≠ ⊤)
   obtain ⟨⟨𝔪, h𝔪, hI𝔪, hinv⟩, -⟩ := maxinv_spec hI hItop
   rw [← hinv]; exact exists_inv_zero_eq hI hI𝔪
 
-theorem ReesData.e_ne_zero_iff (S : ReesData A) (i : ℕ) : S.e i ≠ 0 ↔ i < S.k :=
-  ne_zero_iff_lt_numNonzero (maxinv_mem_Γ S.ne_bot S.ne_top)
-    (finite_support_maxinv S.ne_bot S.ne_top) i
+/-- `eᵢ ≠ 0` exactly for `i < k` (through `kOf`: the support bound of `S.comp` gives a zero entry). -/
+theorem ReesData.e_ne_zero_iff (S : ReesData A) (i : ℕ) : S.e i ≠ 0 ↔ i < S.k := by
+  obtain ⟨N, -, hb₀⟩ := S.comp.bd
+  have h : ∃ i, S.e i = 0 := ⟨N, hb₀ N le_rfl⟩
+  have hdown : ∀ j l, S.e j = 0 → j ≤ l → S.e l = 0 := fun j l hj hjl => by
+    induction l, hjl using Nat.le_induction with
+    | base => exact hj
+    | succ l _ ih => exact S.e_zero_succ l ih
+  have hiff : ∀ i, S.e i ≠ 0 ↔ i < Nat.find h := fun i =>
+    ⟨fun hi => (Nat.lt_or_ge i (Nat.find h)).resolve_right fun hge =>
+      hi (hdown _ _ (Nat.find_spec h) hge), fun hi => Nat.find_min h hi⟩
+  have hnum : S.k = Nat.find h := by
+    show numNonzero S.e = _
+    have hset : {i | S.e i ≠ 0} = ↑(Finset.range (Nat.find h)) := by
+      ext i
+      rw [Set.mem_ofPred_eq, Finset.coe_range, Set.mem_Iio]
+      exact hiff i
+    rw [numNonzero, hset, Set.ncard_coe_finset, Finset.card_range]
+  rw [hnum]
+  exact hiff i
 
-/-- `k ≥ 1`: the first weight of `maxinv(I)` is nonzero. -/
-theorem ReesData.one_le_k (S : ReesData A) : 1 ≤ S.k := by
-  obtain ⟨a, ha, he⟩ := exists_maxinv_zero_eq S.ne_bot S.ne_top
-  have h0 : S.e 0 ≠ 0 := by
-    show maxinv S.I 0 ≠ 0
-    rw [he]; positivity
-  exact (S.e_ne_zero_iff 0).1 h0
+/-- `k ≥ 1`: the first weight of `e` is nonzero (`InvAt.zero_ne` at the attaining point). -/
+theorem ReesData.one_le_k (S : ReesData A) : 1 ≤ S.k :=
+  (S.e_ne_zero_iff 0).1 (by obtain ⟨q, -, hv⟩ := S.hatt; exact InvAt.zero_ne S.ne_bot hv)
+
+section UFD
 
 variable [UniqueFactorizationMonoid A]
 
-/-- Given Notation 3.4 over a UFD, a prime element `π ∈ 𝔭` exists. -/
+/-- Given Notation 3.4 over a UFD, a prime element `π ∈ 𝔭` exists (HM's route; the GCD route
+uses `div_eq_span_G` instead). -/
 theorem ReesData.exists_prime_mem (S : ReesData A) : ∃ π : A, Prime π ∧ π ∈ S.𝔭 := by
-  have h𝔭 := (theorem_3_3_3 S.ne_bot S.ne_top).2.1 S.𝔭 S.mem_components
-  have hne : S.𝔭 ≠ ⊥ := fun h => S.ne_bot (eq_bot_iff.2 (h ▸ h𝔭.2))
-  obtain ⟨π, hπ𝔭, hπ⟩ := Ideal.IsPrime.exists_mem_prime_of_ne_bot h𝔭.1 hne
+  have hne : S.𝔭 ≠ ⊥ := fun h => S.ne_bot (eq_bot_iff.2 (h ▸ S.I_le_𝔭))
+  obtain ⟨π, hπ𝔭, hπ⟩ := Ideal.IsPrime.exists_mem_prime_of_ne_bot S.𝔭_isPrime hne
   exact ⟨π, hπ, hπ𝔭⟩
+
+end UFD
 
 namespace PrincipalizationData
 
 variable (S : PrincipalizationData A)
 
 /-! ## Lemma 4.1: the divisorial step -/
+
+include S in
+/-- Charts of one size near every explicit point of `A` (from `S.hN`). -/
+theorem hchart_pt : ∀ p : Principalization.Pt A, ∃ f : A, f ∉ p.ker ∧ ∃ n : ℕ,
+    Nonempty (Principalization.Chart (Localization.Away f) n) := fun p => by
+  obtain ⟨_, hN⟩ := S.hN
+  obtain ⟨f, hf, hc⟩ := hN.exists_chart_away p
+  exact ⟨f, hf, _, hc⟩
 
 /-- The ideal `I₁ = (I : π^a)` of the divisorial step. -/
 def divI₁ (a : ℕ) : Ideal A := S.I.colon {S.π ^ a}
@@ -133,7 +169,7 @@ include hk
 /-- **Lemma 4.1**: if `k = 1`, then `e = (1/a, 0, 0, …)` for a positive integer `a`
 (Theorem 3.3(1)). -/
 theorem divisorial_e : ∃ a : ℕ, 0 < a ∧ S.e = fun i => if i = 0 then 1 / (a : ℚ) else 0 := by
-  obtain ⟨a, ha, he⟩ := exists_maxinv_zero_eq S.ne_bot S.ne_top
+  obtain ⟨a, ha, he⟩ := S.he_cl.exists_zero_eq S.ne_bot
   refine ⟨a, ha, funext fun i => ?_⟩
   split_ifs with hi
   · subst hi; exact he
@@ -141,6 +177,24 @@ theorem divisorial_e : ∃ a : ℕ, 0 < a ∧ S.e = fun i => if i = 0 then 1 / (
     have := (S.e_ne_zero_iff i).1 h
     have hk' : S.toReesData.k = 1 := hk
     omega
+
+/-- **Lemma 4.1 at an explicit point**: `divisorial_e` with the first weight read off the invariant
+at a point of `𝔭` (`InvAt.exists_zero_eq_pt`). -/
+theorem divisorial_e_pt [Fact (Constructive.HasPres A)] :
+    ∃ a : ℕ, 0 < a ∧ S.e = fun i => if i = 0 then 1 / (a : ℚ) else 0 := by
+  have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing ℚ A
+  obtain ⟨q, -, hle, -⟩ := S.h𝔭c.exists_locDataPt S.ne_bot S.Igens S.hIgens S.hchart_pt S.hmax
+  obtain ⟨hIq, hv⟩ := S.h𝔭c.mem_ptL S.ne_bot S.Igens S.hIgens S.hchart_pt S.hmax q hle
+  obtain ⟨a, ha, he⟩ := InvAt.exists_zero_eq_pt S.ne_bot S.Igens S.hIgens q hIq hv
+  refine ⟨a, ha, funext fun i => ?_⟩
+  split_ifs with hi
+  · subst hi; exact he
+  · rcases Nat.eq_zero_or_pos i with h0 | hpos
+    · exact absurd h0 hi
+    · have hk' : S.toReesData.k = 1 := hk
+      rcases (inferInstance : Decidable (S.e i = 0)) with h | h
+      · exact absurd ((S.e_ne_zero_iff i).1 h) (by omega)
+      · exact h
 
 theorem e_zero_ne : S.e 0 ≠ 0 := (S.e_ne_zero_iff 0).2 (by have : S.toReesData.k = 1 := hk; omega)
 
@@ -151,16 +205,19 @@ theorem e_one_eq : S.e 1 = 0 := by
   omega
 
 /-- **Lemma 4.1**: `𝔭 = π A`. -/
-theorem divisorial_𝔭_eq : S.𝔭 = Ideal.span {S.π} :=
-  div_eq_span S.ne_bot S.hmax S.h𝔭 (S.e_zero_ne hk) (S.e_one_eq hk) S.prime_π S.π_mem
+theorem divisorial_𝔭_eq [Fact (Constructive.HasPres A)] : S.𝔭 = Ideal.span {S.π} :=
+  have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing ℚ A
+  div_eq_span_ptL S.ne_bot S.Igens S.hIgens S.hchart_pt S.hmax S.h𝔭c (S.e_zero_ne hk)
+    (S.e_one_eq hk) (S.prime_π hk) S.π_mem
 
 variable {a : ℕ} (ha : S.e 0 = 1 / (a : ℚ))
 include ha
 
 /-- **Lemma 4.1**: `I ⊆ π^a A`. -/
-theorem divisorial_le : S.I ≤ Ideal.span {S.π ^ a} :=
-  div_le_span_pow S.ne_bot S.hmax S.h𝔭 S.d_pos (S.e_zero_ne hk) (S.e_one_eq hk) S.prime_π
-    S.π_mem ha
+theorem divisorial_le [Fact (Constructive.HasPres A)] : S.I ≤ Ideal.span {S.π ^ a} :=
+  have : IsNoetherianRing A := Algebra.FiniteType.isNoetherianRing ℚ A
+  div_le_span_pow_ptL S.ne_bot S.Igens S.hIgens S.hchart_pt S.hmax S.h𝔭c S.d_pos (S.e_zero_ne hk)
+    (S.e_one_eq hk) (S.prime_π hk) S.π_mem ha
 
 theorem a_pos : 0 < a := by
   rcases Nat.eq_zero_or_pos a with h | h
@@ -168,22 +225,22 @@ theorem a_pos : 0 < a := by
   · exact h
 
 /-- **Lemma 4.1**: `I = π^a I₁`, `I₁ = (I : π^a)`. -/
-theorem divisorial_I_eq : S.I = Ideal.span {S.π ^ a} * S.divI₁ a :=
+theorem divisorial_I_eq [Fact (Constructive.HasPres A)] : S.I = Ideal.span {S.π ^ a} * S.divI₁ a :=
   div_eq_mul (S.divisorial_le hk ha)
 
 /-- **Lemma 4.1**: `I₁ + π A = A`. -/
-theorem divisorial_sup : S.divI₁ a ⊔ Ideal.span {S.π} = ⊤ := by
+theorem divisorial_sup [Fact (Constructive.HasPres A)] : S.divI₁ a ⊔ Ideal.span {S.π} = ⊤ := by
   by_contra h
   obtain ⟨𝔪, h𝔪, hle⟩ := Ideal.exists_le_maximal _ h
   exact div_not_mem S.ne_bot S.hmax (S.a_pos hk ha) ha (S.divisorial_le hk ha) 𝔪
     (le_sup_left.trans hle) (hle (Ideal.mem_sup_right (Ideal.mem_span_singleton_self S.π)))
 
 /-- A maximal ideal containing `I₁` does not contain `π`. -/
-theorem π_not_mem (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔪 : S.divI₁ a ≤ 𝔪) : S.π ∉ 𝔪 :=
+theorem π_not_mem [Fact (Constructive.HasPres A)] (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔪 : S.divI₁ a ≤ 𝔪) : S.π ∉ 𝔪 :=
   div_not_mem S.ne_bot S.hmax (S.a_pos hk ha) ha (S.divisorial_le hk ha) 𝔪 h𝔪
 
 /-- **Lemma 4.1**: `inv_𝔪(I₁) = inv_𝔪(I)` for every maximal ideal `𝔪 ⊇ I₁`. -/
-theorem divisorial_inv_eq (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔪 : S.divI₁ a ≤ 𝔪) :
+theorem divisorial_inv_eq [Fact (Constructive.HasPres A)] (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔪 : S.divI₁ a ≤ 𝔪) :
     inv (S.divI₁ a) 𝔪 = inv S.I 𝔪 := by
   have hI𝔪 : S.I ≤ 𝔪 := (le_divI S.I S.π a).trans h𝔪
   exact inv_eq_of_invAt (divI_ne_bot S.ne_bot) h𝔪
@@ -193,10 +250,11 @@ theorem divisorial_inv_eq (𝔪 : Ideal A) [𝔪.IsMaximal] (h𝔪 : S.divI₁ a
 /-- **Lemma 4.1**: either `maxinv(I₁) ≺ maxinv(I)` or `I₁ = A`, or `maxinv(I₁) = maxinv(I)` and the
 components of the maximal locus of `I₁` are those of `I` other than `V(𝔭)`; in particular
 `c(I₁) < c(I)`. -/
-theorem divisorial_decrease :
-    maxinv (S.divI₁ a) ≺ maxinv S.I ∨ S.divI₁ a = ⊤ ∨
-      (maxinv (S.divI₁ a) = maxinv S.I ∧ components (S.divI₁ a) = components S.I \ {S.𝔭} ∧
+theorem divisorial_decrease [Fact (Constructive.HasPres A)] :
+    maxinv (S.divI₁ a) ≺ S.e ∨ S.divI₁ a = ⊤ ∨
+      (maxinv (S.divI₁ a) = S.e ∧ components (S.divI₁ a) = components S.I \ {S.𝔭} ∧
         numComponents (S.divI₁ a) < numComponents S.I) := by
+  rw [S.e_eq_maxinv]
   by_cases htop : S.divI₁ a = ⊤
   · exact Or.inr (Or.inl htop)
   have hI₁ : S.divI₁ a ≠ ⊥ := divI_ne_bot S.ne_bot

@@ -1,3 +1,4 @@
+import BezoutCounterexample.Principalization.CompactLift
 import BezoutCounterexample.MarkedCenter
 
 /-!

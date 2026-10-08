@@ -1,0 +1,3286 @@
+# Whitelist for the constructivity audit (scripts/ConstructiveAudit.lean).
+# Each constant below has been checked by hand: its statement is constructively valid at the
+# types where the Constructive/ files use it (ℕ, ℚ, ℤ, ℝ as Bishop reals with ≤ := ¬ >).
+# Its Mathlib proof may be classical; that is the point of the whitelist.
+#
+# Reviewed 2026-10-02. Notes on the less obvious entries:
+#   le_of_not_gt                      ¬ b < a → a ≤ b : definition of ≤ for Bishop reals
+#   Mathlib.Tactic.Linarith.eq_of_not_lt_of_not_gt   equality of reals is negative
+#   contravariant_lt_of_covariant_le, *ReflectLE*, *ReflectLT*, addRightStrictMono...
+#                                     order cancellation facts, true for ℝ constructively
+#   Real.linearOrder, Real.lattice    instances are data; only lemmas whose statements are
+#                                     valid are applied to them (no le_total, lt_trichotomy, ...)
+#   propext                           accepted (as in the HM audit)
+# NOT allowed (would fail review): lt_of_not_ge, not_lt.mpr-style, le_total, lt_trichotomy,
+#   le_or_lt, lt_or_le, le_max_iff, le_abs at ℝ, any Classical.*.
+# Division and inverse on ℝ are avoided altogether (total inverse is not constructive).
+AddCommGroup.toAddGroup
+AddCommGroup.toDivisionAddCommMonoid
+AddCommMagma.toAdd
+AddCommMonoidWithOne.toAddMonoidWithOne
+AddCommSemigroup.toAddCommMagma
+AddGroup.addLeftReflectLE_of_addLeftMono
+AddGroup.toSubNegMonoid
+AddGroup.toSubtractionMonoid
+AddGroupWithOne.toAddGroup
+AddGroupWithOne.toAddMonoidWithOne
+AddLeftCancelSemigroup.toIsLeftCancelAdd
+AddMonoid.toAddSemigroup
+AddMonoid.toAddZeroClass
+AddMonoidWithOne.toAddMonoid
+AddMonoidWithOne.toNatCast
+AddMonoidWithOne.toOne
+AddSemigroup.toAdd
+AddZero.toAdd
+AddZero.toZero
+AddZeroClass.toAddZero
+And
+And.casesOn
+And.intro
+And.left
+And.right
+Bool
+Bool.false
+CommRing.toNonUnitalCommRing
+CommRing.toRing
+CommSemiring.toSemiring
+Distrib.toAdd
+Distrib.toMul
+DistribLattice.toLattice
+Eq
+Eq.mp
+Eq.mpr
+Eq.refl
+Eq.symm
+Eq.trans
+Exists
+Exists.casesOn
+Exists.intro
+False
+False.elim
+FloorRing.toFloorSemiring
+FloorSemiring.instCharZero
+HAdd.hAdd
+HMul.hMul
+HPow.hPow
+HSub.hSub
+HasDistribNeg.toInvolutiveNeg
+Iff.mp
+Iff.mpr
+Int
+Int.negOfNat
+Int.ofNat
+Int.rawCast
+InvolutiveNeg.toNeg
+IsLeftCancelAdd.addLeftReflectLE_of_addLeftReflectLT
+IsLeftCancelAdd.addLeftStrictMono_of_addLeftMono
+IsOrderedAddMonoid.toAddLeftMono
+IsOrderedAddMonoid.toAddRightMono
+IsOrderedRing.toMulPosMono
+IsOrderedRing.toPosMulMono
+IsStrictOrderedRing.toPosMulStrictMono
+IsStrictOrderedRing.toZeroLEOneClass
+LE.le
+LT.lt
+Lattice.toSemilatticeInf
+LinearOrder.toPartialOrder
+Mathlib.Meta.NormNum.IsInt.of_raw
+Mathlib.Meta.NormNum.IsInt.to_isNat
+Mathlib.Meta.NormNum.IsInt.to_raw_eq
+Mathlib.Meta.NormNum.IsNat.mk
+Mathlib.Meta.NormNum.IsNat.of_raw
+Mathlib.Meta.NormNum.IsNat.to_isInt
+Mathlib.Meta.NormNum.IsNat.to_raw_eq
+Mathlib.Meta.NormNum.instAddMonoidWithOne
+Mathlib.Meta.NormNum.instAtLeastTwo
+Mathlib.Meta.NormNum.isInt_add
+Mathlib.Meta.NormNum.isInt_mul
+Mathlib.Meta.NormNum.isInt_neg
+Mathlib.Meta.NormNum.isNat_add
+Mathlib.Meta.NormNum.isNat_lt_true
+Mathlib.Meta.NormNum.isNat_mul
+Mathlib.Meta.NormNum.isNat_ofNat
+Mathlib.Meta.Positivity.pos_of_isNat
+Mathlib.Tactic.Linarith.add_lt_of_le_of_neg
+Mathlib.Tactic.Linarith.add_lt_of_neg_of_le
+Mathlib.Tactic.Linarith.add_neg
+Mathlib.Tactic.Linarith.add_nonpos
+Mathlib.Tactic.Linarith.eq_of_not_lt_of_not_gt
+Mathlib.Tactic.Linarith.le_of_le_of_eq
+Mathlib.Tactic.Linarith.lt_irrefl
+Mathlib.Tactic.Linarith.lt_of_lt_of_eq
+Mathlib.Tactic.Linarith.mul_neg
+Mathlib.Tactic.Linarith.mul_nonpos
+Mathlib.Tactic.Linarith.sub_neg_of_lt
+Mathlib.Tactic.Linarith.sub_nonpos_of_le
+Mathlib.Tactic.Linarith.zero_lt_one
+Mathlib.Tactic.LinearCombination.eq_of_eq
+Mathlib.Tactic.LinearCombination.eq_rearrange
+Mathlib.Tactic.LinearCombination.mul_const_eq
+Mathlib.Tactic.Ring.Common.add_congr
+Mathlib.Tactic.Ring.Common.add_mul
+Mathlib.Tactic.Ring.Common.add_overlap_pf
+Mathlib.Tactic.Ring.Common.add_overlap_pf_zero
+Mathlib.Tactic.Ring.Common.add_pf_add_gt
+Mathlib.Tactic.Ring.Common.add_pf_add_lt
+Mathlib.Tactic.Ring.Common.add_pf_add_overlap
+Mathlib.Tactic.Ring.Common.add_pf_add_overlap_zero
+Mathlib.Tactic.Ring.Common.add_pf_add_zero
+Mathlib.Tactic.Ring.Common.add_pf_zero_add
+Mathlib.Tactic.Ring.Common.atom_pf
+Mathlib.Tactic.Ring.Common.mul_add
+Mathlib.Tactic.Ring.Common.mul_congr
+Mathlib.Tactic.Ring.Common.mul_pf_left
+Mathlib.Tactic.Ring.Common.mul_pf_right
+Mathlib.Tactic.Ring.Common.mul_pow_mul
+Mathlib.Tactic.Ring.Common.mul_pp_pf_overlap
+Mathlib.Tactic.Ring.Common.mul_zero
+Mathlib.Tactic.Ring.Common.neg_add
+Mathlib.Tactic.Ring.Common.neg_congr
+Mathlib.Tactic.Ring.Common.neg_mul
+Mathlib.Tactic.Ring.Common.neg_zero
+Mathlib.Tactic.Ring.Common.one_pow
+Mathlib.Tactic.Ring.Common.pow_add
+Mathlib.Tactic.Ring.Common.pow_congr
+Mathlib.Tactic.Ring.Common.pow_zero
+Mathlib.Tactic.Ring.Common.single_pow
+Mathlib.Tactic.Ring.Common.sub_congr
+Mathlib.Tactic.Ring.Common.sub_pf
+Mathlib.Tactic.Ring.Common.zero_mul
+Mathlib.Tactic.Ring.cast_pos
+Mathlib.Tactic.Ring.cast_zero
+Mathlib.Tactic.Ring.of_eq
+Monoid.toNPow
+MulZeroClass.toZero
+MulZeroOneClass.toMulOneClass
+NPow.toPow
+Nat
+Nat.ble
+Nat.cast_one
+Nat.cast_zero
+Nat.instAddMonoidWithOne
+Nat.instAtLeastTwoHAddOfNat
+Nat.instCommSemiring
+Nat.instNeZeroSucc
+Nat.le_succ
+Nat.le_succ_of_le
+Nat.lt_succ_of_lt
+Nat.lt_succ_self
+Nat.rawCast
+Nat.recAux
+NeZero.charZero_one
+Neg.neg
+NegZeroClass.toNeg
+NegZeroClass.toZero
+NonAssocSemiring.toAddCommMonoidWithOne
+NonUnitalCommRing.toNonUnitalCommSemiring
+NonUnitalCommRing.toNonUnitalNonAssocCommRing
+NonUnitalCommSemiring.toNonUnitalSemiring
+NonUnitalNonAssocCommRing.toNonUnitalNonAssocRing
+NonUnitalNonAssocRing.toHasDistribNeg
+NonUnitalNonAssocRing.toNonUnitalNonAssocSemiring
+NonUnitalNonAssocSemiring.toDistrib
+Not.intro
+OfNat.ofNat
+One.toOfNat1
+Or
+Or.casesOn
+Or.elim
+Or.inl
+Or.inr
+PartialOrder.toPreorder
+Preorder.toLE
+Preorder.toLT
+Real
+Real.commRing
+Real.instAdd
+Real.instAddCommGroup
+Real.instAddCommMonoid
+Real.instAddCommSemigroup
+Real.instAddGroup
+Real.instAddLeftCancelSemigroup
+Real.instAddMonoid
+Real.instCommSemiring
+Real.instFloorRing
+Real.instIsOrderedAddMonoid
+Real.instIsOrderedRing
+Real.instIsStrictOrderedRing
+Real.instLE
+Real.instLT
+Real.instMonoid
+Real.instMonoidWithZero
+Real.instMul
+Real.instNatCast
+Real.instNeg
+Real.instNontrivial
+Real.instOne
+Real.instPreorder
+Real.instRing
+Real.instStarOrderedRing
+Real.instSub
+Real.instZero
+Real.instZeroLEOneClass
+Real.lattice
+Real.linearOrder
+Real.partialOrder
+Real.semiring
+Ring
+Ring.toAddCommGroup
+Ring.toAddGroupWithOne
+Ring.toSemiring
+SemilatticeInf.toPartialOrder
+Semiring.toMonoid
+Semiring.toMonoidWithZero
+Semiring.toNonAssocSemiring
+StarOrderedRing.toExistsAddOfLE
+SubNegMonoid.toAddMonoid
+SubNegMonoid.toSub
+SubNegZeroMonoid.toNegZeroClass
+SubtractionCommMonoid.toSubtractionMonoid
+SubtractionMonoid.toSubNegZeroMonoid
+Trans.trans
+Zero.toOfNat0
+abs
+abs_add_le
+abs_le
+abs_mul
+abs_neg
+abs_nonneg
+abs_of_neg
+abs_of_pos
+abs_one
+abs_sub_comm
+absurd
+addRightReflectLE_of_addLeftReflectLE
+add_le_add
+congr
+congrArg
+congrFun'
+contravariant_lt_of_covariant_le
+ge_iff_le._simp_1
+id
+inferInstance
+instAddNat
+instDistribLatticeOfLinearOrder
+instDistribOfSemiring
+instHAdd
+instHMul
+instHPow
+instHSub
+instIsLeftCancelAddOfAddLeftReflectLE
+instIsRightCancelAddOfAddRightReflectLE
+instLENat
+instLTNat
+instMulZeroClassOfSemiring
+instMulZeroOneClassOfSemiring
+instNeZeroNatHAdd_1
+instOfNatAtLeastTwo
+instOfNatNat
+instStarRingReal
+instTransEq
+instTransEq_1
+instTransLE
+instTransLELT
+le_abs_self
+le_of_lt
+le_of_not_gt
+le_trans
+lt_irrefl
+lt_of_lt_of_le
+lt_trans
+mul_le_mul
+mul_le_mul_of_nonneg_left
+mul_le_mul_of_nonneg_right
+mul_lt_mul_of_pos_left
+mul_nonneg
+mul_one
+mul_pos
+neg_eq_zero
+neg_le_abs
+neg_lt_zero
+neg_mul
+neg_neg
+neg_neg_of_pos
+neg_pos
+one_le_pow₀
+one_pos
+pow_pos
+rfl
+sq_le_one_iff_abs_le_one
+sq_nonneg
+sub_eq_zero_of_eq
+two_pos
+# --- added 2026-10-02 for DualityP: ℕ/List/Finset/ideal lemmas; byContradiction only with Nat instances;
+#     mem_span_range_iff_exists_fun, Submodule.mem_sup (existence of coefficients); inv_mul_cancel₀ at ℚ only.
+AddCommMonoid.toAddCommSemigroup
+AddCommMonoid.toAddMonoid
+AddMemClass.add_mem
+AddMonoid.toNSMul
+AddMonoidHomClass.toAddHomClass
+AddMonoidHomClass.toZeroHomClass
+AddSubmonoidClass.toAddMemClass
+AddSubmonoidClass.toZeroMemClass
+Algebra
+Algebra.algebraMap
+Algebra.id
+Algebra.toModule
+Algebra.toSMul
+BEq
+BEq.beq
+Bool.true
+CommMonoid.toMonoid
+CommMonoidWithZero.toCommMonoid
+CommMonoidWithZero.toMonoidWithZero
+CommRing
+CommRing.toCommMonoid
+CommRing.toCommSemiring
+CompleteLattice.toConditionallyCompleteLattice
+ConditionallyCompleteLattice.toLattice
+DFunLike.coe
+Decidable.byContradiction
+Decidable.decide
+DecidableEq
+Derivation
+Derivation.instAddMonoidHomClass
+Derivation.instFunLike
+Derivation.leibniz
+Derivation.leibniz_pow
+Derivation.map_natCast
+Derivation.map_one_eq_zero
+Derivation.map_smul
+Distrib.leftDistribClass
+Distrib.rightDistribClass
+DistribMulAction.toDistribSMul
+DistribSMul.toSMulZeroClass
+DivInvMonoid.toInv
+DivisionRing.toRing
+DivisionSemiring.toGroupWithZero
+EmptyCollection.emptyCollection
+Eq.ndrec
+Eq.propIntro
+Eq.rec
+Field.toSemifield
+Fin
+Fin.fintype
+Fin.instLawfulEqOrd
+Fin.instLinearOrder
+Finset
+Finset.Nat.antidiagonalTuple
+Finset.Nat.mem_antidiagonalTuple
+Finset.decidableMem
+Finset.erase
+Finset.exists_lt_of_sum_lt
+Finset.induction_on
+Finset.instEmptyCollection
+Finset.instInsert
+Finset.instSetLike
+Finset.mem_coe
+Finset.mem_insert_of_mem
+Finset.mem_insert_self
+Finset.mem_univ
+Finset.mem_univ._simp_1
+Finset.mul_prod_erase
+Finset.ne_of_mem_erase
+Finset.notMem_erase
+Finset.prod
+Finset.prod_congr
+Finset.prod_const_one
+Finset.prod_eq_single
+Finset.prod_eq_zero
+Finset.prod_insert
+Finset.prod_mul_distrib
+Finset.prod_ne_zero_iff
+Finset.single_le_sum
+Finset.sum
+Finset.sum_add_distrib
+Finset.sum_congr
+Finset.sum_const_zero
+Finset.sum_eq_sum_iff_of_le
+Finset.sum_insert
+Finset.sum_ite_eq'
+Finset.sum_le_sum
+Finset.sum_sub_distrib
+Finset.univ
+FinsetCoe.fintype
+Fintype.decidablePiFintype
+Function.comp
+GE.ge
+GT.gt
+GroupWithZero.toDivInvMonoid
+GroupWithZero.toMonoidWithZero
+HEq
+HEq.refl
+HSMul.hSMul
+Ideal
+Ideal.eq_top_iff_one
+Ideal.instIsTwoSided_1
+Ideal.mem_span_range_iff_exists_fun
+Ideal.mul_mem_left
+Ideal.mul_mem_right
+Ideal.span
+Ideal.span_le
+Ideal.subset_span
+Ideal.sum_mem
+IdemSemiring.toSemilatticeSup
+Iff
+Iff.intro
+Iff.symm
+Insert.insert
+Int.add_one_le_of_lt
+Int.instAdd
+Int.instLEInt
+Int.instNegInt
+Int.instSub
+Int.natCast_add
+Int.natCast_nonneg
+Int.sub_eq_zero_of_eq
+Int.sub_nonneg_of_le
+Inv.inv
+IsEmpty.forall_iff._simp_1
+IsStrictOrderedRing.noZeroDivisors
+LE.le.trans
+Lattice.toSemilatticeSup
+LawfulBEq
+Lean.Omega.Coeffs.ofList
+Lean.Omega.Constraint.addEquality_sat
+Lean.Omega.Constraint.addInequality_sat
+Lean.Omega.Constraint.combine_sat'
+Lean.Omega.Constraint.isImpossible
+Lean.Omega.Constraint.mk
+Lean.Omega.Constraint.not_sat'_of_isImpossible
+Lean.Omega.Int.add_congr
+Lean.Omega.Int.ofNat_congr
+Lean.Omega.Int.ofNat_le_of_le
+Lean.Omega.Int.ofNat_lt_of_lt
+Lean.Omega.Int.ofNat_sub_dichotomy
+Lean.Omega.Int.ofNat_sub_sub
+Lean.Omega.Int.sub_congr
+Lean.Omega.LinearCombo
+Lean.Omega.LinearCombo.add_eval
+Lean.Omega.LinearCombo.coordinate
+Lean.Omega.LinearCombo.coordinate_eval_0
+Lean.Omega.LinearCombo.coordinate_eval_1
+Lean.Omega.LinearCombo.coordinate_eval_2
+Lean.Omega.LinearCombo.coordinate_eval_3
+Lean.Omega.LinearCombo.coordinate_eval_4
+Lean.Omega.LinearCombo.coordinate_eval_5
+Lean.Omega.LinearCombo.coordinate_eval_6
+Lean.Omega.LinearCombo.coordinate_eval_7
+Lean.Omega.LinearCombo.coordinate_eval_8
+Lean.Omega.LinearCombo.eval
+Lean.Omega.LinearCombo.instAdd
+Lean.Omega.LinearCombo.instSub
+Lean.Omega.LinearCombo.mk
+Lean.Omega.LinearCombo.sub_eval
+Lean.Omega.combo_sat'
+Lean.Omega.tidy_sat
+Lean.injEq_helper
+List
+List.below
+List.brecOn
+List.brecOn.eq
+List.brecOn.go
+List.casesOn
+List.cons
+List.count
+List.count_cons
+List.count_finRange
+List.count_flatMap
+List.count_replicate
+List.count_replicate_self
+List.finRange
+List.flatMap
+List.instMembership
+List.length
+List.length_cons
+List.map
+List.nil
+List.rec
+List.replicate
+List.sum
+List.sum_map_eq_nsmul_single
+Mathlib.Tactic.Push.not_exists._simp_1
+Max.max
+Membership.mem
+Module.toDistribMulAction
+Monoid.toMulOneClass
+MonoidHomClass.toOneHomClass
+MonoidWithZero.toMulZeroOneClass
+MonoidWithZeroHomClass.toMonoidHomClass
+MulOne.toMul
+MulOne.toOne
+MulOneClass.toMulOne
+MulZeroClass.mul_zero
+MulZeroClass.toMul
+MulZeroClass.zero_mul
+MulZeroOneClass.toMulZeroClass
+NSMul.toSMul
+Nat.Simproc.add_sub_add_le
+Nat.add_left_cancel_iff._simp_1
+Nat.add_sub_cancel_left
+Nat.cast
+Nat.cast_inj._simp_1
+Nat.cast_mul
+Nat.decLe
+Nat.decLt
+Nat.decidableExistsFin
+Nat.descFactorial
+Nat.descFactorial_eq_zero_iff_lt
+Nat.descFactorial_self
+Nat.descFactorial_succ
+Nat.eq_zero_or_pos
+Nat.factorial
+Nat.factorial_ne_zero
+Nat.instAddCommMonoid
+Nat.instAddMonoid
+Nat.instCanonicallyOrderedAdd
+Nat.instCommMonoid
+Nat.instCommMonoidWithZero
+Nat.instDistrib
+Nat.instIsOrderedAddMonoid
+Nat.instIsOrderedCancelAddMonoid
+Nat.instIsStrictOrderedRing
+Nat.instLinearOrder
+Nat.instMonoid
+Nat.instMulOneClass
+Nat.instMulZeroClass
+Nat.instNoMaxOrder
+Nat.instNonUnitalSemiring
+Nat.instNontrivial
+Nat.instOne
+Nat.instOrderedSub
+Nat.instPartialOrder
+Nat.instPreorder
+Nat.instSemiring
+Nat.instStarOrderedRing
+Nat.instStarRing
+Nat.instSuccAddOrder
+Nat.le_induction
+Nat.le_mul_of_pos_left
+Nat.le_of_not_lt
+Nat.lt_of_not_le
+Nat.lt_or_ge
+Nat.lt_or_gt_of_ne
+Nat.pos_iff_ne_zero
+Nat.pos_of_ne_zero
+Nat.sub_le
+Nat.sub_sub
+Nat.zero_le
+Ne
+Ne.symm
+NonAssocSemiring.toMulZeroOneClass
+NonAssocSemiring.toNonUnitalNonAssocSemiring
+NonUnitalNonAssocSemiring.toAddCommMonoid
+NonUnitalRingHomClass.toMulHomClass
+NonUnitalSemiring.toSemigroupWithZero
+Not
+Option.none
+Option.some
+Ord.compare
+Order.add_one_le_iff._simp_1
+PProd
+PUnit
+Pi.addCommMonoid
+Pi.instAdd
+Pi.instSub
+Pi.instZero
+Pi.orderedSub
+Pi.partialOrder
+Rat
+Rat.commSemiring
+Rat.instCharZero
+Rat.instDivisionRing
+Rat.instField
+Rat.instInv
+Rat.instMul
+Rat.instNatCast
+Rat.semiring
+RingHom
+RingHom.instFunLike
+RingHom.instRingHomClass
+RingHomClass.toMonoidWithZeroHomClass
+RingHomClass.toNonUnitalRingHomClass
+SMulZeroClass.toSMul
+Semifield.toDivisionSemiring
+Semigroup.toMul
+SemigroupWithZero.toSemigroup
+SemilatticeSup.toMax
+SemilatticeSup.toPartialOrder
+Semiring.toAddCommMonoid
+Semiring.toModule
+Set
+Set.Elem
+Set.instLE
+Set.instMembership
+Set.ofPred
+Set.range
+SetLike.coe
+SetLike.instMembership
+SetLike.mem_coe._simp_1
+SizeOf
+SizeOf.mk
+SizeOf.sizeOf
+Std.LawfulBCmp.toLawfulBEqCmp
+Std.LawfulBEqOrd.lawfulBEq
+SubNegZeroMonoid.toSubNegMonoid
+Submodule
+Submodule.addSubgroupClass
+Submodule.addSubmonoidClass
+Submodule.completeLattice
+Submodule.idemSemiring
+Submodule.instPartialOrder
+Submodule.instTop
+Submodule.mem_sup
+Submodule.mem_sup_left
+Submodule.mem_sup_right
+Submodule.mem_top
+Submodule.setLike
+Submodule.span
+Submodule.span_induction
+SubtractionCommMonoid.toAddCommMonoid
+SubtractionMonoid.toSubNegMonoid
+Subtype
+Subtype.casesOn
+Subtype.ext
+Subtype.ext_iff
+Subtype.mk
+Subtype.property
+Subtype.val
+Top.top
+True
+Unit
+Unit.unit
+Zero.ofOfNat0
+ZeroMemClass.zero_mem._simp_1
+add_mul
+add_zero
+beq_iff_eq
+beq_iff_eq._simp_1
+binderNameHint
+cast
+congrFun
+decidable_of_iff
+dite
+eq_false
+eq_of_heq
+eq_self
+forall_congr
+funext
+heq_of_eq
+if_neg
+if_pos
+if_true
+implies_congr
+instBEqOfDecidableEq
+instDecidableEqBool
+instDecidableEqFin
+instDecidableEqNat
+instDecidableTrue
+instHSMul
+instIsEmptyFalse
+instLawfulBCmpCompare_mathlib
+instMulNat
+instNatCastInt
+instOfNat
+instOrdFin
+instSMulOfMul
+instSubNat
+inv_mul_cancel₀
+ite
+ite_congr
+ite_eq_left
+ite_eq_left_of_eq_true
+ite_eq_right
+ite_eq_right_of_eq_false
+le_antisymm
+le_of_le_of_eq
+le_refl
+le_rfl
+lt_self_iff_false._simp_1
+map_add
+map_mul
+map_natCast
+map_one
+map_sub
+map_zero
+mul_add
+mul_assoc
+mul_ite
+not_lt._simp_1
+not_true_eq_false
+nsmul_eq_mul
+nsmul_zero
+of_decide_eq_true
+of_eq_true
+one_mul
+pow_add
+pow_one
+pow_zero
+propext
+smul_eq_mul
+sub_mem
+sub_self
+sub_zero
+sup_eq_left
+tsub_self
+tsub_zero
+
+# --- Added 2026-10-02 for Constructive/ChartP.lean (bridge to HM charts), reviewed: ---
+# Finsupp.* : data defs (Finsupp, single, sum, weight, instances) and equational lemmas about them.
+#   The defs compute their support with classical decidability, but are only used extensionally
+#   (values at points of Fin n, which are ℕ-valued); every lemma used is an equation valid pointwise.
+# Principalization.Chart{,.x,.d,.d_x,.D,.D_zero,.D_add_single,.F,.F.eq_1,.wmonos}: HM's chart structure,
+#   its projections and field d_x (an equation, if-then-else on Fin equality), the iterated derivative D
+#   (data) with its two defining equations, and the ideal F (data) with its unfolding.
+# Fintype.{prod,sum}_of_injective, List.{filter,get,Nodup,...}: finite combinatorics, decidable.
+AddMonoidHom
+AddMonoidHom.instAddMonoidHomClass
+AddMonoidHom.instFunLike
+BezoutCounterexample.Principalization.Chart
+BezoutCounterexample.Principalization.Chart.D
+BezoutCounterexample.Principalization.Chart.D_add_single
+BezoutCounterexample.Principalization.Chart.D_zero
+BezoutCounterexample.Principalization.Chart.F
+BezoutCounterexample.Principalization.Chart.F.eq_1
+BezoutCounterexample.Principalization.Chart.d
+BezoutCounterexample.Principalization.Chart.d_x
+BezoutCounterexample.Principalization.Chart.wmonos
+BezoutCounterexample.Principalization.Chart.x
+CommMagma.toMul
+CommSemiring.toNonUnitalCommSemiring
+DecidablePred
+Finsupp
+Finsupp.add_apply
+Finsupp.ext
+Finsupp.instAdd
+Finsupp.instAddCommMonoid
+Finsupp.instAddZeroClass
+Finsupp.instFunLike
+Finsupp.instZero
+Finsupp.single
+Finsupp.single_apply
+Finsupp.single_eq_of_ne'
+Finsupp.sum
+Finsupp.sum_fintype
+Finsupp.weight
+Finsupp.weight_apply
+Finsupp.weight_single
+Fintype.prod_of_injective
+Fintype.sum_of_injective
+Function.Injective
+List.Nodup
+List.Nodup.filter
+List.filter
+List.get
+List.map_cons
+List.map_nil
+List.mem_filter
+List.mem_filter._simp_1
+List.mem_finRange._simp_1
+List.mem_iff_get
+List.nodup_finRange
+List.nodup_iff_injective_get
+Monoid.toMulAction
+Monoid.toSemigroup
+MulAction.toSemigroupAction
+MulZeroClass.toSMulWithZero
+Nat.instAddCommSemigroup
+Nat.instNonUnitalNonAssocSemiring
+NonUnitalCommSemiring.toNonUnitalNonAssocCommSemiring
+NonUnitalNonAssocCommSemiring.toCommMagma
+NonUnitalNonAssocSemiring.toDistribSMul
+Pi.add_apply
+SemigroupAction.toSMul
+Semiring
+Set.ext
+Set.image
+add_comm
+decide_eq_true_eq
+iff_self
+instDecidableNot
+mul_comm
+not_false_eq_true
+one_smul
+smul_zero
+true_and
+zero_add
+zero_smul
+
+# --- Added 2026-10-02 for Constructive/KrullP.lean (Perdry/Kuroki Krull step), reviewed: ---
+# Polynomial, Subring, Submonoid/Subsemiring.mk, Units, Prod, Fin: data, used through coeff/val only;
+#   Polynomial is Finsupp-based (classical support) but every lemma used (coeff_mul, coeff_C_mul_X_pow,
+#   finsetSum_coeff, ...) is an equation between coefficients. Ideal.pow_le_self, Ideal.mul_mem_mul,
+#   Finset.sum_mul, sub_mul: inclusions/equations. ite_eq_left_iff: used with decidable ℕ equality.
+AddCommGroupWithOne.toAddGroupWithOne
+AddSubmonoidClass.coe_finsetSum
+AddSubmonoidClass.toAddCommMonoid
+CommRing.toNonAssocCommRing
+Fin.isLt
+Fin.val
+Finset.HasAntidiagonal.antidiagonal
+Finset.HasAntidiagonal.mem_antidiagonal
+Finset.Nat.instHasAntidiagonal
+Finset.sum_mul
+Ideal.mul_mem_mul
+Ideal.one_eq_top
+Ideal.pow_le_self
+IdemSemiring.toSemiring
+IsScalarTower
+IsScalarTower.right
+IsUnit
+NegMemClass.neg_mem
+NonAssocCommRing.toNonAssocRing
+NonAssocRing.toAddCommGroupWithOne
+NonAssocRing.toNonAssocSemiring
+NonAssocRing.toNonUnitalNonAssocRing
+NonUnitalNonAssocCommRing.toNonUnitalNonAssocCommSemiring
+NonUnitalNonAssocRing.toAddCommGroup
+NonUnitalNonAssocSemiring
+NonUnitalSubringClass.toNegMemClass
+Polynomial
+Polynomial.C
+Polynomial.X
+Polynomial.coeff
+Polynomial.coeff_C_mul
+Polynomial.coeff_C_mul_X_pow
+Polynomial.coeff_add
+Polynomial.coeff_mul
+Polynomial.coeff_mul_X_pow'
+Polynomial.coeff_neg
+Polynomial.coeff_one
+Polynomial.coeff_zero
+Polynomial.commRing
+Polynomial.finsetSum_coeff
+Polynomial.instAdd
+Polynomial.instMul
+Polynomial.instNeg
+Polynomial.instOne
+Polynomial.instZero
+Polynomial.semiring
+Prod
+Prod.fst
+Prod.snd
+Ring.toNonAssocRing
+Submodule.instPowNat
+Submodule.mem_top._simp_1
+Submonoid.mk
+Subring
+Subring.instSetLike
+Subring.mk
+Subring.toCommRing
+Subring.toCommRing._proof_1
+SubringClass.toRing._proof_8
+Subsemigroup.mk
+Subsemiring.mk
+SubsemiringClass.toSemiring._proof_7
+Units
+Units.instInv
+Units.inv_mul
+Units.val
+ZeroMemClass.zero_mem
+instNonUnitalSubringClassIdeal
+ite_eq_left_iff
+sub_mul
+
+# --- NoethBar.lean (reviewed 2026-10-02) ---
+# Data, structures, instances, recursors (List/Nat/Prod, Forall₂, MvPolynomial, AddMonoidAlgebra,
+# quotients, subring classes, equivalences): no propositional content beyond their fields.
+# Statement-level checks of the propositions:
+#   Algebra.FiniteType.iff_quotient_mvPolynomial''  f.t. ↔ ∃ surjection from ℚ[Y₁..Y_N]: a finite
+#                                     generating set gives aeval, whose range is adjoin s
+#   MvPolynomial.isLocalization       S[Y] = R[Y] localised at C(M): common denominators over a
+#                                     finite support; coefficientwise equalisers multiplied
+#   MvPolynomial.map_surjective       lift finitely many coefficients (finite choice)
+#   MvPolynomial.ringHom_ext, eval₂Hom_C, eval₂Hom_X'  ext by induction on polynomials / rfl
+#   Polynomial.as_sum_support_C_mul_X_pow   g = Σ_{support} C(gⱼ)Xʲ; only "support covers the
+#                                     nonzero coefficients" is used, never mem_support_iff
+#   Ideal.mul_le, Ideal.span_mono, Subring.sum_mem, Ideal.Quotient.mk_surjective (Quot.ind),
+#   IsLocalization.surj / map_units (fields), AlgEquiv/RingEquiv.surjective, Units.mul_inv,
+#   List lemmas, Nat.succ_lt_succ, pow_succ, RingHom.comp_apply: elementary.
+AddMonoidAlgebra.algebra
+AddMonoidAlgebra.commRing
+AddMonoidAlgebra.commSemiring
+AddMonoidAlgebra.instMul
+AddMonoidAlgebra.nonAssocRing
+AddMonoidAlgebra.nonAssocSemiring
+AddMonoidAlgebra.semiring
+AddSubmonoid.mk
+AddSubsemigroup.mk
+Algebra.FiniteType
+Algebra.FiniteType.iff_quotient_mvPolynomial''
+AlgEquiv.surjective
+AlgEquiv.toRingEquiv
+AlgHom
+AlgHom.funLike
+AlgHom.toRingHom
+CommGroupWithZero.toDivisionCommMonoid
+DivInvOneMonoid.toInvOneClass
+DivisionCommMonoid.toDivisionMonoid
+DivisionMonoid.toDivInvOneMonoid
+Equiv.symm
+EquivLike.toFunLike
+Field
+Field.toCommRing
+Fin.mk
+finSumFinEquiv
+Finsupp.instAddMonoid
+Function.Surjective
+Function.Surjective.comp
+HasQuotient.Quotient
+Ideal.comap
+Ideal.instHasQuotient
+Ideal.instHasQuotient_1
+Ideal.mul_le
+Ideal.Quotient.commRing
+Ideal.Quotient.commSemiring
+Ideal.Quotient.mk
+Ideal.Quotient.mk_surjective
+Ideal.span_mono
+InvOneClass.toInv
+IsLocalization
+IsLocalization.map_units
+IsLocalization.surj
+IsScalarTower.left
+List.cons_ne_nil
+List.cons.inj
+List.cons.noConfusion
+List.ctorIdx
+List.Forall₂
+List.Forall₂.casesOn
+List.Forall₂.cons
+List.Forall₂.nil
+List.Forall₂.rec
+List.Mem
+List.mem_cons
+List.mem_cons_of_mem
+List.mem_cons_self
+List.mem_map
+List.mem_singleton_self
+List.not_mem_nil
+MonoidWithZeroHomClass.toZeroHomClass
+MulMemClass.mul_mem
+MvPolynomial
+MvPolynomial.algebraMvPolynomial
+MvPolynomial.C
+MvPolynomial.eval₂Hom
+MvPolynomial.eval₂Hom_C
+MvPolynomial.eval₂Hom_X'
+MvPolynomial.isLocalization
+MvPolynomial.map
+MvPolynomial.map_surjective
+MvPolynomial.renameEquiv
+MvPolynomial.ringHom_ext
+MvPolynomial.sumRingEquiv
+MvPolynomial.X
+Nat.below
+Nat.brecOn
+Nat.brecOn.eq
+Nat.brecOn.go
+Nat.casesAuxOn
+Nat.casesOn
+Nat.rec
+Nat.succ
+Nat.succ_lt_succ
+noConfusion_of_Nat
+Polynomial.as_sum_support_C_mul_X_pow
+Polynomial.commSemiring
+Polynomial.support
+pow_succ
+Prod.casesOn
+Prod.mk
+Rat.commRing
+RingEquiv
+RingEquiv.instEquivLike
+RingEquiv.surjective
+RingEquiv.toRingHom
+RingHom.codRestrict
+RingHom.comp
+RingHom.comp_apply
+RingHom.range
+RingHomClass.toAddMonoidHomClass
+Semifield.toCommGroupWithZero
+Semifield.toCommSemiring
+Submodule.mk
+Submodule.mul
+Submodule.one
+Submonoid
+Submonoid.instSetLike
+Submonoid.map
+SubmonoidClass.toMulMemClass
+Subring.instSubringClass
+Subring.subtype
+Subring.sum_mem
+SubringClass.toNonAssocRing
+SubringClass.toSubsemiringClass
+SubsemiringClass
+SubsemiringClass.toAddSubmonoidClass
+SubsemiringClass.toCommSemiring
+SubsemiringClass.toSubmonoidClass
+Sum
+True.intro
+Units.mul_inv
+
+# --- AlmostFull.lean, PolyBar.lean (reviewed 2026-10-02) ---
+# MonomialOrder, MonomialOrder.lex, .degree, .leadingCoeff: data (over ℚ the degree is computable:
+#   the lex-largest monomial of the finite support); lex carries the instance WellFoundedGT (Fin N)
+#   (Finite.to_wellFoundedGT, isWellOrder_gt, IsWellOrder.wf: Fin N is finite — fine).
+#   MonomialOrder.eq_C_of_degree_eq_zero   degree f = 0 → f = C (lc f)
+#   MonomialOrder.leadingCoeff_ne_zero_iff lc f ≠ 0 ↔ f ≠ 0 (ℚ has decidable equality)
+#   Finsupp.le_def (pointwise ≤), zero_le, Nat order lemmas, Or.imp_*, Or.resolve_left,
+#   Fin.ext, add_sub_cancel: elementary.  Remaining entries: instances.
+add_sub_cancel
+AddMonoidAlgebra.addCommGroup
+AddMonoidAlgebra.nonUnitalCommRing
+AddMonoidAlgebra.nonUnitalSemiring
+AddMonoidAlgebra.ring
+AddMonoidAlgebra.zero
+Fin.ext
+Fin.instPartialOrder
+Finite.of_fintype
+Finite.to_wellFoundedGT
+Finsupp.instIsBotZeroClass
+Finsupp.instLE
+Finsupp.le_def
+Finsupp.partialorder
+isWellOrder_gt
+IsWellOrder.wf
+LinearOrderedCommMonoidWithZero.toIsBotZeroClass
+MonomialOrder
+MonomialOrder.degree
+MonomialOrder.eq_C_of_degree_eq_zero
+MonomialOrder.leadingCoeff
+MonomialOrder.leadingCoeff_ne_zero_iff
+MonomialOrder.lex
+Nat.instLinearOrderedCommMonoidWithZero
+Nat.le_antisymm
+Nat.le_of_lt_succ
+Nat.le_trans
+Nat.lt_of_lt_of_le
+Nat.not_lt_zero
+Or.imp_left
+Or.imp_right
+Or.resolve_left
+Rat.instOfNat
+WellFounded
+zero_le
+# --- TopReduce.lean (top reduction by a finite list; replaces the former @[cprim] normal_form) ---
+# Reviewed 2026-10-02.
+#   AddMonoidAlgebra.instDecidableEq = coeffEquiv.decidableEq, i.e. Finsupp.instDecidableEq
+#     (decidable_of_iff: equal supports and equal coefficients on the support), instDecidableEqRat:
+#     genuine algorithms; only the proofs of the `iff`s are classical.
+#   Finsupp.decidableLE      decidable_of_iff (∀ i ∈ f.support, f i ≤ g i): algorithm
+#   List.decidableBEx        structural recursion on the list
+#   MonomialOrder.syn, toSyn, addCommMonoidSyn, linearOrderSyn: data; the decidability fields of
+#     linearOrderSyn are never used for decisions (only `<` for well-founded induction)
+#   MonomialOrder.wellFoundedLT_syn   lex on Fin N →₀ ℕ is well founded: valid (Acc, nested induction)
+#   WellFoundedLT.induction  valid
+#   MonomialOrder.reduce (+ eq_1)  f - monomial (deg f - deg b) (u⁻¹ * lc f) * b: data
+#   IsUnit.unit              Mathlib defines it with Classical.choose, but the unit with given value
+#                            is unique (inverses are unique): unique choice. At ℚ it is a⁻¹.
+#   isUnit_iff_ne_zero       at ℚ: a ≠ 0 → a * a⁻¹ = 1, valid
+#   MonomialOrder.degree_reduce_lt   deg (reduce b f) < deg f when lm b ∣ lm f, deg f ≠ 0: valid
+AddEquiv
+AddEquiv.instEquivLike
+AddMonoidAlgebra.instAddCommMonoid
+AddMonoidAlgebra.instDecidableEq
+AddMonoidAlgebra.instModule
+Finsupp.decidableLE
+Finsupp.instDecidableEq
+Finsupp.tsub
+IsUnit.unit
+LinearMap
+LinearMap.instFunLike
+List.decidableBEx
+MonoidWithZero.toMonoid
+MonomialOrder.addCommMonoidSyn
+MonomialOrder.degree_reduce_lt
+MonomialOrder.linearOrderSyn
+MonomialOrder.reduce
+MonomialOrder.reduce.eq_1
+MonomialOrder.syn
+MonomialOrder.toSyn
+MonomialOrder.wellFoundedLT_syn
+MvPolynomial.monomial
+Rat.monoid
+RingHom.id
+Set.instSingletonSet
+Set.mem_singleton_iff
+Singleton.singleton
+WellFoundedLT.induction
+instDecidableEqRat
+isUnit_iff_ne_zero
+sub_add_sub_cancel
+sub_sub_cancel
+# --- PolyNoeth.lean (reviewed 2026-10-02) ---
+#   Fin.isEmpty'  IsEmpty (Fin 0); MvPolynomial.isEmptyRingEquiv  R[∅] ≃+* R (evaluation): data
+Fin.isEmpty'
+MvPolynomial.isEmptyRingEquiv
+Ideal.mem_span_singleton'
+NonUnitalCommSemiring.toCommSemigroup
+Ideal.add_mem
+mul_left_comm
+Ideal.zero_mem
+Mathlib.Tactic.Ring.Common.pow_one_cast_of_isNat
+CommSemigroup.toCommMagma
+mul_pow
+pow_succ'
+# FGKer (2026-10-03): defs/instances, equations, closure facts; Set.finite_range only at MvPolynomial (Fin N) ℚ (decidable =). Not whitelisted on purpose: Ideal.IsMaximal.isPrime', Localization.AtPrime.isLocalRing (disjunctions).
+AddMonoidAlgebra.nonUnitalNonAssocRing
+AddMonoidAlgebra.nonUnitalNonAssocSemiring
+Algebra.algebraMap_eq_smul_one
+Algebra.smul_def
+AlgHom.algHomClass
+AlgHom.comp
+AlgHom.instNonUnitalAlgHomClassOfAlgHomClass
+AlgHomClass.toRingHomClass
+CommSemiring.toCommMonoid
+DFinsupp.instEquivLikeLinearEquiv
+DistribMulActionSemiHomClass.toAddMonoidHomClass
+Finite.instProd
+Finset.mul_sum
+Finset.sum_comm
+Finsupp.finsetSum_apply
+Finsupp.module
+Finsupp.smul_apply
+Finsupp.smulZeroClass
+FunLike
+HSub
+Ideal.ext
+Ideal.FG
+Ideal.FG.map
+Ideal.IsPrime
+Ideal.map
+Ideal.map_comap_of_surjective
+Ideal.mem_comap
+Ideal.primeCompl
+instFiniteOption
+LinearEquiv
+LinearEquiv.instEquivLike
+LinearEquiv.instSemilinearEquivClass
+Localization.AtPrime
+map_smul
+map_sum
+Module.Basis
+Module.Basis.instFunLike
+Module.Basis.repr
+Module.Basis.sum_repr
+MonoidHom
+MonoidHom.id
+MonoidHom.instFunLike
+mul_sub
+MvPolynomial.algHom_C
+MvPolynomial.C_mul
+MvPolynomial.induction_on
+MvPolynomial.instModuleSelf
+NonUnitalAlgHomClass.instLinearMapClass
+NonUnitalAlgSemiHomClass.toDistribMulActionSemiHomClass
+NonUnitalAlgSemiHomClass.toMulHomClass
+Option
+Option.casesOn
+OreLocalization.instAlgebra
+OreLocalization.instSemiring
+OreLocalization.oreSetComm
+outParam
+Rat.addCommMonoid
+Rat.addMonoid
+RingHom.ker
+RingHom.mem_ker
+RingHomClass
+RingHomClass.toRingHom
+RingHomInvPair.ids
+SemilinearEquivClass.instSemilinearMapClass
+SemilinearMapClass.distribMulActionSemiHomClass
+SemilinearMapClass.toAddHomClass
+SemilinearMapClass.toMulActionSemiHomClass
+Set.finite_range
+smul_mul_assoc
+Submodule.fg_span
+# KrullBar (2026-10-03). Reviewed: order/structure instances (Bot, OrderBot, Submodule.instBot,
+#   instNonUnitalSemiring), quotient-ring instances (Quot), subring coercions, pow_two,
+#   le_bot_iff, Ideal.pow_le_pow_right, Ideal.mul_mono_left, Ideal.top_mul, Ideal.map_pow,
+#   Ideal.map_le_iff_le_comap (Galois connection), Ideal.mem_map_of_mem,
+#   Ideal.mem_map_iff_of_surjective (the image of an ideal under a surjection is an ideal),
+#   Ideal.Quotient.eq_zero_iff_mem, Submodule.mem_mul_span_singleton (P·(y) = {z y : z ∈ P}),
+#   IsUnit.map, List.mem_map_of_mem: equational or Horn statements, constructively valid.
+le_bot_iff
+Submodule.Quotient.instZeroQuotient
+pow_two
+Submodule.Quotient.addCommGroup
+Ideal.mem_map_of_mem
+Submodule.instNonUnitalSemiring
+OrderBot.toBot
+Submodule.Quotient.addMonoid
+Subring.coe_mul
+ZeroMemClass.zero
+Submodule.mem_mul_span_singleton
+AddSubmonoidClass.toAddMonoid._proof_6
+Bot.bot
+Ideal.Quotient.eq_zero_iff_mem
+Ideal.pow_le_pow_right
+Submodule.instBot
+Ideal.map_le_iff_le_comap
+Ideal.Quotient.ring
+ZeroMemClass.coe_zero
+Ideal.Quotient.one
+Ideal.top_mul
+Ideal.Quotient.semiring
+Ideal.mem_map_iff_of_surjective
+IsUnit.map
+Ideal.mul_mono_left
+Submodule.instOrderBot
+List.mem_map_of_mem
+Subring.coe_add
+Ideal.map_pow
+Ideal.Quotient.instRingQuotient
+# --- GCD strand (ValBar, NagataGCD, GCDPoly, GenericPrime, InvPrinc, JouGCD), reviewed 2026-10-03 ---
+# All rings here carry an explicit zero test (hypothesis `∀ a, a = 0 ∨ a ≠ 0`), so domain facts in
+# disjunctive form (mul_eq_zero, IsDomain.to_noZeroDivisors, Ideal.span_singleton_prime,
+# Ideal.Quotient.isDomain_iff_prime, MulEquiv.isDomain_iff) are constructively valid where used.
+#   Prime.dvd_or_dvd                 projection of the definition of `Prime`.
+#   FractionRing.field, IsUnit.mk0   total inverse on Frac(A); used only with a zero test on A
+#                                    (`hzero_fraction`), where Frac(A) is a discrete field.
+#   IsLocalization.integerNormalization(_spec)
+#                                    choice-defined witness, used only inside the ∃ of
+#                                    `exists_clear` (finite common denominator: valid).
+#   Polynomial.natDegree/leadingCoeff/eraseLead/divX, MvPolynomial.totalDegree
+#                                    defined from the (data) support; equations about them valid.
+#   HM Jouanolou constants (Jou.J, rel, rel_eq, σ, sum_σ_mul, elimLoc, LocP, isLocalization_elim,
+#     isDomain, algebraMap_injective, quotEquiv): statements reviewed. isLocalization_elim is an
+#     explicit elimination of σ_l (units, ∃-surjectivity, ∃-kernel: positive and valid);
+#     isDomain = cancellation form (negative hypotheses), valid; quotEquiv: the inverse of
+#     J/(b) → J_{B/b}(c̄) is the explicit lift, so the iso is constructive although HM build it
+#     with `quotientKerEquivOfSurjective`; it is used only to transport IsDomain.
+AddCancelMonoid.toIsCancelAdd
+AddGroup.toAddCancelMonoid
+AlgEquiv
+AlgEquiv.commutes
+AlgEquiv.instAlgEquivClass
+AlgEquiv.instEquivLike
+AlgEquiv.instFunLike
+AlgEquivClass.toAlgHomClass
+BezoutCounterexample.Jou.σ
+BezoutCounterexample.Jou.algebraMap_injective
+BezoutCounterexample.Jou.elimLoc
+BezoutCounterexample.Jou.isDomain
+BezoutCounterexample.Jou.isLocalization_elim
+BezoutCounterexample.Jou.J
+BezoutCounterexample.Jou.LocP
+BezoutCounterexample.Jou.quotEquiv
+BezoutCounterexample.Jou.rel
+BezoutCounterexample.Jou.rel_eq
+BezoutCounterexample.Jou.sum_σ_mul
+CommSemigroup.toSemigroup
+CommSemiring
+CommSemiring.toCommMonoidWithZero
+Dvd
+dvd_add
+dvd_mul_left
+dvd_mul_of_dvd_left
+dvd_mul_of_dvd_right
+dvd_mul_right
+dvd_refl
+dvd_rfl
+dvd_sub
+dvd_trans
+dvd_zero
+Dvd.dvd.mul_left
+Dvd.dvd.trans
+EmbeddingLike.map_eq_zero_iff._simp_1
+eq_comm
+eq_sub_iff_add_eq
+Eq.casesOn
+EquivLike.toEmbeddingLike
+Fin.cons
+Fin.cons_succ
+Fin.cons_zero
+Fin.ofNat._proof_1
+Finsupp.single_left_injective
+Finsupp.single_ne_zero
+FractionRing
+FractionRing.field
+HAdd
+Ideal.instAlgebraQuotient
+Ideal.IsTwoSided
+Ideal.mem_span_singleton
+Ideal.Quotient.isDomain_iff_prime
+Ideal.Quotient.lift
+Ideal.Quotient.lift_mk
+Ideal.Quotient.ringHom_ext
+Ideal.span_pow_eq_top
+Ideal.span_singleton_prime
+injective_iff_map_eq_zero
+instIsDedekindFiniteMonoid
+instMinNat
+Int.instAddCommMonoid
+IsCancelMulZero.toIsLeftCancelMulZero
+IsDomain
+IsDomain.to_noZeroDivisors
+IsDomain.toIsCancelMulZero
+IsDomain.toNontrivial
+IsFractionRing
+IsFractionRing.injective
+IsLocalization.Away
+IsLocalization.eq_iff_exists
+IsLocalization.injective
+IsLocalization.integerNormalization
+IsLocalization.integerNormalization_spec
+IsLocalization.isDomain_localization
+IsLocalization.mem_map_algebraMap_iff
+IsLocalization.mk'
+IsLocalization.mk'_eq_zero_iff
+IsLocalization.mk'_spec
+IsLocalization.mk'_surjective
+IsLocalization.mk'_surjective.match_1
+IsLocalization.mk'_zero
+isReduced_of_noZeroDivisors
+IsRelPrime
+isUnit_of_dvd_one
+isUnit_of_dvd_unit
+IsUnit.dvd
+IsUnit.dvd_mul_left
+IsUnit.dvd_mul_right
+IsUnit.mk0
+IsUnit.mul_right_dvd
+IsUnit.of_mul_eq_one
+LaurentPolynomial
+LaurentPolynomial.algebraPolynomial
+LaurentPolynomial.isLocalization
+le_min
+LinearMap.mulRight
+Localization.Away
+Localization.instNoZeroDivisors
+Localization.isLocalization
+lt_of_le_of_lt
+map_dvd
+min_le_left
+min_le_right
+Min.min
+Module
+MonoidWithZero.toSemigroupWithZero
+mul_dvd_mul
+mul_dvd_mul_iff_left
+mul_dvd_mul_left
+mul_dvd_mul_right
+mul_eq_zero
+mul_eq_zero_of_right
+mul_left_cancel₀
+MulEquiv
+MulEquiv.instEquivLike
+MulEquiv.instMulEquivClass
+MulEquiv.isDomain_iff
+MulEquiv.prime_iff
+MvPolynomial.algebraMap_eq
+MvPolynomial.C_dvd_iff_dvd_coeff
+MvPolynomial.C_eq_zero
+MvPolynomial.coeff_C
+MvPolynomial.coeff_C_mul
+MvPolynomial.coeff_X
+MvPolynomial.eval₂
+MvPolynomial.eval₂_C
+MvPolynomial.eval₂_mul
+MvPolynomial.eval₂_one
+MvPolynomial.eval₂_sub
+MvPolynomial.eval₂_sum
+MvPolynomial.eval₂_X
+MvPolynomial.finSuccEquiv
+MvPolynomial.finSuccEquiv_X_succ
+MvPolynomial.finSuccEquiv_X_zero
+MvPolynomial.instIsDomainOfIsCancelAdd
+MvPolynomial.totalDegree
+MvPolynomial.totalDegree_C
+MvPolynomial.totalDegree_eq_zero_iff_eq_C
+MvPolynomial.totalDegree_mul_of_isDomain
+Nat.instZeroLEOneClass
+Nat.lt_of_succ_lt_succ
+Nat.lt_succ_iff_lt_or_eq
+Nat.strong_induction_on
+Nat.sub_lt
+Nat.zero
+Ne.eq_1
+NeZero
+NonUnitalCommRing.toNonUnitalRing
+NonUnitalRing.toNonUnitalSemiring
+nonZeroDivisors
+nonZeroDivisors.ne_zero
+Or.resolve_right
+OrderTop.toTop
+OreLocalization.instAddMonoid
+OreLocalization.instCommMonoid
+OreLocalization.instCommRing
+OreLocalization.instCommSemiring
+OreLocalization.instGroupWithZeroNonZeroDivisors
+OreLocalization.instMonoid
+OreLocalization.instMul
+Polynomial.algebraMap_apply
+Polynomial.algebraOfAlgebra
+Polynomial.C_0
+Polynomial.C_dvd_iff_dvd_coeff
+Polynomial.C_eq_zero
+Polynomial.C_mul
+Polynomial.coeff_C_succ
+Polynomial.coeff_C_zero
+Polynomial.coeff_divX
+Polynomial.coeff_eq_zero_of_natDegree_lt
+Polynomial.coeff_mul_degree_add_degree
+Polynomial.coeff_mul_X
+Polynomial.coeff_X_zero
+Polynomial.divX
+Polynomial.eq_C_of_natDegree_eq_zero
+Polynomial.eraseLead
+Polynomial.eraseLead_add_C_mul_X_pow
+Polynomial.eraseLead_natDegree_le
+Polynomial.ext
+Polynomial.instIsDomainOfIsCancelAdd
+Polynomial.instIsLeftCancelMulZeroOfIsCancelAdd
+Polynomial.instNoZeroDivisors
+Polynomial.instSub
+Polynomial.leadingCoeff
+Polynomial.leadingCoeff_C
+Polynomial.leadingCoeff_mul
+Polynomial.leadingCoeff.eq_1
+Polynomial.map
+Polynomial.map_C
+Polynomial.map_dvd
+Polynomial.map_injective
+Polynomial.map_mul
+Polynomial.map_zero
+Polynomial.module
+Polynomial.mul_coeff_zero
+Polynomial.natDegree
+Polynomial.natDegree_C_mul
+Polynomial.natDegree_eq_zero_of_isUnit
+Polynomial.natDegree_linear
+Polynomial.natDegree_mul
+Polynomial.natDegree_zero
+Polynomial.ring
+pow_dvd_pow
+pow_ne_zero
+powers_le_nonZeroDivisors_of_noZeroDivisors
+Prime
+Prime.dvd_or_dvd
+Prime.ne_zero
+Prime.not_isUnit
+RingEquiv.ofRingHom
+RingEquiv.symm_apply_apply
+RingEquiv.toMulEquiv
+RingHom.congr_fun
+RingHom.toAlgebra
+SemigroupWithZero.toMulZeroClass
+Semiring.toNonUnitalSemiring
+Set.singleton_subset_iff
+sub_eq_zero
+Submodule.comap
+Submodule.instOrderTop
+Submodule.mem_comap
+Submodule.Quotient.addCommMonoid
+Submonoid.instPartialOrder
+Submonoid.mul_mem
+Submonoid.powers
+top_le_iff
+zero_dvd_iff
+zero_ne_one
+
+# --- Groebner.lean (decidable ideal membership via Buchberger; proposed by session coll-7c) ---
+# Reviewed 2026-10-03. All statements constructively valid at the types used:
+#   order facts at MonomialOrder.syn (lex): le_of_add_le_add_right, add_lt_add_of_le_of_lt,
+#     lt_of_le_of_ne (partial order: ≤ ∧ ≠ → <), LE.le.trans_lt, LT.lt.le; instances are Prop/data.
+#     The order is never decided: only <-induction and these lemmas.
+#   Fin N →₀ ℕ (pointwise): tsub_* , le_add_self, sup_le, le_sup_left/right, Finsupp.semilatticeSup
+#     (pointwise max on ℕ: data), Nat.instLattice.
+#   mul_ne_zero, MvPolynomial.instNoZeroDivisors: negative statements (domain), valid.
+#   Finset.biUnion/union/add/mem_*: finite combinatorics with decidable equality of monomials.
+#   MvPolynomial.support_* / coeff_* / monomial_mul_monomial / ext: equations and inclusions.
+#   Ideal.Quotient.eq, Ideal.map_span, Ideal.span_insert, Ideal.span_union, Ideal.mem_map_of_equiv:
+#     equations/iffs between explicitly described ideals.
+#   Finset.sum_eq_single, Finset.sum_eq_zero, Fin.sum_univ_succ, Pi.single*: equations.
+#   ite_eq_right_iff, decide_eq_true, eq_true, mul_inv_cancel₀ (ℚ, a ≠ 0): valid.
+AddCancelCommMonoid.toAddCancelMonoid
+AddCancelMonoid.toAddRightCancelMonoid
+AddCommMonoid
+AddEquiv.injective
+AddEquiv.instAddEquivClass
+AddEquivClass.instAddMonoidHomClass
+AddGroup
+AddMonoidAlgebra.coeff
+AddRightCancelMonoid.toAddRightCancelSemigroup
+AddRightCancelSemigroup.toIsRightCancelAdd
+CanonicallyOrderedAdd
+CanonicallyOrderedAdd.toExistsAddOfLE
+Dvd.dvd
+Fin.cases
+Fin.elim0
+Fin.instOfNat
+Fin.succ
+Fin.sum_univ_succ
+Finset.add
+Finset.biUnion
+Finset.instSingleton
+Finset.instUnion
+Finset.mem_add
+Finset.mem_biUnion
+Finset.mem_singleton
+Finset.mem_union
+Finset.notMem_empty._simp_1
+Finset.sum_eq_single
+Finset.sum_eq_zero
+Finset.univ_eq_empty
+Finsupp.addLeftReflectLE
+Finsupp.instCanonicallyOrderedAddOfAddLeftMono
+Finsupp.isOrderedAddMonoid
+Finsupp.orderedSub
+Finsupp.preorder
+Finsupp.semilatticeSup
+Function.swap
+GetElem.getElem
+HAppend.hAppend
+Ideal.Quotient.eq
+Ideal.map_span
+Ideal.mem_map_of_equiv
+Ideal.span_insert
+Ideal.span_union
+IsOrderedCancelAddMonoid.toAddLeftReflectLE
+IsRightCancelAdd.addRightReflectLE_of_addRightReflectLT
+LE.le.trans_lt
+LT.lt.le
+LinearMap.semilinearMapClass
+List.get_mem
+List.instAppend
+List.instGetElemNatLtLength
+List.mem_append
+MonomialOrder.degree_mem_support
+MonomialOrder.degree_mul
+MonomialOrder.instAddCancelCommMonoidSyn
+MonomialOrder.isOrderedAddMonoid_syn
+MonomialOrder.isOrderedCancelAddMonoid_syn
+MonomialOrder.le_degree
+MvPolynomial.C_apply
+MvPolynomial.coeff_add
+MvPolynomial.coeff_monomial
+MvPolynomial.coeff_monomial_mul'
+MvPolynomial.coeff_sub
+MvPolynomial.coeff_sum
+MvPolynomial.ext
+MvPolynomial.instNoZeroDivisors
+MvPolynomial.mem_support_iff
+MvPolynomial.monomial_mul_monomial
+MvPolynomial.support
+MvPolynomial.support_add
+MvPolynomial.support_monomial_subset
+MvPolynomial.support_mul
+MvPolynomial.support_neg
+Nat.instLattice
+NormMulClass.toNoZeroDivisors
+NormedCommRing.toNormedRing
+NormedDivisionRing.toNormMulClass
+NormedField.toNormedCommRing
+NormedField.toNormedDivisionRing
+OrderedSub
+PartialOrder
+Pi.single
+Pi.single_eq_of_ne
+Pi.single_eq_same
+Rat.addGroup
+Rat.instNormedField
+Rat.semigroup
+RingEquiv.apply_symm_apply
+RingEquiv.injective
+RingEquiv.instRingEquivClass
+RingEquiv.symm
+RingEquivClass.toNonUnitalRingHomClass
+RingEquivClass.toRingHomClass
+Semigroup
+Set.instInsert
+Set.instUnion
+Set.mem_image
+Set.mem_insert_iff
+Set.mem_range
+Set.mem_union
+Sub
+SubNegMonoid.toNeg
+Union.union
+add_lt_add_of_le_of_lt
+decide_eq_true
+eq_true
+instHAppendOfAppend
+ite_eq_right_iff
+le_add_self
+le_of_add_le_add_right
+le_sup_left
+le_sup_right
+lt_of_le_of_ne
+mul_inv_cancel₀
+mul_ne_zero
+neg_sub
+one_ne_zero
+semigroupDvd
+sub_add_cancel
+sub_eq_add_neg
+sub_eq_self
+sup_le
+tsub_add_cancel_of_le
+tsub_add_tsub_cancel
+tsub_le_self
+tsub_tsub_cancel_of_le
+# --- DecTransfer.lean (transfer of zero tests / decidable divisibility; coll-7c) ---
+# Reviewed 2026-10-03. Statements constructively valid at the types used:
+#   Polynomial.degree/natDegree lemmas (degree_sub_lt, natDegree_lt_natDegree, natDegree_le_of_dvd,
+#     leadingCoeff_C_mul_X_pow, natDegree_C_mul_X_pow, degree_eq_natDegree): equations and
+#     inequalities between explicitly given degrees; WithBot ℕ order data.
+#   Jou.redHom (data: quotient lift), Jou.ker_redHom (equation of ideals),
+#   Jou.exists_pow_mul_eq_zero_of_elimLoc (∃ n read off from a localization equation; valid).
+#   IsUnit.*, isUnit_of_mul_isUnit_*, dvd_pow_self, map_pow, Prime.not_unit: valid.
+BezoutCounterexample.Jou.exists_pow_mul_eq_zero_of_elimLoc
+BezoutCounterexample.Jou.ker_redHom
+BezoutCounterexample.Jou.redHom
+Function.comp_apply
+Iff.rfl
+IsUnit.mul_iff._simp_2
+IsUnit.mul_left_dvd
+IsUnit.pow
+LT.lt.not_ge
+Nat.succ_ne_zero
+OreLocalization.instZero
+Polynomial.C_eq_zero._simp_1
+Polynomial.X_ne_zero._simp_1
+Polynomial.degree
+Polynomial.degree_eq_natDegree
+Polynomial.degree_sub_lt
+Polynomial.leadingCoeff_C_mul_X_pow
+Polynomial.leadingCoeff_eq_zero
+Polynomial.leadingCoeff_zero
+Polynomial.natDegree_C_mul_X_pow
+Polynomial.natDegree_le_of_dvd
+Polynomial.natDegree_lt_natDegree
+Polynomial.nontrivial
+Prime.not_unit
+WithBot
+WithBot.instNatCast
+WithBot.instPreorder
+dvd_pow_self
+false_and
+instNatCastNat
+isUnit_of_mul_isUnit_left
+isUnit_of_mul_isUnit_right
+map_pow
+mul_eq_zero._simp_1
+one_dvd
+or_false
+pow_eq_zero_iff'._simp_1
+# --- Positive covers (PosCover, PosF2, LexDec), reviewed 2026-10-03 (coll-8a) ---
+#   Rat.linearOrder, Pi.instPartialOrderLexForallOfLinearOrder: instances (data); only lt, its
+#   decidability on ℚ (Rat.instDecidableLt, computable), le_of_lt/le_of_eq/le_antisymm are used;
+#   no le_total / lt_trichotomy. Units.mul_right_eq_zero: iff, valid. Rest: membership lemmas.
+Equiv
+Equiv.instEquivLike
+Finset.mem_insert
+Finset.notMem_empty
+Ideal.mem_sup_left
+Ideal.mem_sup_right
+Ideal.pow_mem_pow
+Lex
+Pi.instLTLexForall
+Pi.instPartialOrderLexForallOfLinearOrder
+Rat.instDecidableLt
+Rat.instLT
+Rat.instPartialOrder
+Rat.linearOrder
+Units.mul_right_eq_zero
+le_of_eq
+toLex
+# --- GroebnerElim / Kernel / Presented / PresentedOps / IdealOps (presentations; coll-7c) ---
+# Reviewed 2026-10-03. Statements constructively valid at the types used:
+#   Fin/Finsupp/List/Set combinatorics (Fin.addCases, castAdd, natAdd, mapDomain, image, ofFn, all,
+#     finSumFinEquiv, Equiv.sumComm, Sum.*): data and equations with decidable equality.
+#   not_le / not_lt / zero_le etc.: used at ℕ only (decidable order).
+#   Finsupp.Lex.lt_iff, ofLex: definition of lex (`∃ i, (∀ j < i, a j = b j) ∧ a i < b i`).
+#   MvPolynomial.{aeval, rename, renameEquiv, bind₁, vars, mem_vars, aeval_rename, aeval_X_left_apply,
+#     aeval_ite_mem_eq_self (with the ℕ-decidable instance), algHom_ext, ker_map, sumRingEquiv_*,
+#     support_rename_of_injective}: data / equations / extensionality.
+#   RingHom.ext_rat: ring maps out of ℚ agree.
+#   Isomorphisms used only inside `Nonempty` (HasPres is a Prop): Ideal.quotEquivOfEq,
+#     RingEquiv.quotientBot, Subalgebra.equivOfEq, Polynomial.mapEquiv, RingEquiv.trans,
+#     RingHom.quotientKerEquivOfSurjective and IsLocalization.ringEquivOfRingEquiv (Mathlib builds
+#     their inverses with choice, but the inverse/lift is uniquely determined: unique choice, as for
+#     IsUnit.unit above).
+#   Algebra.adjoin_range_eq_range_aeval, AlgHom.rangeRestrict(_surjective), Submodule.mem_inf,
+#     Submonoid.map_powers, IsLocalization.Away.algebraMap_isUnit, map_eq_zero_iff: valid.
+AddCancelCommMonoid.toAddLeftCancelMonoid
+AddLeftCancelMonoid.toAddLeftCancelSemigroup
+AddMonoidAlgebra.nonUnitalCommSemiring
+AlgEquiv.injective
+AlgEquiv.map_add'
+AlgEquiv.map_mul'
+AlgEquiv.mk
+AlgEquiv.mk.congr_simp
+AlgEquiv.toEquiv
+AlgHom.coe_toRingHom
+AlgHom.range
+AlgHom.rangeRestrict
+AlgHom.rangeRestrict_surjective
+AlgHom.toRingHom_eq_coe
+Algebra.adjoin
+Algebra.adjoin_range_eq_range_aeval
+Bool.not
+Bool.not_eq_eq_eq_not
+Bool.not_true
+Bool.or
+Bool.or_eq_true
+DFunLike
+Decidable
+Eq.le
+Equiv.mk
+Equiv.mk.congr_simp
+Equiv.sumComm
+Equiv.sumComm_apply
+Equiv.toFun
+Equiv.trans
+EquivLike.toEquiv
+Fin.addCases
+Fin.addCases_left
+Fin.addCases_right
+Fin.castAdd
+Fin.natAdd
+Fin.natAdd_injective
+Fin.succ_injective
+Finset.image
+Finset.mem_image
+Finsupp.Lex.lt_iff
+Finsupp.instLTLex
+Finsupp.mapDomain
+Finsupp.mapDomain_notin_range
+Finsupp.mem_support_iff
+Finsupp.support
+Function.LeftInverse
+Function.RightInverse
+Ideal.instIsTwoSidedBot
+Ideal.map_map
+Ideal.mem_span_singleton_self
+Ideal.quotEquivOfEq
+IsEmpty
+IsLocalization'.mk
+IsLocalization.Away.algebraMap_isUnit
+IsLocalization.ringEquivOfRingEquiv
+IsUnit.val_inv_mul
+LinearOrder
+List.all
+List.all_eq_true
+List.mem_append_left
+List.mem_append_right
+List.mem_cons._simp_1
+List.mem_finRange
+List.mem_ofFn
+List.not_mem_nil._simp_1
+List.ofFn
+MonoidHom.instMonoidHomClass
+MvPolynomial.C_0
+MvPolynomial.aeval
+MvPolynomial.aeval_X
+MvPolynomial.aeval_X_left_apply
+MvPolynomial.aeval_ite_mem_eq_self
+MvPolynomial.aeval_rename
+MvPolynomial.algHom_ext
+MvPolynomial.bind₁
+MvPolynomial.bind₁_X_right
+MvPolynomial.ker_map
+MvPolynomial.mem_vars
+MvPolynomial.rename
+MvPolynomial.renameEquiv._proof_1
+MvPolynomial.renameEquiv._proof_2
+MvPolynomial.renameEquiv._proof_3
+MvPolynomial.renameEquiv._proof_4
+MvPolynomial.renameEquiv._proof_5
+MvPolynomial.renameEquiv_apply
+MvPolynomial.rename_X
+MvPolynomial.sumRingEquiv_X_inr
+MvPolynomial.sumRingEquiv_symm_C_C
+MvPolynomial.support_rename_of_injective
+MvPolynomial.vars
+Nat.add_eq_zero_iff._simp_1
+Nat.eq_zero_of_le_zero
+Nat.instAddCancelCommMonoid
+Nonempty
+Nonempty.casesOn
+Nonempty.intro
+One
+Order.lt_one_iff._simp_1
+OreLocalization.instAddCommGroup
+OreLocalization.instAddGroupOreLocalization
+OreLocalization.instOne
+Polynomial.mapEquiv
+RingEquiv.coe_toRingHom
+RingEquiv.map_add'
+RingEquiv.map_mul'
+RingEquiv.mk
+RingEquiv.quotientBot
+RingEquiv.toMonoidHom
+RingEquiv.toRingHom_eq_coe
+RingEquiv.trans
+RingHom.ext_rat
+RingHom.mem_ker._simp_1
+RingHom.quotientKerEquivOfSurjective
+Set.decidableSetOf
+Set.instEmptyCollection
+Set.mem_setOf_eq
+Set.mem_singleton_iff._simp_1
+SetLike
+SetLike.mem_coe
+Subalgebra
+Subalgebra.algebra
+Subalgebra.equivOfEq
+Subalgebra.instSetLike
+Subalgebra.instSubsemiringClass
+Subalgebra.toCommRing
+Subalgebra.toSemiring
+Submodule.instMin
+Submodule.mem_inf
+Submodule.span_empty
+Submonoid.IsLocalizationMap.mk
+Submonoid.map_powers
+Subtype.coe_inj
+Sum.inl
+Sum.inr
+Sum.swap
+Zero
+add_lt_iff_neg_left._simp_1
+add_sub_add_comm
+and_congr_right
+and_false
+decide_eq_false_iff_not
+finSumFinEquiv_symm_apply_castAdd
+if_false
+instDecidableFalse
+instLTFin
+isEmpty_Prop._simp_1
+le_add_iff_nonneg_left._simp_1
+le_add_iff_nonneg_right._simp_1
+map_eq_zero_iff
+nonpos_iff_eq_zero._simp_1
+not_le
+not_le._simp_1
+not_lt
+not_lt_zero._simp_1
+ofLex
+one_ne_zero._simp_1
+right_eq_ite_iff._simp_1
+true_implies
+zero_le._simp_1
+# --- Colon.lean (coll-7c), reviewed 2026-10-03: instances (domain/cancellation of ℚ[Y]), List/Fin equations,
+#   mul_right_cancel₀ (in the domain ℚ[Y]), inf_le_left, Ideal.span_singleton_one: valid.
+AddMonoid.instFGNat
+AddMonoidAlgebra.instIsRightCancelAddZeroOfIsCancelAddOfUniqueSums
+AffineAddMonoid.to_twoUniqueSums
+Fin.cast
+Ideal.span_singleton_one
+IsCancelMulZero.toIsRightCancelMulZero
+IsOrderedCancelAddMonoid.toIsCancelAdd
+IsStrictOrderedRing.toIsOrderedCancelAddMonoid
+List.get_ofFn
+List.get_ofFn._proof_1
+List.length_ofFn
+List.mem_map._simp_1
+Nat.instIsAddTorsionFree
+Rat.instIsStrictOrderedRing
+Rat.isDomain
+Set.mem_image._simp_1
+TwoUniqueSums.toUniqueSums
+ZeroMemClass
+forall_eq_or_imp
+iff_true
+inf_le_left
+instUniqueSumsFinsupp
+mul_right_cancel₀
+# --- Chain lifting analytics (Kantorovich, NuBound), reviewed 2026-10-03 (coll-8a) ---
+#   Real.normedField/NormedField.toField/Field.toDivisionRing: instance data behind NormedSpace ℝ;
+#   no division or inverse is applied. Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le: mean value
+#   inequality, a ≤ statement, constructively valid. HasFDerivAt*: definitions/composition rules.
+#   pow_le_*, abs_*, norm_*: ≤/= statements. Abel/NormNum: tactic certificates (equations).
+AddCommGroup.toAddCommMonoid
+CompleteSpace
+ContinuousLinearMap
+ContinuousLinearMap.comp
+ContinuousLinearMap.continuousSemilinearMapClass
+ContinuousLinearMap.funLike
+ContinuousLinearMap.hasFDerivAt
+ContinuousLinearMap.hasOpNorm
+ContinuousLinearMap.id
+ContinuousLinearMap.sub
+ContinuousLinearMap.toSeminormedAddCommGroup
+ContinuousSemilinearMapClass.toSemilinearMapClass
+Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le
+DenselyNormedField.toNontriviallyNormedField
+Dist.dist
+Even
+Even.pow_abs
+Even.pow_nonneg
+Field.toDivisionRing
+Finset.abs_prod
+Finset.abs_sum_le_sum_abs
+Finset.card
+Finset.prod_le_prod₀
+Finset.prod_pow_eq_pow_sum
+Finset.sum_const
+Fintype
+HMul
+HPow
+HasFDerivAt
+HasFDerivAt.comp
+HasFDerivAt.hasFDerivWithinAt
+HasFDerivAt.sub
+HasFDerivAt.sub_const
+HasFDerivWithinAt
+Int.instRing
+Mathlib.Meta.NormNum.IsNat.to_eq
+Mathlib.Meta.NormNum.isNat_le_true
+Mathlib.Tactic.Abel.const_add_termg
+Mathlib.Tactic.Abel.subst_into_addg
+Mathlib.Tactic.Abel.subst_into_negg
+Mathlib.Tactic.Abel.term_add_constg
+Mathlib.Tactic.Abel.term_add_termg
+Mathlib.Tactic.Abel.term_atomg
+Mathlib.Tactic.Abel.term_neg
+Mathlib.Tactic.Abel.termg
+Mathlib.Tactic.Abel.unfold_sub
+Mathlib.Tactic.Abel.zero_termg
+Metric.closedBall
+Metric.mem_closedBall
+Metric.mem_closedBall_self
+Monoid
+NontriviallyNormedField.toNormedField
+Norm
+Norm.norm
+NormedAddCommGroup
+NormedAddCommGroup.toAddCommGroup
+NormedAddCommGroup.toNorm
+NormedAddCommGroup.toSeminormedAddCommGroup
+NormedCommRing.toSeminormedCommRing
+NormedField.toField
+NormedSpace
+NormedSpace.toModule
+PseudoMetricSpace.toDist
+PseudoMetricSpace.toUniformSpace
+Real.denselyNormedField
+Real.instCommMonoid
+Real.instCommMonoidWithZero
+Real.instRCLike
+Real.normedCommRing
+Real.normedField
+RingHomCompTriple.ids
+RingHomIsometric.ids
+SeminormedAddCommGroup.toAddCommGroup
+SeminormedAddCommGroup.toIsTopologicalAddGroup
+SeminormedAddCommGroup.toNorm
+SeminormedAddCommGroup.toPseudoMetricSpace
+SeminormedAddCommGroup.toSeminormedAddGroup
+SeminormedAddGroup.toAddGroup
+SeminormedAddGroup.toNorm
+SeminormedCommRing.toSeminormedRing
+UniformSpace.toTopologicalSpace
+abs_pow
+convex_closedBall
+dist_eq_norm
+hasFDerivAt_id
+instIsRCLikeNormedField
+lt_add_of_pos_right
+neg_zero
+norm_add_le
+norm_neg
+norm_nonneg
+pow_le_of_le_one
+pow_le_pow_left₀
+pow_le_pow_of_le_one
+pow_mul
+pow_nonneg
+sub_eq_self._simp_1
+sub_sub_cancel_left
+# --- PresContract.lean (coll-7c, D5 step 4, O3), reviewed 2026-10-03.
+# IsLocalization.ringEquivOfRingEquiv_eq (equation for the induced iso of localizations),
+# le_inf, sup_comm (lattice identities on ideals): valid.
+IsLocalization.ringEquivOfRingEquiv_eq
+le_inf
+sup_comm
+# --- Kronecker.lean (coll-7c, option 2 step 1: factorisation in ℚ[X]), reviewed 2026-10-03:
+#   Polynomial.card_le_degree_of_subset_roots, Polynomial.roots, Polynomial.mem_roots: used only as
+#     "a finset of roots of F ≠ 0 has ≤ deg F elements" (Z.val ⊆ roots stated via mem_roots ↔
+#     F ≠ 0 ∧ IsRoot). Constructively valid over ℤ (division by X - a, decidable equality); `roots`
+#     is a uniquely determined multiset, so its classical definition is harmless (unique choice).
+#   Polynomial.IsPrimitive.dvd_iff_fraction_map_dvd_fraction_map (Gauss's lemma, ℤ ⊂ ℚ), primPart,
+#     primPart_dvd, isPrimitive_primPart, natDegree_primPart: Gauss's lemma for a primitive divisor
+#     is constructive over ℤ (Lombardi–Quitté, Mines–Richman–Ruitenburg). primPart is used only as
+#     a witness inside ∃ (Prop): p = C(content)·primPart with content ≠ 0 determines it uniquely
+#     (ℤ[X] a domain), so unique choice. The GCD-monoid instances on ℤ (Int.instStrongNormalizedGCDMonoid,
+#     instNormalizedGCDMonoidOfStrongNormalizedGCDMonoid, IsBezout.instIsGCDMonoidOfIsCancelMulZero,
+#     IsBezout.of_isPrincipalIdealRing, EuclideanDomain.instIsPrincipalIdealRing, Int.euclideanDomain)
+#     are parameters only; IsPrimitive (∀ r, C r ∣ p → IsUnit r) and ∣ do not depend on them.
+#   IsLocalization side: Rat.isFractionRing, Ring.toIntAlgebra, Rat.instIntCast (with the already
+#     whitelisted integerNormalization_spec): clearing denominators, valid.
+#   Lagrange.interpolate (explicit sum of C(r i)·basis), Lagrange.eq_interpolate_of_eval_eq
+#     (a polynomial of degree < #s agreeing with r on injective nodes is the interpolant): valid
+#     over a field with decidable equality (difference has #s roots).
+#   Fintype.piFinset, Fintype.mem_piFinset, Finset.Subtype.fintype, Subtype.instDecidableEq,
+#     Finset.filter (with Int decidable equality), mem_filter, card_filter_add_card_filter_not,
+#     card_image_of_injective, card_range, card_attach, mem_union_left/right, Finset.val,
+#     Nat.divisors, Nat.mem_divisors, Int.natAbs*, Int.natAbs_eq (a = |a| ∨ a = -|a|, decidable):
+#     finite combinatorics, valid.
+#   Decidable.em, Decidable.not_not._simp_1: decidable instances only (ℕ order, ℤ equality).
+#   Irreducible, Irreducible.mk, IsUnit.mul, IsUnit.mul_right_eq_zero, List.prod, List.prod_append,
+#     Polynomial.eval/eval₂/eval_map/eval₂_at_intCast/eval_dvd/IsRoot/coeff_intCast_mul,
+#     degree_le_natDegree, natDegree_map_eq_of_injective, Int.cast_injective, Int.cast_ne_zero,
+#     RingHom.injective_int, Nat.cast_injective, zsmul_eq_mul, Set.InjOn, instance constants
+#     (WithBot.*, Pi.Function.module, Int.inst*, Nat.inst*, Semigroup.*, Std.*), forall_eq, implies_true:
+#     definitions, equations, logic, valid.
+#   Irreducible.coprime_iff_not_dvd (in ℚ[X], via Polynomial.instEuclideanDomain): ¬ p ∣ n → IsCoprime p n
+#     has a positive conclusion from a negative hypothesis; valid in ℚ[X] since divisibility is decidable
+#     and extended Euclid computes the Bézout coefficients (cf. cprim exists_bezout_polynomial_field).
+#     Used only in irreducible_quotient. Ideal.IsMaximal / PrincipalIdealRing.isMaximal_of_irreducible
+#     deliberately NOT whitelisted (IsCoatom form is not constructively usable).
+Decidable.em
+Decidable.not_not._simp_1
+EuclideanDomain.instIsPrincipalIdealRing
+Finset.Subtype.fintype
+Finset.card_attach
+Finset.card_filter_add_card_filter_not
+Finset.card_image_of_injective
+Finset.card_range
+Finset.filter
+Finset.mem_filter
+Finset.mem_union_left
+Finset.mem_union_right
+Finset.val
+Fintype.mem_piFinset
+Fintype.piFinset
+Int.cast_injective
+Int.cast_ne_zero
+Int.euclideanDomain
+Int.instDvd
+Int.instIsCancelMulZero
+Int.instIsDomain
+Int.instNontrivial
+Int.instSemiring
+Int.instStrongNormalizedGCDMonoid
+Int.natAbs
+Int.natAbs_dvd_natAbs
+Int.natAbs_eq
+Int.natAbs_ne_zero
+Irreducible
+Irreducible.mk
+IsBezout.instIsGCDMonoidOfIsCancelMulZero
+IsBezout.of_isPrincipalIdealRing
+IsUnit.mul
+IsUnit.mul_right_eq_zero
+Lagrange.eq_interpolate_of_eval_eq
+Lagrange.interpolate
+List.prod
+List.prod_append
+Nat.cast_injective
+Nat.divisors
+Nat.instCharZero
+Nat.instDvd
+Nat.mem_divisors
+Pi.Function.module
+Polynomial.IsPrimitive.dvd_iff_fraction_map_dvd_fraction_map
+Polynomial.IsRoot
+Polynomial.IsRoot.def._simp_1
+Polynomial.card_le_degree_of_subset_roots
+Polynomial.coeff_intCast_mul
+Polynomial.degree_le_natDegree
+Polynomial.eval
+Polynomial.eval_dvd
+Polynomial.eval_map
+Polynomial.eval₂
+Polynomial.eval₂_at_intCast
+Polynomial.isPrimitive_primPart
+Polynomial.mem_roots
+Polynomial.natDegree_map_eq_of_injective
+Polynomial.natDegree_primPart
+Polynomial.primPart
+Polynomial.primPart_dvd
+Polynomial.roots
+Rat.instIntCast
+Rat.isFractionRing
+Ring.toIntAlgebra
+RingHom.injective_int
+Semigroup.to_isAssociative
+Semigroup.to_isLawfulIdentity
+Set.InjOn
+Std.LawfulIdentity.toLawfulLeftIdentity
+Subtype.instDecidableEq
+WithBot.addLeftMono
+WithBot.addMonoidWithOne
+WithBot.charZero
+WithBot.instPartialOrder
+WithBot.zeroLEOneClass
+forall_eq._simp_1
+implies_true
+instNormalizedGCDMonoidOfStrongNormalizedGCDMonoid
+zsmul_eq_mul
+Irreducible.coprime_iff_not_dvd
+Polynomial.instEuclideanDomain
+# --- FactorialField.lean (coll-7c, option 2 M2a: K factorial ⇒ Frac K[t] factorial), reviewed 2026-10-03:
+#   Polynomial.isUnit_iff (over a domain: IsUnit p ↔ ∃ r, IsUnit r ∧ C r = p): degrees add in a
+#     domain, so a unit is constant; positive, valid.
+#   Polynomial.Bivariate.swap (explicit AlgEquiv X ↔ Y by aevalAeval), swap_monomial_monomial,
+#     swap_swap_apply: definitions / equations, valid.
+#   Polynomial.natDegree_le_iff_coeff_eq_zero (deg ≤ n ↔ ∀ N > n, coeff N = 0), le_natDegree_of_mem_supp,
+#     natDegree_mul_C (domain), coeff_mul_C, coeff_monomial(_same), monomial_mul_X_pow,
+#     monomial_zero_right, as_sum_support, eval_C, eval_mul, eval_eq_sum, induction_on' (Prop motive),
+#     Polynomial.sum (+ .eq_1, sum_add_index, sum_monomial_index, sum_zero_index), isUnit_C:
+#     definitions / equations over the support, valid.
+#   Associated (∃ unit), Associated.mul_left, associated_one_iff_isUnit, Irreducible.ne_zero,
+#     IsCoprime.dvd_of_dvd_mul_left, IsCoprime.symm, IsUnit.ne_zero, Units.isUnit, map_ne_zero_iff,
+#     map_eq_zero: algebraic identities, valid.
+#   DivisionRing.toNontrivial: structure projection (used to keep inference away from
+#     Field.henselian / IsRegularLocalRing paths, which are NOT whitelisted).
+#   List.sublists, List.mem_sublists, List.Sublist(.cons, .cons_cons), List.prod_cons,
+#     Multiset.ofList, Multiset.mem_coe, Nat.add_mul_div_left, Nat.add_mul_mod_self_left,
+#     AddMonoidHom.mk, ZeroHom.mk: finite combinatorics / structures, valid.
+AddMonoidHom.mk
+Associated
+Associated.mul_left
+DivisionRing.toNontrivial
+Irreducible.ne_zero
+IsCoprime.dvd_of_dvd_mul_left
+IsCoprime.symm
+IsUnit.ne_zero
+List.Sublist
+List.Sublist.cons
+List.Sublist.cons_cons
+List.mem_sublists
+List.prod_cons
+List.sublists
+Multiset.mem_coe
+Multiset.ofList
+Nat.add_mul_div_left
+Nat.add_mul_mod_self_left
+Polynomial.Bivariate.swap
+Polynomial.Bivariate.swap_monomial_monomial
+Polynomial.Bivariate.swap_swap_apply
+Polynomial.as_sum_support
+Polynomial.coeff_monomial
+Polynomial.coeff_monomial_same
+Polynomial.coeff_mul_C
+Polynomial.eval_C
+Polynomial.eval_eq_sum
+Polynomial.eval_mul
+Polynomial.induction_on'
+Polynomial.isUnit_C
+Polynomial.isUnit_iff
+Polynomial.le_natDegree_of_mem_supp
+Polynomial.monomial
+Polynomial.monomial_mul_X_pow
+Polynomial.monomial_zero_right
+Polynomial.natDegree_le_iff_coeff_eq_zero
+Polynomial.natDegree_mul_C
+Polynomial.sum
+Polynomial.sum.eq_1
+Polynomial.sum_add_index
+Polynomial.sum_monomial_index
+Polynomial.sum_zero_index
+Units.isUnit
+ZeroHom.mk
+associated_one_iff_isUnit
+associated_one_iff_isUnit._simp_1
+map_eq_zero._simp_1
+map_ne_zero_iff
+# --- FactorialAlg.lean (coll-7c, option 2 M2b: K factorial, char 0 ⇒ K[Y]/(p) factorial), reviewed 2026-10-03:
+#   AdjoinRoot, .mk, .of, .root, .mkₐ, .mk_eq_mk, .mk_eq_zero, .mk_surjective, .instCommRing,
+#     .instAlgebra, .instIsScalarTower: quotient constructions and their defining equations, valid.
+#   AdjoinRoot.instField [Fact (Irreducible p)]: field axioms (a ≠ 0 → a a⁻¹ = 1) are valid for
+#     K[Y]/(p) with p irreducible and K discrete (Bézout); the inverse is uniquely determined, so its
+#     classical definition is harmless (unique choice). Constructive consumers use zeroTest_adjoin.
+#   EuclideanDomain.instDiv/instMod/div_add_mod/mod_eq_zero/mod_lt, Polynomial.instDiv/instMod,
+#     EuclideanDomain.toCommRing: division with remainder in F[X]; quotient and remainder are
+#     uniquely determined (unique choice), equations valid. Used in bezout_field (constructive Euclid).
+#   RingHom.injective (from a field): valid for the discrete fields used (zero test).
+#   Polynomial.derivative, derivative_ne_zero (↔ natDegree ≠ 0, char 0), natDegree_derivative_lt,
+#     CharZero, charZero_of_injective_algebraMap, IsAddTorsionFree.of_isCancelMulZero_charZero,
+#     Polynomial.aeval, aeval_algHom_apply, Polynomial.isScalarTower, AlgHom.restrictScalars,
+#     Fact, instDecidableAnd, Nat.lt_succ_iff, NonUnitalRing.toNonUnitalNonAssocRing:
+#     definitions / equations / instances, valid.
+#   New @[cprim] exists_primitive_shift — status (user's decision, 2026-10-04): JUSTIFIED BY A ¬¬-ARGUMENT,
+#     Lean proof classical (AlgebraicClosure, embeddings, Vandermonde) as a trusted stand-in.
+#     (a) For each f the statement is a bounded ∃ (c ≤ N², N = deg p·deg f) of a property decidable by
+#     Gaussian elimination over K in the basis αⁱXʲ (annihilator by dimension; generation = rank N),
+#     so ¬¬∃ → ∃ by finite search. (b) Under ¬¬, finitely many LEM steps (≤ deg p + N: "proper factor
+#     or irreducible" per nonlinear factor) build a discrete splitting field E of p and of the
+#     conjugates σ_r(f). (c) In E: deg p distinct roots r, deg f distinct roots s of each σ_r(f)
+#     (separable: char 0, IsCoprime f f'), N maps B → E with θ_c ↦ s + c r; distinct pairs collide for
+#     ≤ 1 value of c, so by counting some c ≤ N² is good. (d) Vandermonde: 1, θ_c, …, θ_c^(N-1)
+#     independent, hence a K-basis of B. So ¬¬P(c), hence ¬¬∃, hence ∃.
+#     Optional future work: formal ∂_T proof (θ_T primitive over K(T), μ squarefree since B(T)
+#     reduced, α = −μ_T(θ)/μ_S(θ)), ~800–1500 lines. The trace-form/discriminant route is circular
+#     (det Hankel(c) = det M(c)²·det Gram), not an alternative. Field.henselian / IsRegularLocalRing
+#     instance paths avoided (letI Nontrivial := DivisionRing.toNontrivial); NOT whitelisted.
+AdjoinRoot
+AdjoinRoot.instAlgebra
+AdjoinRoot.instAlgebra._proof_1
+AdjoinRoot.instCommRing
+AdjoinRoot.instField
+AdjoinRoot.instIsScalarTower
+AdjoinRoot.mk
+AdjoinRoot.mk_eq_mk
+AdjoinRoot.mk_eq_zero
+AdjoinRoot.mk_surjective
+AdjoinRoot.mkₐ
+AdjoinRoot.of
+AdjoinRoot.root
+AlgHom.restrictScalars
+CharZero
+EuclideanDomain.div_add_mod
+EuclideanDomain.instDiv
+EuclideanDomain.instMod
+EuclideanDomain.mod_eq_zero
+EuclideanDomain.mod_lt
+EuclideanDomain.toCommRing
+Fact
+IsAddTorsionFree.of_isCancelMulZero_charZero
+Nat.lt_succ_iff
+NonUnitalRing.toNonUnitalNonAssocRing
+Polynomial.aeval
+Polynomial.aeval_algHom_apply
+Polynomial.derivative
+Polynomial.derivative_ne_zero
+Polynomial.instDiv
+Polynomial.instMod
+Polynomial.isScalarTower
+Polynomial.natDegree_derivative_lt
+RingHom.injective
+charZero_of_injective_algebraMap
+instDecidableAnd
+# --- Lasker.lean (coll-7c, option 2 M3a: Perdry Thm 4.3, strong primality test in ℚ[Y₁..Yₙ]), reviewed 2026-10-04:
+#   RingHom.ker_isPrime (kernel of a hom into a domain is prime): IsPrime = ne_top ∧ (ab ∈ → a ∈ ∨ b ∈);
+#     the disjunction comes from the target's NoZeroDivisors axiom (mul_eq_zero), valid. Used with
+#     targets AdjoinRoot G (G irreducible) and FractionRing K[X] (K discrete).
+#   Ideal.IsPrime.mem_or_mem, .ne_top (projections), Ideal.Quotient.isDomain (prime ⇒ domain): valid.
+#   IsFractionRing.of_field (injective + every element a quotient ⇒ IsFractionRing): the surj field needs
+#     a case split y = 0; valid for the decidable R ⧸ I used here. IsFractionRing.div_surjective,
+#     FaithfulSMul, faithfulSMul_iff_algebraMap_injective: valid.
+#   OreLocalization.instCommGroupWithZeroNonZeroDivisors (field structure of FractionRing K[X]),
+#     AdjoinRoot.instGroupWithZero, Rat.commGroupWithZero, CommGroupWithZero.toGroupWithZero,
+#     DivisionRing.toDivInvMonoid, DivInvMonoid.toDiv, div_eq_div_iff, eq_div_iff, div_one: field
+#     axioms / equations; inverses uniquely determined (unique choice), valid for discrete K.
+#   MvPolynomial.isEmptyAlgEquiv (ℚ[∅] ≅ ℚ), AlgEquiv.symm/apply_symm_apply/symm_apply_apply/toAlgHom,
+#     Polynomial.CAlgHom(_apply), mapRingHom, map_add/map_pow/map_map, map_surjective, coeff_map,
+#     natDegree_map_le, C_1, C_injective, as_sum_range_C_mul_X_pow, finset_sum_coeff,
+#     le_natDegree_of_ne_zero, leadingCoeff_eq_zero, leadingCoeff_ne_zero, Ideal.mem_bot,
+#     List.mem_singleton, Nat.lt_succ_of_le, Fact.mk, Function.Injective.comp,
+#     charZero_of_injective_ringHom: definitions / equations, valid.
+#   Field.henselian / IsRegularLocalRing paths avoided twice (K and AdjoinRoot G); NOT whitelisted.
+AdjoinRoot.instGroupWithZero
+AlgEquiv.apply_symm_apply
+AlgEquiv.symm
+AlgEquiv.symm_apply_apply
+AlgEquiv.toAlgHom
+CommGroupWithZero.toGroupWithZero
+DivInvMonoid.toDiv
+DivisionRing.toDivInvMonoid
+Fact.mk
+FaithfulSMul
+Function.Injective.comp
+Ideal.IsPrime.mem_or_mem
+Ideal.IsPrime.ne_top
+Ideal.Quotient.isDomain
+Ideal.mem_bot
+IsFractionRing.div_surjective
+IsFractionRing.of_field
+List.mem_singleton
+MvPolynomial.isEmptyAlgEquiv
+Nat.lt_succ_of_le
+OreLocalization.instCommGroupWithZeroNonZeroDivisors
+Polynomial.CAlgHom
+Polynomial.CAlgHom_apply
+Polynomial.C_1
+Polynomial.C_injective
+Polynomial.as_sum_range_C_mul_X_pow
+Polynomial.coeff_map
+Polynomial.finset_sum_coeff
+Polynomial.le_natDegree_of_ne_zero
+Polynomial.leadingCoeff_eq_zero._simp_1
+Polynomial.leadingCoeff_ne_zero
+Polynomial.mapRingHom
+Polynomial.map_add
+Polynomial.map_map
+Polynomial.map_pow
+Polynomial.map_surjective
+Polynomial.natDegree_map_le
+Rat.commGroupWithZero
+RingHom.ker_isPrime
+charZero_of_injective_ringHom
+div_eq_div_iff
+div_one
+eq_div_iff
+faithfulSMul_iff_algebraMap_injective
+# --- MinPrime.lean (coll-7c, option 2 M3b: Perdry Thm 4.4, minimal primes), reviewed 2026-10-04:
+#   List.append_eq_nil_iff: list equation, valid.
+List.append_eq_nil_iff
+# --- CompList, PosOrd, XiMin, SepPoly (Task D), reviewed 2026-10-04 (coll-7c) ---
+# CompList (Task D, R2): finite list combinatorics and order, constructive as stated.
+Eq.ge
+HasSubset.Subset
+List.instHasSubset
+List.Pairwise
+List.Pairwise.rec
+List.Pairwise.nil
+List.Pairwise.cons
+List.Pairwise.imp
+List.Pairwise.sublist
+List.pairwise_map
+List.Nodup.eq_1
+List.Nodup.length_le_of_subset
+List.Sublist.slnil
+List.Sublist.subset
+List.map_eq_nil_iff
+List.exists_mem_of_ne_nil
+List.length_map
+ExistsUnique
+Submodule.add_mem_sup
+# XiMin / CompList (Task D, R6), reviewed 2026-10-04: arithmetic and decidable order on ℚ and ℤ
+#   (instances, num/den, toNat, casts), explicit list and Fin combinators (List.range, flatMap,
+#   Fin.cons/tail), bot_le, omega/linarith internals. All constructive as stated at ℚ, ℤ, ℕ.
+Rat.num_div_den
+Rat.instSub
+div_mul_cancel₀
+List.mem_range
+Int.cast_zero
+Int.instMax
+lt_of_not_ge
+mul_div_assoc
+Rat.instAddLeftMono
+Rat.instZeroLEOneClass
+Int.decLe
+Rat.instIsOrderedAddMonoid
+Rat.num_pos
+Rat.instPosMulMono
+DivInvMonoid.toMonoid
+List.range
+Int.max_def
+Lean.Omega.ite_disjunction
+Rat.instLE
+Int.cast_le._simp_1
+Fin.cons_self_tail
+Rat.instStarRing
+Int.instLTInt
+div_lt_one
+Int.toNat_eq_max
+Rat.instPreorder
+Lean.Omega.Int.lt_of_not_le
+Rat.num_nonneg
+Mathlib.Tactic.Linarith.natCast_nonneg
+Int.toNat
+div_nonneg
+List.mem_flatMap
+Nat.cast_le
+Rat.instStarOrderedRing
+Rat.addLeftCancelSemigroup
+Fin.tail
+Rat.addCommSemigroup
+bot_le
+Rat.instDiv
+Int.cast_one
+# SepPoly (Task D, R6, recentring), reviewed 2026-10-04:
+#   Algebra.IsIntegral.of_finite, Algebra.IsIntegral.isIntegral, IsIntegral, Polynomial.Monic(.ne_zero):
+#     K (Cayley–Hamilton): an element of a finitely generated ℚ-module algebra is a root of a monic
+#     polynomial (determinant of `a·1 − M` on a generating family); accepted as K by coll-01.
+#   Irreducible.separable (at ℚ[X], char 0): gcd(p, p') = 1 for irreducible p, since p ∤ p'
+#     (deg p' < deg p, p' ≠ 0 in char 0); Euclid in ℚ[X] is constructive.
+#   Polynomial.Separable.aeval_derivative_ne_zero: from `a p + b p' = 1` evaluated at a root.
+#   Nontrivial, Rat.nontrivial, NeZero.one, Polynomial.derivative_X: trivial.
+Nontrivial
+Algebra.IsIntegral.isIntegral
+NeZero.one
+Polynomial.derivative_X
+Rat.nontrivial
+Algebra.IsIntegral.of_finite
+Polynomial.Separable.aeval_derivative_ne_zero
+Polynomial.Monic
+IsIntegral
+Irreducible.separable
+Polynomial.Monic.ne_zero
+#   RingHom.liftOfSurjective (+ ._proof_1, liftOfRightInverse_comp_apply), Function.surjInv: the
+#     induced hom ψ : S → K with ψ ∘ f = g (ker f ≤ ker g) is uniquely determined since f is
+#     surjective, so its definition via surjInv (choice) is harmless (unique choice); used only inside
+#     the Prop PrimeFF.map. Ideal.comap_isPrime, Ideal.comap_map_of_surjective' (comap (map f I) =
+#     I ⊔ ker f), Ideal.map_mono, List.map_append, sup_of_le_left: valid.
+Function.surjInv
+Ideal.comap_isPrime
+Ideal.comap_map_of_surjective'
+Ideal.map_mono
+List.map_append
+RingHom.liftOfRightInverse_comp_apply
+RingHom.liftOfSurjective
+RingHom.liftOfSurjective._proof_1
+sup_of_le_left
+#   Ideal.minimalPrimes (definition: Minimal (prime ∧ I ≤ ·)); used only as a hypothesis in
+#     HasPres.gens_of_minimalPrime, valid.
+Ideal.minimalPrimes
+#   Ideal.radical (definition: ∃ n, xⁿ ∈ I), valid.
+Ideal.radical
+# --- Nullstellensatz.lean (coll-7c, option 2 M4/(G2): explicit points, Jacobson form), reviewed 2026-10-04:
+#   Polynomial.eq_zero_of_natDegree_lt_card_of_eval_eq_zero (vanishing at > deg distinct points ⇒ 0):
+#     valid over a domain (division by X - aᵢ); used over a char-0 field with zero test.
+#   Ideal.IsPrime.mem_of_pow_mem (induction with mem_or_mem), pow_eq_zero_iff': valid.
+#   Module.Finite, FiniteDimensional (∃ finite spanning family), Module.Finite.trans, PowerBasis.finite,
+#     AdjoinRoot.powerBasis (explicit basis 1, α, …, α^(d-1)), IsScalarTower.rat, Rat.numberField,
+#     NumberField.to_finiteDimensional: finiteness of explicit towers, valid.
+#   AdjoinRoot.aeval_eq, AdjoinRoot.algebraMap_eq, Polynomial.aeval_def, evalRingHom, eval₂RingHom,
+#     eval₂_C, eval₂_map, eval_natCast_map, eval_zero, map_sub, natDegree_map_of_leadingCoeff_ne_zero,
+#     List.prod_nil, SubtractionMonoid, lt_add_iff_pos_right: definitions / equations, valid.
+AdjoinRoot.aeval_eq
+AdjoinRoot.algebraMap_eq
+AdjoinRoot.powerBasis
+FiniteDimensional
+Ideal.IsPrime.mem_of_pow_mem
+IsScalarTower.rat
+List.prod_nil
+Module.Finite
+Module.Finite.trans
+NumberField.to_finiteDimensional
+Polynomial.aeval_def
+Polynomial.eq_zero_of_natDegree_lt_card_of_eval_eq_zero
+Polynomial.evalRingHom
+Polynomial.eval_natCast_map
+Polynomial.eval_zero
+Polynomial.eval₂RingHom
+Polynomial.eval₂_C
+Polynomial.eval₂_map
+Polynomial.map_sub
+Polynomial.natDegree_map_of_leadingCoeff_ne_zero
+PowerBasis.finite
+Rat.numberField
+SubtractionMonoid
+lt_add_iff_pos_right._simp_1
+pow_eq_zero_iff'
+# --- option 2 leaves (coll-7c, 2026-10-04): constants previously covered only by unmerged pending lists:
+#   DivisionRing.isSimpleRing, IsDomain.of_isSimpleRing: Mathlib's instance path Field K → IsDomain K;
+#     used only for cancellation / no zero divisors, valid for the discrete fields used (every field in
+#     the option-2 leaves comes with a zero test: ℚ, FactorialField towers, AdjoinRoot, FractionRing K[X]).
+#   Int.*, Nat.*, Finset.range/mem_range, Fintype.card(_fin), Multiset.* (induction_on with Prop motive,
+#     membership), IsCoprime (Bézout definition), isUnit_iff_dvd_one, isUnit_one, Ideal.sub_mem,
+#     Ideal.span_singleton_le_iff_mem, Polynomial.C_pow, map_intCast, eq_intCast, HDiv/HMod/instHDiv/
+#     instHMod/Nat.instDiv/Nat.instMod, Int.castRingHom, OneHom, MonoidHom.toOneHom,
+#     RingHom.toMonoidHom, LinearCombination.add_eq_eq, Set.mem_insert_iff, trivial, zero_sub:
+#     definitions / equations / instances, valid.
+AddGroupWithOne.toIntCast
+DivisionRing.isSimpleRing
+Finset.mem_range
+Finset.range
+Fintype.card
+Fintype.card_fin
+HDiv.hDiv
+HMod.hMod
+Ideal.span_singleton_le_iff_mem
+Ideal.sub_mem
+Int.cast
+Int.castRingHom
+Int.instCharZero
+Int.instCommRing
+Int.instCommSemiring
+Int.instDecidableEq
+IsCoprime
+IsDomain.of_isSimpleRing
+Mathlib.Tactic.LinearCombination.add_eq_eq
+MonoidHom.toOneHom
+Multiset
+Multiset.cons
+Multiset.induction_on
+Multiset.instMembership
+Multiset.instZero
+Multiset.mem_cons
+Multiset.mem_cons_of_mem
+Multiset.mem_cons_self
+Multiset.notMem_zero
+Nat.cast_lt._simp_1
+Nat.div_eq_of_lt
+Nat.instDiv
+Nat.instMod
+Nat.mod_eq_of_lt
+Nat.succ_pos
+OneHom
+Polynomial.C_pow
+RingHom.toMonoidHom
+Set.mem_insert_iff._simp_1
+eq_intCast
+instHDiv
+instHMod
+isUnit_iff_dvd_one
+isUnit_one
+map_intCast
+trivial
+zero_sub
+
+# ===== merged 2026-10-04 from docs/pending/chainlift-whitelist.txt =====
+# --- ChainLift{Basic,Off,Push,,Moebius,Chart}.lean (chain lifting, bezout-positive.tex §2) ---
+# Reviewed 2026-10-03 (chain-lifting session). All statements constructively valid at the types used
+# (ℝ as Bishop reals, ℕ/ℤ decidable):
+#   abs_lt (|a| < b ↔ -b < a ∧ a < b), abs_nonpos_iff, abs_of_nonneg, abs_sub, le_of_abs_le, le_neg,
+#     neg_lt_neg, LT.lt.trans, mul_lt_mul_of_pos_right, le_of_mul_le_mul_left/right (0 < c),
+#     lt_of_mul_lt_mul_left (a b < a c, 0 ≤ a ⇒ b < c: valid since a(c-b) > 0 forces c-b > 0),
+#     mul_pos_of_neg_of_neg, mul_nonneg_of_nonpos_of_nonpos, one_lt_pow₀, le_self_pow₀, pow_le_one₀,
+#     pow_le_pow_right₀, add_nonneg, add_pos_of_pos_of_nonneg: ≤/</= statements, no decisions.
+#   exists_nat_gt, Real.instArchimedean: the Archimedean property (valid for Bishop reals).
+#   geom_sum₂_mul, two_mul, one_pow, even_two_mul: equations.
+#   pi_norm_le_iff_of_nonneg, norm_le_pi_norm, Real.norm_eq_abs, Pi.normedRing, Pi.seminormedAddGroup,
+#     Real.norm: sup norm on Fin N → ℝ (data; ≤ statements only, used in ChainLiftChart).
+#   Nat/Int/Lean.Omega/HDiv/HMod (on ℕ only: j / M, j % M), Finset.range, Fintype.*, Function.update*,
+#     Matrix.vecCons/vecEmpty, List.Mem.*, Option/Prod injectivity, Inhabited instances: data and
+#     decidable finite combinatorics. eq_false_of_decide, instDecidableOr, List.decidableBAll: at
+#     decidable propositions on ℕ.
+#   No division or inverse on ℝ outside the two new @[cprim] (exists_inv_pos, exists_root_pos);
+#     no lt_of_not_ge (strict goals proved with lt_two_mul' / lt_of_two_mul_le, not linarith).
+AddGroup.existsAddOfLE
+CharP.cast_eq_zero
+CharP.ofCharZero
+Eq.ndrec_symm
+Finset.card_univ
+Finset.mem_range
+Finset.range
+Finset.sum_nonneg
+Fintype.card
+Fintype.complete
+Fintype.elems
+Function.update
+Function.update_of_ne
+Function.update_self
+HDiv.hDiv
+HEq.homo_ndrec
+HMod.hMod
+Inhabited
+Int.instDecidableEq
+Int.instDiv
+Int.instMod
+Int.instMul
+Int.natCast_ediv
+Int.natCast_emod
+Int.natCast_mul
+IsOrderedRing.toZeroLEOneClass
+IsRightCancelAdd.addRightStrictMono_of_addRightMono
+IsStrictOrderedRing.toIsOrderedRing
+IsStrictOrderedRing.toMulPosStrictMono
+LT.lt.trans
+Lean.Omega.Coeffs.isZero
+Lean.Omega.Int.emod_ofNat_nonneg
+Lean.Omega.Int.mul_congr
+Lean.Omega.LinearCombo.mul
+Lean.Omega.LinearCombo.mul_eval
+List.Mem.casesOn
+List.Mem.head
+List.Mem.tail
+List.decidableBAll
+Mathlib.Meta.NormNum.IsNat.raw_refl
+Mathlib.Meta.NormNum.intPow_negOfNat_bit0
+Mathlib.Meta.NormNum.isInt_pow
+Mathlib.Meta.NormNum.isNat_eq_true
+Mathlib.Meta.NormNum.one_natPow
+Mathlib.Tactic.Linarith.eq_of_eq_of_eq
+Mathlib.Tactic.Linarith.lt_of_eq_of_lt
+Mathlib.Tactic.Linarith.mul_eq
+Mathlib.Tactic.Linarith.zero_mul_eq
+Mathlib.Tactic.LinearCombination.add_eq_eq
+Mathlib.Tactic.Ring.Common.coeff_one
+Mathlib.Tactic.Ring.Common.pow_atom
+Mathlib.Tactic.Ring.Common.pow_bit0
+Mathlib.Tactic.Ring.Common.pow_bit1
+Mathlib.Tactic.Ring.Common.pow_nat
+Mathlib.Tactic.Ring.Common.pow_one
+Mathlib.Tactic.Ring.Common.pow_prod_atom
+Mathlib.Tactic.RingNF.add_assoc_rev
+Mathlib.Tactic.RingNF.add_neg
+Mathlib.Tactic.RingNF.int_rawCast_neg
+Mathlib.Tactic.RingNF.mul_assoc_rev
+Mathlib.Tactic.RingNF.mul_neg
+Mathlib.Tactic.RingNF.nat_rawCast_1
+Matrix.vecCons
+Matrix.vecEmpty
+MulPosStrictMono.toMulPosReflectLE
+Nat.AtLeastTwo
+Nat.Internal.elimOffset
+Nat.add
+Nat.add_mul_div_right
+Nat.add_mul_mod_self_right
+Nat.cast_add
+Nat.cast_le._simp_1
+Nat.cast_lt._simp_1
+Nat.cast_nonneg'
+Nat.cast_pos'
+Nat.ctorIdx
+Nat.div_add_mod
+Nat.div_eq_of_lt
+Nat.div_lt_iff_lt_mul
+Nat.exists_eq_add_of_le
+Nat.instDiv
+Nat.instMod
+Nat.le
+Nat.le.casesOn
+Nat.le.refl
+Nat.le.step
+Nat.le_of_lt
+Nat.le_refl
+Nat.le_zero
+Nat.mod_eq_of_lt
+Nat.mod_lt
+Nat.mod_self
+Nat.mod_zero
+Nat.mono_cast
+Nat.mul_div_cancel
+Nat.mul_le_mul_right
+Nat.mul_mod_left
+Nat.one_le_iff_ne_zero
+Nat.succ_pos
+Nat.zero_div
+NonUnitalSeminormedCommRing.toNonUnitalSeminormedRing
+NonUnitalSeminormedRing.toSeminormedAddCommGroup
+NormedRing.toNorm
+NormedRing.toSeminormedRing
+OfNat.ofNat_eq_ofNat._simp_1
+Option.ctorIdx
+Option.some.injEq
+Pi.instInhabited
+Pi.normedRing
+Pi.seminormedAddGroup
+Pi.sub_apply
+PosMulReflectLE.toPosMulReflectLT
+PosMulStrictMono.toPosMulReflectLE
+Prod.mk.injEq
+Real._sizeOf_inst
+Real.instArchimedean
+Real.instInhabited
+Real.instSemigroup
+Real.norm
+Real.norm_eq_abs
+Right.add_pos_of_nonneg_of_pos
+SeminormedCommRing.toNonUnitalSeminormedCommRing
+SeminormedRing.toNonUnitalSeminormedRing
+StarOrderedRing.toIsOrderedRing
+Std.le_refl._simp_1
+abs_lt
+abs_nonpos_iff
+abs_of_nonneg
+abs_sub
+abs_two
+abs_zero
+add_eq_left._simp_1
+add_left_inj._simp_1
+add_nonneg
+add_pos_of_pos_of_nonneg
+and_true
+eq_false'
+eq_false_of_decide
+even_two_mul
+exists_nat_gt
+false_or
+geom_sum₂_mul
+instDecidableOr
+instHDiv
+instHMod
+instInhabitedOption
+instInhabitedProd
+instIsBotZeroClass
+instReflLe
+instSizeOfDefault
+instSizeOfNat
+ite_false
+ite_true
+le_add_of_nonneg_right
+le_neg
+le_of_abs_le
+le_of_mul_le_mul_left
+le_of_mul_le_mul_right
+le_self_pow₀
+left_eq_add._simp_1
+lt_of_mul_lt_mul_left
+mul_lt_mul_of_pos_right
+mul_nonneg_of_nonpos_of_nonpos
+mul_pos_of_neg_of_neg
+neg_lt_neg
+neg_lt_self
+norm_le_pi_norm
+one_lt_pow₀
+one_pow
+or_true
+pi_norm_le_iff_of_nonneg
+pow_le_one₀
+pow_le_pow_right₀
+trivial
+true_or
+two_mul
+zero_le_one
+zero_le_two
+#   ChainLiftPoly: Int.cast/Int.castRingHom/Real.instIntCast (ℤ → ℝ, data), MvPolynomial.eval₂_add, map_intCast: equations.
+AddGroupWithOne.toIntCast
+Int.cast
+Int.castRingHom
+Int.instCommSemiring
+MvPolynomial.eval₂_add
+Preorder
+Real.instIntCast
+map_intCast
+#   ChainLiftIFT: MvPolynomial.pderiv (formal derivation, data) and pderiv_C/X_self/X_of_ne/mul, eval₂_zero,
+#     eq_intCast, ite_mul, Finset.sum_ite_eq, sq, Fintype.card_fin: equations. Pi.complete, Real.instCompleteSpace:
+#     completeness (only used by the cprim exists_fixedPoint_half); Pi/Real normed and metric instances: data.
+Finset.sum_ite_eq
+Fintype.card_fin
+Mathlib.Tactic.Ring.Common.atom_pf'
+MvPolynomial.eval₂_zero
+MvPolynomial.pderiv
+MvPolynomial.pderiv_C
+MvPolynomial.pderiv_X_of_ne
+MvPolynomial.pderiv_X_self
+MvPolynomial.pderiv_mul
+Pi.complete
+Pi.normedAddCommGroup
+Pi.seminormedAddCommGroup
+PseudoEMetricSpace.toUniformSpace
+PseudoMetricSpace.toPseudoEMetricSpace
+Real.instCompleteSpace
+Real.normedAddCommGroup
+Real.pseudoMetricSpace
+SeminormedAddGroup.toPseudoMetricSpace
+eq_intCast
+instDecidableEqProd
+instFintypeProd
+ite_mul
+pseudoMetricSpacePi
+sq
+#   ChainLiftIFT (inverse_of_det) / ChainLiftPolyChart: Matrix.det/adjugate/updateRow/one/smul/mul (data over ℝ, defined
+#     by finite sums), adjugate_mul, mul_adjugate, *_apply, smul_*: equations; Matrix.det_le with AbsoluteValue.abs:
+#     |det A| ≤ n! xⁿ (≤ statement); Fin.append(_left/_right): data/equations; abs_sub_abs_le_abs_sub, Nat.factorial_pos.
+AbsoluteValue
+AbsoluteValue.abs
+AbsoluteValue.abs_apply
+AbsoluteValue.funLike
+AddMonoidAlgebra._sizeOf_inst
+Algebra.to_smulCommClass
+Fin._sizeOf_inst
+Fin.append
+Fin.append_left
+Fin.append_right
+Finsupp._sizeOf_inst
+Int._sizeOf_inst
+List._sizeOf_inst
+Matrix
+Matrix.adjugate
+Matrix.adjugate_apply
+Matrix.adjugate_mul
+Matrix.det
+Matrix.det_le
+Matrix.instHMulOfFintypeOfMulOfAddCommMonoid
+Matrix.mulAction
+Matrix.mul_adjugate
+Matrix.mul_apply
+Matrix.mul_smul
+Matrix.one
+Matrix.one_apply
+Matrix.smul
+Matrix.smul_apply
+Matrix.smul_mul
+Matrix.updateRow
+Matrix.updateRow_apply
+Nat.factorial_pos
+abs_sub_abs_le_abs_sub
+smul_smul
+sub_pos
+#   ChainLiftSquare/ChainLiftCert: RingHom.map_det, RingHom.mapMatrix, Matrix.of, Matrix.nonAssocSemiring, map_prod,
+#     Int.instCommRing, Nat.cast_nonneg: equations, data, ≤ statements.
+Int.instCommRing
+Matrix.nonAssocSemiring
+Matrix.of
+Nat.cast_nonneg
+RingHom.mapMatrix
+RingHom.map_det
+map_prod
+#   Sum types (cover over ι ⊕ J): Sum.elim, Sum.casesOn, instances, Fintype.sum_sum_type: data/equations.
+Fintype.sum_sum_type
+Sum.casesOn
+Sum.elim
+instDecidableEqSum
+instFintypeSum
+
+# --- ChainLiftMinor{,Poly}.lean (Jacobian-minor cover, milestone C1), reviewed 2026-10-04 (coll-8a) ---
+# Equations and data definitions over commutative rings: Matrix.* (det, adjugate maps, trace, submatrix,
+#   vecMul/mulVec, fromBlocks, det_fromBlocks_zero₁₂, det_submatrix_equiv_self), Polynomial.* (aeval,
+#   derivative, coeff lemmas, aeval_add_of_sq_eq_zero = first-order Taylor), DualNumber/TrivSqZeroExt
+#   (the ring R[ε]), coeff_det_one_add_X_smul_eq_sum_minors (coefficients of det(1+XE) = sums of
+#   principal minors), finite combinatorics (Finset.powersetCard, orderIsoOfFin/orderEmbOfFin via sort,
+#   Fintype.truncEquivFin: data; Trunc.induction_on: Quot.ind).
+# Existence statements, constructively valid: List.get_of_mem (index of a member), Ideal.sum_pow_mem_span_pow,
+#   Submodule.mem_ideal_smul_span_iff_exists_sum (coefficients of an element of I • span(range f); the
+#   span is inductively generated). Nat.cast_ne_zero: negations at CharZero. IsUnit.mul_left_cancel.
+# No order on ℝ; no decision except on ℕ (Nat.lt_or_ge, already whitelisted).
+AddCommGroup.toAddCancelCommMonoid
+AddCommMonoidWithOne.toAddCommMonoid
+AlgHom.mapMatrix
+AlgHom.mapMatrix_apply
+AlgHom.map_det
+CommSemigroup.isCentralScalar
+DistribMulAction.toMulAction
+DualNumber
+DualNumber.eps
+DualNumber.eps_pow_two
+Equiv.symm_apply_apply
+Finset.Subtype.fintype
+Finset.coe_univ
+Finset.decidableEq
+Finset.instPartialOrder
+Finset.mem_powersetCard
+Finset.orderEmbOfFin
+Finset.orderIsoOfFin
+Finset.powersetCard
+Finset.sum_coe_sort
+Fintype.truncEquivFin
+Function.hasSMul
+Ideal.neg_mem_iff
+Ideal.smul_eq_mul
+Ideal.sub_mem
+Ideal.sum_pow_mem_span_pow
+IsScalarTower.opposite_mid
+IsUnit.mul_left_cancel
+List.get_of_mem
+Matrix.add
+Matrix.addCommGroup
+Matrix.addCommMonoid
+Matrix.addGroup
+Matrix.addZeroClass
+Matrix.coeff_det_one_add_X_smul_eq_sum_minors
+Matrix.coeff_det_one_add_X_smul_one
+Matrix.det_fromBlocks_zero₁₂
+Matrix.det_mul
+Matrix.det_one
+Matrix.det_smul
+Matrix.det_submatrix_equiv_self
+Matrix.ext
+Matrix.fromBlocks
+Matrix.instAlgebra
+Matrix.instMulOfFintypeOfAddCommMonoid
+Matrix.isScalarTower
+Matrix.map
+Matrix.map_add
+Matrix.map_mul
+Matrix.map_zero
+Matrix.module
+Matrix.mulVec
+Matrix.mulVec_mulVec
+Matrix.mulVec_zero
+Matrix.mul_assoc
+Matrix.mul_one
+Matrix.mul_sub
+Matrix.one_apply_eq
+Matrix.one_apply_ne
+Matrix.one_mul
+Matrix.one_mulVec
+Matrix.semiring
+Matrix.smul_mulVec
+Matrix.smul_vecMul
+Matrix.sub
+Matrix.sub_mul
+Matrix.sub_vecMul
+Matrix.submatrix
+Matrix.submatrix_apply
+Matrix.submatrix_map
+Matrix.trace
+Matrix.trace_add
+Matrix.trace_mul_comm
+Matrix.trace_one
+Matrix.trace_smul
+Matrix.vecMul
+Matrix.vecMul_one
+Matrix.vecMul_smul
+Matrix.vecMul_vecMul
+Matrix.vecMul_zero
+Matrix.zero
+Matrix.zero_mul
+Matrix.zero_vecMul
+Membership
+MonoidHom.toOneHom
+MulOpposite
+MulOpposite.instMonoid
+MulOpposite.instSemiring
+Nat.cast_ne_zero
+Nat.cast_pow
+Nat.cast_sub
+Nat.factorial_succ
+NonUnitalNonAssocSemiring.toMulZeroClass
+NonUnitalSemiring.toNonUnitalNonAssocSemiring
+OneHom
+OrderEmbedding
+Pi.instSubsingleton
+Pi.zero_apply
+Polynomial.X_mul_C
+Polynomial.aeval
+Polynomial.aeval_C
+Polynomial.aeval_X
+Polynomial.aeval_X_left_apply
+Polynomial.aeval_add_of_sq_eq_zero
+Polynomial.aeval_algHom_apply
+Polynomial.coeff_derivative
+Polynomial.coeff_mul_C
+Polynomial.coeff_mul_X_zero
+Polynomial.coeff_zero_eq_aeval_zero'
+Polynomial.coeff_zero_eq_eval_zero
+Polynomial.derivative
+Polynomial.eval
+Polynomial.eval_one
+RelIso.toEquiv
+RingHom.mapMatrix_apply
+RingHom.map_adjugate
+RingHom.map_vecMul
+RingHom.toMonoidHom
+SMulCommClass.opposite_mid
+Semiring.toOppositeModule
+Set.image_univ
+Set.univ
+Submodule.instSMul
+Submodule.mem_ideal_smul_span_iff_exists_sum
+Subsingleton.elim
+SubtractionCommMonoid
+Subtype.instDecidableEq
+Subtype.instLE
+TrivSqZeroExt
+TrivSqZeroExt.add
+TrivSqZeroExt.addMonoidWithOne
+TrivSqZeroExt.addSemigroup
+TrivSqZeroExt.addZeroClass
+TrivSqZeroExt.algebra'
+TrivSqZeroExt.commMonoid
+TrivSqZeroExt.commRing
+TrivSqZeroExt.commRing._proof_1
+TrivSqZeroExt.commSemiring
+TrivSqZeroExt.fst
+TrivSqZeroExt.inl
+TrivSqZeroExt.inlAlgHom
+TrivSqZeroExt.monoid
+TrivSqZeroExt.mul
+TrivSqZeroExt.nonAssocSemiring
+TrivSqZeroExt.one
+TrivSqZeroExt.semiring
+TrivSqZeroExt.snd
+TrivSqZeroExt.zero
+Trunc
+Trunc.induction_on
+add_assoc
+add_right_inj._simp_1
+add_smul
+apply_ite
+congrArg₂
+eq_sub_of_add_eq
+eval_det_add_X_smul
+finSumFinEquiv_apply_right
+implies_true
+instFunLikeOrderEmbedding
+instLEFin
+instSubsingletonDecidable
+map_neg
+smul_mul_smul_comm
+zero_sub
+
+# --- ChainLift{NuGe,Glue}.lean and the ChainLiftCert edits (C2–C4 certificate level), reviewed 2026-10-04 (coll-8a) ---
+# Fintype.sum_option/sum_prod_type, Option.elim, instFintypeOption, pow_sub_mul_pow: equations and data.
+# Nat.cast_pos, Nat.one_le_cast (at ℝ: (0:ℝ) < C ↔ 0 < C for C : ℕ, valid for Bishop reals),
+#   Nat.le_mul_of_pos_right, Lean.Omega.Int.ofNat_mul_nonneg (omega on ℕ),
+#   LinearOrderedCommMonoidWithZero.toPosMulStrictMono (Prop-valued instance, positivity on ℕ).
+Fintype.sum_option
+Fintype.sum_prod_type
+Lean.Omega.Int.ofNat_mul_nonneg
+LinearOrderedCommMonoidWithZero.toPosMulStrictMono
+Nat.cast_pos
+Nat.le_mul_of_pos_right
+Nat.one_le_cast
+Option.elim
+Option.elim.match_1
+instFintypeOption
+pow_sub_mul_pow
+
+# --- ChainLift{Conormal,OffPres}.lean (conormal retraction; torsor presentation and OffStep), reviewed 2026-10-04 (coll-8a) ---
+# Equations about MvPolynomial (map, rename, eval₂, aeval, C/X), Fin instances, List.map_ofFn: data/equalities.
+# Rat.num/den/den_pos/mul_den_eq_num, Rat.instIntCast: rational arithmetic (decidable). RingHom.injective_int,
+#   MvPolynomial.map_injective: injectivity of ℤ → ℚ and its extension (statements constructive).
+# Finset.prod_pos, Nat.mul_pos, LT.lt.ne': at ℕ only. No ℚ-algebra structure on ℝ: lift_mem evaluates
+#   integer polynomials only and divides by a positive integer through exists_inv_pos.
+Fin.instCommMonoid
+Fin.instNeZeroHAddNatOfNat_mathlib_1
+Fin.instNonUnitalCommRing
+Finset.prod_erase_mul
+Finset.prod_pos
+Int.cast_natCast
+LT.lt.ne'
+List.map_ofFn
+MvPolynomial.C_1
+MvPolynomial.aeval_C
+MvPolynomial.eval₂_natCast
+MvPolynomial.eval₂_pow
+MvPolynomial.eval₂_rename
+MvPolynomial.map_C
+MvPolynomial.map_X
+MvPolynomial.map_injective
+Nat.mul_pos
+Rat.den
+Rat.den_pos
+Rat.instIntCast
+Rat.mul_den_eq_num
+Rat.num
+RingHom.injective_int
+
+# --- ChainLiftChoice.lean (Task B, finite choice), reviewed 2026-10-04 (coll-8a) ---
+# Finite α is the Prop `∃ n, Nonempty (α ≃ Fin n)` (Bishop-finite, a listing up to bijection);
+#   Finite.exists_equiv_fin is its projection, eliminated into Props only.
+Finite
+Finite.exists_equiv_fin
+
+# --- ChainLiftSmoothCert.lean (Task B), reviewed 2026-10-04 (coll-8a) ---
+# RingEquiv.refl: the identity ring isomorphism (data).
+RingEquiv.refl
+
+# --- ChainLiftUnique.lean (Task A), reviewed 2026-10-04 (coll-8a) ---
+# Decidable.isTrue/isFalse, Bool.casesOn: constructors/eliminator (data); iff_false, Bool.false_eq_true: Bool facts.
+Decidable.isTrue
+Decidable.isFalse
+Bool.casesOn
+iff_false
+Bool.false_eq_true
+# ChainLiftJouCert (coll-8a, 2026-10-04): Jouanolou-layer smoothness certificates. Reviewed:
+# Equiv/Fin/Sum/PUnit/Option: explicit equivalences and their simp lemmas (data, computable).
+# Equiv.Perm.sign, Perm.permGroup: computable sign of a permutation (Trunc of swap lists).
+# Matrix.det_permute, det_one_add_replicateCol_mul_replicateRow (matrix determinant lemma),
+#   fromBlocks_toBlocks, toBlocks₁₂, updateRow_*, replicateCol/Row, dotProduct: polynomial identities.
+# MvPolynomial.pderiv_rename, pderiv_X, Derivation.map_intCast: equational facts on derivations.
+# Finset.sum_mul_sum, Equiv.sum_comp, card_singleton, univ_unique; Int/Units arithmetic
+#   (Int.units_mul_self: u*u = 1 for u : ℤˣ, by finite case analysis); instance projections.
+AddCommGroup.toIntModule
+AddMonoidAlgebra.instAddMonoid
+Derivation.map_intCast
+dotProduct
+Equiv.apply_symm_apply
+Equiv.injective
+Equiv.optionEquivSumPUnit
+Equiv.Perm
+Equiv.Perm.permGroup
+Equiv.Perm.sign
+Equiv.refl
+Equiv.sum_comp
+Equiv.sumAssoc
+Equiv.sumCongr
+Equiv.sumCongr_apply
+Equiv.sumSumSumComm
+Equiv.sumSumSumComm_apply
+Fin.castSucc
+Fin.last
+Fin.lastCases
+Fin.succAbove
+finCongr
+finOneEquiv
+finProdFinEquiv
+Finset.card_singleton
+Finset.sum_mul_sum
+Finset.univ_unique
+finSuccEquiv'
+finSumFinEquiv_symm_apply_natAdd
+Group.toDivInvMonoid
+instMulActionNatOfAddMonoid
+Int.cast_mul
+Int.instMonoid
+Int.units_mul_self
+Matrix.det_one_add_replicateCol_mul_replicateRow
+Matrix.det_permute
+Matrix.fromBlocks_toBlocks
+Matrix.replicateCol
+Matrix.replicateRow
+Matrix.toBlocks₁₂
+Matrix.updateRow_ne
+Matrix.updateRow_self
+MvPolynomial.pderiv_rename
+MvPolynomial.pderiv_X
+NonAssocRing
+Pi.single_apply
+PUnit.fintype
+PUnit.instUnique
+PUnit.unit
+Sum.inl_injective
+Sum.inl_ne_inr
+Sum.inr_injective
+Sum.map
+Unique.fintype
+Units.instMul
+Units.instMulOneClass
+Units.instOne
+Units.val_mul
+Matrix.toBlocks₁₁
+Matrix.toBlocks₂₁
+Matrix.toBlocks₂₂
+# ChainLiftConormalCert (coll-8a, 2026-10-04): conormal injectivity from certificates. Reviewed:
+# ring identities (add_sub_cancel_left, sub_sub_sub_cancel_left, sub_dvd_pow_sub_pow: x - y ∣ xⁿ - yⁿ),
+# Nat arithmetic (Nat.sub_add_cancel, Nat.instMulZeroOneClass), injectivity facts (Fin.castAdd_injective,
+# Function.Injective.eq_iff), and the simp lemma Set.mem_range._simp_1.
+Nat.instMulZeroOneClass
+add_sub_cancel_left
+Function.Injective.eq_iff
+Fin.castAdd_injective
+Set.mem_range._simp_1
+Nat.sub_add_cancel
+sub_dvd_pow_sub_pow
+sub_sub_sub_cancel_left
+# ChainLiftCanon (coll-8a, 2026-10-04): canonical generators and the order ≤χ on f.g. ideals. Reviewed:
+# Nat.find, Nat.find_spec: least witness of a decidable predicate (axiom-free; the decidability comes
+#   from decOfOr, the bound from explicit preimages of generators, so no Markov step).
+# decide_eq_true_iff: decide p = true ↔ p for a given Decidable instance.
+# List.le, List.instLE: core's lexicographic ≤ on lists (l₁ ≤ l₂ := ¬ l₂ < l₁); decided by the
+#   axiom-free List.decidableLE. Used ONLY at List ℕ (ℕ has decidable trichotomy), where
+#   List.le_refl, List.le_trans, List.le_total, List.le_antisymm are constructively valid.
+#   (Mathlib's LinearOrder (List ℕ) is NOT used: its decidability comes from linearOrderOfSTO.)
+# instAsymmLt, instIrreflLt, Nat.instTrichotomousLt, Nat.instIsLinearOrder,
+#   Lean.Grind.instLawfulOrderLTNat: core order-class instances on ℕ (Props / decidable data).
+Lean.Grind.instLawfulOrderLTNat
+List.instLE
+List.le
+List.le_antisymm
+List.le_refl
+List.le_total
+List.le_trans
+Nat.find
+Nat.find_spec
+Nat.instIsLinearOrder
+Nat.instTrichotomousLt
+decide_eq_true_iff
+instAsymmLt
+instIrreflLt
+# PrimitiveShift (coll-8a, 2026-10-04): constructive exists_primitive_shift' (∂_T trick). Reviewed:
+# Polynomial.{eval₂_*, eval_*, derivative_*, map_*, monic_*, Monic.*, C_*, coe_mapRingHom, hom_eval₂, aeval_comp,
+#   ringHom_ext', X_pow_dvd_iff, coeff_X_pow_mul', coeff_eq_zero_of_lt_natTrailingDegree, induction_on, instNatCast,
+#   charZero}: equational facts on polynomials, evaluation and derivatives (statements valid over any ring).
+# Polynomial.derivative_eq_zero: p' = 0 ↔ deg p = 0 in characteristic 0 (coefficientwise, n·a = 0 → a = 0).
+# Polynomial.natTrailingDegree, trailingCoeff (+ .eq_1, trailingCoeff_eq_zero): computed from the finite support.
+# Polynomial.comp: substitution (data, eval₂). PowerBasis: structure (used through AdjoinRoot.powerBasis, finiteness).
+# Algebra.IsAlgebraic.of_finite, Algebra.IsAlgebraic.isIntegral, IsIntegral.add, IsIntegral.mul: a finite algebra
+#   is integral, and integral elements are closed under + and · (Cayley–Hamilton / determinant trick; valid).
+# IsCoprime.{dvd_of_dvd_mul_right, isUnit_of_dvd', pow_right}, not_isCoprime_zero_zero, pow_dvd_pow_of_dvd:
+#   divisibility facts in commutative rings. AdjoinRoot.mk_C, mk_X, IsScalarTower.toAlgHom: definitional data.
+# OreLocalization.instRing, OreLocalization.inv': the field FractionRing K[X] (as FractionRing.field already in the
+#   main whitelist): the total inverse is only used with the zero test `hzero_fraction` (gcds in Frac(K[T])[S]).
+# Fact.out, Or.imp, Or.symm, RingHom.ext, Nat.sub_self: logic / extensionality / arithmetic.
+AdjoinRoot.mk_C
+AdjoinRoot.mk_X
+Algebra.IsAlgebraic.isIntegral
+Algebra.IsAlgebraic.of_finite
+Fact.out
+IsCoprime.dvd_of_dvd_mul_right
+IsCoprime.isUnit_of_dvd'
+IsCoprime.pow_right
+IsIntegral.add
+IsIntegral.mul
+IsScalarTower.toAlgHom
+Nat.sub_self
+not_isCoprime_zero_zero
+Or.imp
+Or.symm
+OreLocalization.instRing
+OreLocalization.inv'
+Polynomial.aeval_comp
+Polynomial.C_eq_natCast
+Polynomial.C_ne_zero
+Polynomial.charZero
+Polynomial.coe_mapRingHom
+Polynomial.coeff_eq_zero_of_lt_natTrailingDegree
+Polynomial.coeff_X_pow_mul'
+Polynomial.comp
+Polynomial.derivative_add
+Polynomial.derivative_C
+Polynomial.derivative_eq_zero
+Polynomial.derivative_map
+Polynomial.derivative_monomial
+Polynomial.derivative_mul
+Polynomial.derivative_pow
+Polynomial.derivative_sq
+Polynomial.derivative_zero
+Polynomial.eval_add
+Polynomial.eval₂_add
+Polynomial.eval₂_monomial
+Polynomial.eval₂_mul
+Polynomial.eval₂_neg
+Polynomial.eval_pow
+Polynomial.eval₂_pow
+Polynomial.eval₂_sub
+Polynomial.eval_X
+Polynomial.eval₂_X
+Polynomial.hom_eval₂
+Polynomial.induction_on
+Polynomial.instNatCast
+Polynomial.map_natCast
+Polynomial.map_X
+Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one
+Polynomial.monic_X_pow
+Polynomial.monic_X_sub_C
+Polynomial.Monic.map
+Polynomial.Monic.mul_right_eq_zero_iff
+Polynomial.natTrailingDegree
+Polynomial.ringHom_ext'
+Polynomial.trailingCoeff
+Polynomial.trailingCoeff_eq_zero
+Polynomial.trailingCoeff.eq_1
+Polynomial.X_pow_dvd_iff
+pow_dvd_pow_of_dvd
+PowerBasis
+RingHom.ext
+
+# Rees layer S0–S3 (coll-8a, 2026-10-04): ChainLiftCertRet, ChainLiftRetTransport, ChainLiftSystem. Reviewed:
+# Fin.sum_univ_add, Fin.natAdd_inj, Pi.single_eq_of_ne': finite sums over Fin (m+n) and injectivity (equations).
+# MvPolynomial.comp_aeval, MvPolynomial.bind₁_X_left, MvPolynomial.derivation_C, AlgHom.comp_apply: equational
+#   facts on polynomial substitution and derivations; AlgHom.id: the identity algebra map (data, computable).
+# Ideal.pow_right_mono: I ≤ J → I^k ≤ J^k.
+AlgHom.comp_apply
+AlgHom.id
+Fin.natAdd_inj
+Fin.sum_univ_add
+Ideal.pow_right_mono
+MvPolynomial.bind₁_X_left
+MvPolynomial.comp_aeval
+MvPolynomial.derivation_C
+Pi.single_eq_of_ne'
+# S1 ChainLiftChartTransport: matrix algebra over a commutative ring (instances are data: entrywise
+# operations), ring axioms, and the facts that Matrix.map along a ring hom commutes with 1 and subtraction.
+Matrix.add_mul
+Matrix.addCommSemigroup
+Matrix.addMonoid
+Matrix.distribMulAction
+Matrix.map_one
+Matrix.map_sub
+Matrix.mul_add
+Matrix.neg
+OneHomClass
+ZeroHomClass
+add_neg_cancel
+add_right_comm
+smul_add
+# S4a/S4b (ChainLiftChartCongr, ChainLiftReesModel): diagonal matrices and their determinant, reindexing of a
+# matrix along an equivalence (det_reindex_self), Matrix.mul_zero.
+Matrix.det_diagonal
+Matrix.det_reindex_self
+Matrix.diagonal
+Matrix.diagonal_mul
+Matrix.mul_zero
+Matrix.reindex
+# S4b part 2 (ChainLiftReesModel: Rees and Laurent model square systems), reviewed by coll-8a 2026-10-04:
+# equational facts on renaming, derivatives, finite products and Fin casts (Prop); Set.range_comp: range of a
+# composite is an image (Prop); Matrix.det_unique: determinant of a 1×1 matrix (Prop).
+# Fin.instUnique, Unique.instInhabited, Inhabited.default: the unique element 0 of Fin 1 (data, computable);
+# Fin.subsingleton_one: Fin 1 is a subsingleton (Prop).
+Fin.castAdd_inj._simp_1
+Fin.natAdd_inj._simp_1
+Fin.instUnique
+Fin.natAdd_eq_addNat
+Fin.prod_univ_add
+Fin.subsingleton_one
+Finset.prod_const
+Inhabited.default
+Matrix.det_unique
+MvPolynomial.pderiv_one
+MvPolynomial.rename_rename
+Set.range_comp
+Unique.instInhabited
+# quotRenameEquiv (ChainLiftReesModel): Ideal.quotientEquiv, the isomorphism of quotients induced by a ring
+# isomorphism mapping one ideal onto the other (data: Ideal.quotientMap, i.e. Quotient.lift; no choice);
+# MvPolynomial.map_rename, List.map_map, Set.image_congr: equational facts (Prop).
+Ideal.quotientEquiv
+List.map_map
+MvPolynomial.map_rename
+Set.image_congr
+# structure constructors (cleanup-choice, PrimeFF.map by unique choice)
+RingHom.mk
+MonoidHom.mk
+OneHom.mk
